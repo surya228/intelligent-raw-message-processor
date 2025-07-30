@@ -1,0 +1,34 @@
+
+g	java:S112h"FDefine and throw a dedicated exception instead of using a generic one.(ßŞî¤ùÿÿÿÿ8§ÁŞï2
+l
+java:S20957"OUse try-with-resources or close this "PreparedStatement" in a "finally" clause.(ëÿËÄ8®¢ÁŞï2
+]	java:S125"<This block of commented-out lines of code should be removed.(ºŸçûÿÿÿÿ8³¢ÁŞï2
+X	java:S125"<This block of commented-out lines of code should be removed.(ÆÇ­Ô8¿‚”‚ô2
+t
+java:S3776""RRefactor this method to reduce its Cognitive Complexity from 23 to the 15 allowed.(ş¸şäøÿÿÿÿ8´¢ÁŞï2
+G	java:S106*"+Replace this use of System.out by a logger.(º¤í›8¸¢ÁŞï2
+G	java:S106."+Replace this use of System.out by a logger.(¿«8¸¢ÁŞï2
+G	java:S106/"+Replace this use of System.out by a logger.(ü§Œ”8ı×»ÿğ2
+L	java:S1066"+Replace this use of System.out by a logger.(³âœœûÿÿÿÿ8»¢ÁŞï2
+]
+java:S1119;";Refactor the code to remove this label and the need for it.(ö˜‡¢ıÿÿÿÿ8»¢ÁŞï2
+]	java:S125E"<This block of commented-out lines of code should be removed.(•´Üûøÿÿÿÿ8½¢ÁŞï2
+L	java:S106J"+Replace this use of System.out by a logger.(Îî¸Ûüÿÿÿÿ8™Ø»ÿğ2
+X	java:S125O"<This block of commented-out lines of code should be removed.(“»²¯8À¢ÁŞï2
+G	java:S106_"+Replace this use of System.out by a logger.(ì¤ğÁ8Á¢ÁŞï2
+L	java:S106a"+Replace this use of System.err by a logger.(ËÜÈ¶úÿÿÿÿ8Â¢ÁŞï2
+J
+java:S4925i"-Remove this "Class.forName()", it is useless.(ùíÄé8Ã¢ÁŞï2
+L	java:S106k"+Replace this use of System.out by a logger.(´ÁÍğúÿÿÿÿ8Ä¢ÁŞï2
+G	java:S106u"+Replace this use of System.out by a logger.(àåöà8Æ¢ÁŞï2
+H	java:S106‚"+Replace this use of System.out by a logger.(™Ã˜8È¢ÁŞï2
+H	java:S106‹"+Replace this use of System.out by a logger.(¤˜Ø£8İ¢ÁŞï2
+H	java:S106"+Replace this use of System.err by a logger.(„ê«ñ8İ¢ÁŞï2
+M	java:S106—"+Replace this use of System.err by a logger.(íàóâøÿÿÿÿ8ß¢ÁŞï2
+M	java:S106¯"+Replace this use of System.err by a logger.(íàóâøÿÿÿÿ8à¢ÁŞï2
+H	java:S106Í"+Replace this use of System.out by a logger.(×”Ã8ã¢ÁŞï2
+ª
+java:S1130Ğ"‹Remove the declaration of thrown exception 'com.fasterxml.jackson.core.JsonProcessingException', as it cannot be thrown from method's body.(ìÆ•Æ8©Ù»ÿğ2
+j
+java:S5998Ò"LRefactor this repetition that can lead to a stack overflow for large inputs.(œ›£8ñÙ»ÿğ2
+M	java:S106Ø"+Replace this use of System.out by a logger.(¶œ¯ûÿÿÿÿ8Ú»ÿğ2

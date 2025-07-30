@@ -1,0 +1,31 @@
+
+h	java:S112”"FDefine and throw a dedicated exception instead of using a generic one.(ßŞî¤ùÿÿÿÿ8İÆ¶ßï2
+f
+java:S11922"JDefine a constant instead of duplicating this literal "matchCols" 3 times.(­˜ÂI8ŞÆ¶ßï2
+j
+java:S11920"HDefine a constant instead of duplicating this literal "matches" 5 times.(ÊÒ¦ãÿÿÿÿÿ8ŞÆ¶ßï2
+W
+java:S1141)"5Extract this nested try block into a separate method.(¡»¢üùÿÿÿÿ8ßÆ¶ßï2
+l
+java:S2095k"OUse try-with-resources or close this "PreparedStatement" in a "finally" clause.(ëÿËÄ8Îë¸ßï2
+m
+java:S2095œ"JUse try-with-resources or close this "XSSFWorkbook" in a "finally" clause.(˜„°ÿÿÿÿÿ8Îë¸ßï2
+W
+java:S1118":Add a private constructor to hide the implicit public one.(‹Ù®8şÎ¶ßï2
+n
+java:S3776"RRefactor this method to reduce its Cognitive Complexity from 31 to the 15 allowed.(İòt8€Ï¶ßï2
+G	java:S106"+Replace this use of System.out by a logger.(Òœ†˜8…Ï¶ßï2
+L	java:S106"+Replace this use of System.out by a logger.(ÚÆóÔùÿÿÿÿ8…Ï¶ßï2
+L	java:S106-"+Replace this use of System.out by a logger.(›‰¨Ëûÿÿÿÿ8›Ï¶ßï2
+L	java:S106U"+Replace this use of System.err by a logger.(ù¡£¼şÿÿÿÿ8øë¸ßï2
+L	java:S106Z"+Replace this use of System.err by a logger.(—èî‘ÿÿÿÿÿ8øë¸ßï2
+L	java:S106j"+Replace this use of System.out by a logger.(³âœœûÿÿÿÿ8ùë¸ßï2
+L	java:S106m"+Replace this use of System.out by a logger.(±ÍÇ”ûÿÿÿÿ8úë¸ßï2
+G	java:S106|"+Replace this use of System.out by a logger.(õ…êÄ8ûë¸ßï2
+H	java:S106‰"+Replace this use of System.out by a logger.(ì¤ğÁ8ûë¸ßï2
+M	java:S106‹"+Replace this use of System.err by a logger.(ËÜÈ¶úÿÿÿÿ8ûë¸ßï2
+K
+java:S4925•"-Remove this "Class.forName()", it is useless.(ùíÄé8üë¸ßï2
+M	java:S106—"+Replace this use of System.out by a logger.(´ÁÍğúÿÿÿÿ8üë¸ßï2
+W
+java:S2864¥"4Iterate over the "entrySet" instead of the "keySet".(ä»“òüÿÿÿÿ8ì¸ßï2
