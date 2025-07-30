@@ -10,21 +10,21 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="file://$MODULE_DIR$/../TFCS-dep-Libs/ojdbc17-full" />
+          <root url="file://$MODULE_DIR$/../../Work/Utilities/TFCS-dep-Libs/ojdbc17-full" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
-        <jarDirectory url="file://$MODULE_DIR$/../TFCS-dep-Libs/ojdbc17-full" recursive="false" />
+        <jarDirectory url="file://$MODULE_DIR$/../../Work/Utilities/TFCS-dep-Libs/ojdbc17-full" recursive="false" />
       </library>
     </orderEntry>
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="file://$MODULE_DIR$/../TFCS-dep-Libs/TFCS Libs" />
+          <root url="file://$MODULE_DIR$/../../Work/Utilities/TFCS-dep-Libs/TFCS Libs" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
-        <jarDirectory url="file://$MODULE_DIR$/../TFCS-dep-Libs/TFCS Libs" recursive="false" />
+        <jarDirectory url="file://$MODULE_DIR$/../../Work/Utilities/TFCS-dep-Libs/TFCS Libs" recursive="false" />
       </library>
     </orderEntry>
   </component>
