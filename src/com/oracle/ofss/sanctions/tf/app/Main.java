@@ -71,14 +71,20 @@ public class Main {
                         String srcKey = "replace.src[" + i + "]";
                         String targetColumnKey = "replace.targetColumn[" + i + "]";
 
-                        String src = props.getProperty(srcKey);
+                        String token = props.getProperty(srcKey);
                         String targetColumn = props.getProperty(targetColumnKey);
 
+                        String identifierToken =  props.getProperty("replace.src[0]");
+                        String identifierTargetColumn = props.getProperty("replace.targetColumn[0]");
+
                         String toBeReplaced = rs.getString(targetColumn);
+                        String identifierToBeReplaced = rs.getString(identifierTargetColumn);
+
                         temp = srcFile;
                         if (toBeReplaced != null) {
-                            System.out.println("toBeReplaced: " + toBeReplaced + "  token: " + src + "  column: "+ targetColumn);
-                            temp = temp.replace(src, toBeReplaced);
+                            System.out.println("toBeReplaced: " + toBeReplaced + "  token: " + token + "  column: "+ targetColumn);
+                            temp = temp.replace(token, toBeReplaced);
+                            temp = temp.replace(identifierToken,identifierToBeReplaced);
                             System.out.println("temp:" + temp);
                             jsonArray.put(new JSONObject(temp));
                         }
