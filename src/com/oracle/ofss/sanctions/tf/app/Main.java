@@ -1,8 +1,8 @@
 package com.oracle.ofss.sanctions.tf.app;
 
 /**
- * Author: Vignesh Kanna P
- * Mail: vkvihari467@gmail.com
+ * Author: Suryansh S
+ * Mail: suryansh.sh228@gmail.com
  * Date: 2025-03-23
  */
 
@@ -23,29 +23,11 @@ import java.util.regex.Pattern;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        String url = prepareWalletUrl();
-        generateRawMessage(url);
+        generateRawMessage();
 //        MatchingRespJsonToExcelUtil.convertJsonToExcel(url);
     }
 
-    private static String prepareWalletUrl() throws IOException {
-        String currentDir = System.getProperty("user.dir");
-        File parentDir = new File(currentDir).getParentFile();
-        String configFilePath = parentDir+File.separator+"bin"+File.separator+"config.properties";
-        Properties props = new Properties();
-        try (FileReader reader = new FileReader(configFilePath)) {
-            props.load(reader);
-        } catch (IOException e) {
-            System.err.println("Error reading properties file: " + e.getMessage());
-            throw e;
-        }
-        String walletPath = parentDir+File.separator+"bin"+File.separator+props.getProperty("walletName");
-
-        System.out.println("walletPath: "+walletPath);
-        return "jdbc:oracle:thin:@icpatomic?oracle.net.wallet_location=" + walletPath + "&TNS_ADMIN=" + walletPath;
-    }
-
-    public static void generateRawMessage(String url) throws Exception {
+    public static void generateRawMessage() throws Exception {
         Connection connection = null;
         PreparedStatement pst = null;
         ResultSet rs = null;
@@ -70,7 +52,7 @@ public class Main {
             }
             int maxIndex = getMaxIndex(props, "replace.src");
 
-            connection = getDbConnection(url);
+            connection = getDbConnection();
             String filter="";
             if(props.containsKey("whereClause")){
                 filter = " where "+ props.get("whereClause");
@@ -160,7 +142,7 @@ public class Main {
         return maxIndex;
     }
 
-    public static Connection getDbConnection(String url) throws Exception {
+    public static Connection getDbConnection() throws Exception {
 
         String currentDir = System.getProperty("user.dir");
         File parentDir = new File(currentDir).getParentFile();
@@ -172,7 +154,6 @@ public class Main {
             System.err.println("Error reading properties file: " + e.getMessage());
             throw e;
         }
-
 
         String jdbcUrl = props.getProperty("jdbcurl");
         String jdbcDriver = props.getProperty("jdbcdriver");
@@ -232,50 +213,50 @@ public class Main {
         }
     }
 
-    public static Map<String, String> loadReplaceProps() throws IOException {
+//    public static Map<String, String> loadReplaceProps() throws IOException {
+//
+//        Properties props = new Properties();
+//        try (FileReader reader = new FileReader("src/resources/config.properties")) {
+//            props.load(reader);
+//        } catch (IOException e) {
+//            System.err.println("Error reading properties file: " + e.getMessage());
+//            throw e;
+//        }
+//
+//        Map<String, String> out = new HashMap<>();
+//
+//        for (String propName : props.stringPropertyNames()) {
+//            if (propName.contains(".src[")) {
+//                String src = props.getProperty(propName);
+//                String targetColumnPropName = propName.replace(".src[", ".targetColumn[");
+//                String targetColumn = props.getProperty(targetColumnPropName);
+//                out.put(src, targetColumn);
+//            }
+//        }
+//
+//        return out;
+//    }
 
-        Properties props = new Properties();
-        try (FileReader reader = new FileReader("src/resources/config.properties")) {
-            props.load(reader);
-        } catch (IOException e) {
-            System.err.println("Error reading properties file: " + e.getMessage());
-            throw e;
-        }
-
-        Map<String, String> out = new HashMap<>();
-
-        for (String propName : props.stringPropertyNames()) {
-            if (propName.contains(".src[")) {
-                String src = props.getProperty(propName);
-                String targetColumnPropName = propName.replace(".src[", ".targetColumn[");
-                String targetColumn = props.getProperty(targetColumnPropName);
-                out.put(src, targetColumn);
-            }
-        }
-
-        return out;
-    }
-
-    public static Map<String, String> loadProps() throws IOException {
-
-        Properties props = new Properties();
-        try (FileReader reader = new FileReader("src/resources/config.properties")) {
-            props.load(reader);
-        } catch (IOException e) {
-            System.err.println("Error reading properties file: " + e.getMessage());
-            throw e;
-        }
-
-        Map<String, String> out = new HashMap<>();
-
-        for (String propName : props.stringPropertyNames()) {
-            if (!propName.contains("replace")) {
-                out.put(propName, props.getProperty(propName));
-            }
-        }
-
-        return out;
-    }
+//    public static Map<String, String> loadProps() throws IOException {
+//
+//        Properties props = new Properties();
+//        try (FileReader reader = new FileReader("src/resources/config.properties")) {
+//            props.load(reader);
+//        } catch (IOException e) {
+//            System.err.println("Error reading properties file: " + e.getMessage());
+//            throw e;
+//        }
+//
+//        Map<String, String> out = new HashMap<>();
+//
+//        for (String propName : props.stringPropertyNames()) {
+//            if (!propName.contains("replace")) {
+//                out.put(propName, props.getProperty(propName));
+//            }
+//        }
+//
+//        return out;
+//    }
 
     public static void writeJsonAsCSVFile(JSONArray jsonArray) throws IOException {
         String currentDir = System.getProperty("user.dir");
