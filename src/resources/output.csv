@@ -1,257 +1,436 @@
 "SeqNo","Rule_Name","Message_ISO","Message_Response"
 "1","","{
+    ""messageDirection"": ""INBOUND"",
     ""jurisdictionCode"": ""AMEA"",
-    ""additionalData"": {},
+    ""additionalData"": {
+        ""identifierValue"": ""36"",
+        ""column"": ""V_COUNTRY_NAME"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""Brazil"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
     ""businessDomainCode"": ""GEN"",
-    ""rawMessage"": ""{1:F01SCBLUS33BXXX2862690428}{2:I199CBBABRSPXXXXN}{3:{108:USPA230727001643}{433:/AOK/NON BLOCKING HIT}}{4:
-:20:USP230719-31
-:21:80235108532719
-:79:AS REQUESTED BY OCEANIC TRADE CORP.
-SEND ANY NOTICES TO BNP PARIBAS
-16 BD DES ITALIENS, PARIS 75009
--}{5:{CHK:84A0028A6939}}""
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>36</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>Brazil</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
 }",""
 "2","","{
+    ""messageDirection"": ""INBOUND"",
     ""jurisdictionCode"": ""AMEA"",
-    ""additionalData"": {},
+    ""additionalData"": {
+        ""identifierValue"": ""36"",
+        ""column"": ""V_ISO3_COUNTRY_CODE"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""BRA"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
     ""businessDomainCode"": ""GEN"",
-    ""rawMessage"": ""{1:F01SCBLUS33BXXX2862690428}{2:I199CBBABRSPXXXXN}{3:{108:USPA230727001643}{433:/AOK/NON BLOCKING HIT}}{4:
-:20:USP230719-32
-:21:80235108532719
-:79:AS REQUESTED BY GLOBAL TECH
-INDUSTRIES, SEND SHIPPING DOCS
-HSBC, 8 CANADA SQ, LONDON E14 5HQ
--}{5:{CHK:84A0028A6939}}""
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>36</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>BRA</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
 }",""
 "3","","{
+    ""messageDirection"": ""INBOUND"",
     ""jurisdictionCode"": ""AMEA"",
-    ""additionalData"": {},
+    ""additionalData"": {
+        ""identifierValue"": ""36"",
+        ""column"": ""V_ISO_COUNTRY_CODE"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""BR"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
     ""businessDomainCode"": ""GEN"",
-    ""rawMessage"": ""{1:F01SCBLUS33BXXX2862690428}{2:I199CBBABRSPXXXXN}{3:{108:USPA230727001643}{433:/AOK/NON BLOCKING HIT}}{4:
-:20:USP230719-33
-:21:80235108532719
-:79:Goods loaded at Chabahar Port, AFG
-THIS CONTRACT TO BE SENT TO
-MANGO OIL COMPANY, IRAN
--}{5:{CHK:84A0028A6939}}""
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>36</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>BR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
 }",""
 "4","","{
+    ""messageDirection"": ""INBOUND"",
     ""jurisdictionCode"": ""AMEA"",
-    ""additionalData"": {},
+    ""additionalData"": {
+        ""identifierValue"": ""37"",
+        ""column"": ""V_COUNTRY_NAME"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""British Indian Ocean Territory (the)"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
     ""businessDomainCode"": ""GEN"",
-    ""rawMessage"": ""{1:F01SCBLUS33BXXX2862690428}{2:I199CBBABRSPXXXXN}{3:{108:USPA230727001643}{433:/AOK/NON BLOCKING HIT}}{4:
-:20:USP230719-34
-:21:80235108532719
-:79:ALL NOTICES, CERTIFICATES OR OTHER
-COMMUNICATIONS TO THE APPLICANT WILL BE
-DELIVERED TO: ALCALDE LINARES Angel, NY
--}{5:{CHK:84A0028A6939}}""
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>37</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>British Indian Ocean Territory (the)</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
 }",""
 "5","","{
+    ""messageDirection"": ""INBOUND"",
     ""jurisdictionCode"": ""AMEA"",
-    ""additionalData"": {},
+    ""additionalData"": {
+        ""identifierValue"": ""37"",
+        ""column"": ""V_ISO3_COUNTRY_CODE"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""IOT"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
     ""businessDomainCode"": ""GEN"",
-    ""rawMessage"": ""{1:F01SCBLUS33BXXX2862690428}{2:I199CBBABRSPXXXXN}{3:{108:USPA230727001643}{433:/AOK/NON BLOCKING HIT}}{4:
-:20:USP230719-35
-:21:80235108532719
-:79:ALL NOTICES, STATEMENTS OR OTHER
-COMMUNICATIONS TO THE APPLICANT
-WILL BE SENT TO: Al Aqsa Foundation, Netherlands
--}{5:{CHK:84A0028A6939}}""
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>37</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>IOT</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
 }",""
 "6","","{
+    ""messageDirection"": ""INBOUND"",
     ""jurisdictionCode"": ""AMEA"",
-    ""additionalData"": {},
+    ""additionalData"": {
+        ""identifierValue"": ""37"",
+        ""column"": ""V_ISO_COUNTRY_CODE"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""IO"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
     ""businessDomainCode"": ""GEN"",
-    ""rawMessage"": ""{1:F01SCBLUS33BXXX2862690428}{2:I199CBBABRSPXXXXN}{3:{108:USPA230727001643}{433:/AOK/NON BLOCKING HIT}}{4:
-:20:USP230719-36
-:21:80235108532719
-:79:We, HAVEEN BANK LIMITED | HAVIGB2L, unconditionally guarantee payment upon written demand as per terms of this L/C.
--}{5:{CHK:84A0028A6939}}""
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>37</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>IO</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
 }",""
 "7","","{
+    ""messageDirection"": ""INBOUND"",
     ""jurisdictionCode"": ""AMEA"",
-    ""additionalData"": {},
+    ""additionalData"": {
+        ""identifierValue"": ""38"",
+        ""column"": ""V_COUNTRY_NAME"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""Brunei Darussalam"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
     ""businessDomainCode"": ""GEN"",
-    ""rawMessage"": ""{1:F01SCBLUS33BXXX2862690428}{2:I199CBBABRSPXXXXN}{3:{108:USPA230727001643}{433:/AOK/NON BLOCKING HIT}}{4:
-:20:USP230719-37
-:21:80235108532719
-:79:By this L/C, LULUVIC, Dragan, Kalinovik, Bosnia-Herzegovina commits to full payment when terms are met and demand is received.
--}{5:{CHK:84A0028A6939}}""
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>38</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>Brunei Darussalam</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
 }",""
 "8","","{
+    ""messageDirection"": ""INBOUND"",
     ""jurisdictionCode"": ""AMEA"",
-    ""additionalData"": {},
+    ""additionalData"": {
+        ""identifierValue"": ""38"",
+        ""column"": ""V_ISO3_COUNTRY_CODE"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""BRN"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
     ""businessDomainCode"": ""GEN"",
-    ""rawMessage"": ""{1:F01SCBLUS33BXXX2862690428}{2:I199CBBABRSPXXXXN}{3:{108:USPA230727001643}{433:/AOK/NON BLOCKING HIT}}{4:
-:20:USP230719-38
-:21:80235108532719
-:79:SKY WALK COMPANY FZIO confirms irrevocable payment obligation under this standby letter of credit upon demand.
--}{5:{CHK:84A0028A6939}}""
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>38</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>BRN</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
 }",""
 "9","","{
+    ""messageDirection"": ""INBOUND"",
     ""jurisdictionCode"": ""AMEA"",
-    ""additionalData"": {},
+    ""additionalData"": {
+        ""identifierValue"": ""38"",
+        ""column"": ""V_ISO_COUNTRY_CODE"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""BN"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
     ""businessDomainCode"": ""GEN"",
-    ""rawMessage"": ""{1:F01SCBLUS33BXXX2862690428}{2:I199CBBABRSPXXXXN}{3:{108:USPA230727001643}{433:/AOK/NON BLOCKING HIT}}{4:
-:20:USP230719-39
-:21:80235108532719
-:79:We, JOINT STICK COMPANY EXMASH, RU, shall pay any amount claimed in line with this L/C, without delay or objection.
--}{5:{CHK:84A0028A6939}}""
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>38</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>BN</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
 }",""
 "10","","{
+    ""messageDirection"": ""INBOUND"",
     ""jurisdictionCode"": ""AMEA"",
-    ""additionalData"": {},
+    ""additionalData"": {
+        ""identifierValue"": ""39"",
+        ""column"": ""V_COUNTRY_NAME"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""Bulgaria"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
     ""businessDomainCode"": ""GEN"",
-    ""rawMessage"": ""{1:F01SCBLUS33BXXX2862690428}{2:I199CBBABRSPXXXXN}{3:{108:USPA230727001643}{433:/AOK/NON BLOCKING HIT}}{4:
-:20:USP230719-310
-:21:80235108532719
-:79:NOVATEK CHINA HULDINGS CO LTD undertakes to pay upon first demand under terms of the standby letter of credit.
--}{5:{CHK:84A0028A6939}}""
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>39</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>Bulgaria</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
 }",""
 "11","","{
+    ""messageDirection"": ""INBOUND"",
     ""jurisdictionCode"": ""AMEA"",
-    ""additionalData"": {},
+    ""additionalData"": {
+        ""identifierValue"": ""39"",
+        ""column"": ""V_ISO3_COUNTRY_CODE"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""BGR"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
     ""businessDomainCode"": ""GEN"",
-    ""rawMessage"": ""{1:F01SCBLUS33BXXX2862690428}{2:I199CBBABRSPXXXXN}{3:{108:USPA230727001643}{433:/AOK/NON BLOCKING HIT}}{4:
-:20:USP230719-311
-:21:80235108532719
-:79:PMNT KAMSKII KABEL, Moscow
-Reimburses varified expenses
-As per contract documantation
-Payment within 3 buisness days
--}{5:{CHK:84A0028A6939}}""
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>39</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>BGR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
 }",""
 "12","","{
+    ""messageDirection"": ""INBOUND"",
     ""jurisdictionCode"": ""AMEA"",
-    ""additionalData"": {},
+    ""additionalData"": {
+        ""identifierValue"": ""39"",
+        ""column"": ""V_ISO_COUNTRY_CODE"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""BG"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
     ""businessDomainCode"": ""GEN"",
-    ""rawMessage"": ""{1:F01SCBLUS33BXXX2862690428}{2:I199CBBABRSPXXXXN}{3:{108:USPA230727001643}{433:/AOK/NON BLOCKING HIT}}{4:
-:20:USP230719-312
-:21:80235108532719
-:79:PMNT FEDERAL STATE BUDGETARY 
-
-INST RUSSIAN ACADEMY
-
-OF RICKET AND ARTILLERY SCIENCES
-Setles dues per invoice terms
--}{5:{CHK:84A0028A6939}}""
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>39</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>BG</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
 }",""
 "13","","{
+    ""messageDirection"": ""INBOUND"",
     ""jurisdictionCode"": ""AMEA"",
-    ""additionalData"": {},
+    ""additionalData"": {
+        ""identifierValue"": ""40"",
+        ""column"": ""V_COUNTRY_NAME"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""Burkina Faso"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
     ""businessDomainCode"": ""GEN"",
-    ""rawMessage"": ""{1:F01SCBLUS33BXXX2862690428}{2:I199CBBABRSPXXXXN}{3:{108:USPA230727001643}{433:/AOK/NON BLOCKING HIT}}{4:
-:20:USP230719-313
-:21:80235108532719
-:79:PMNT INNOVIO VENTURES
-Pays panalties for late action
-If dely exceeds grace perod
-Amount fixed in final notise
--}{5:{CHK:84A0028A6939}}""
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>40</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>Burkina Faso</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
 }",""
 "14","","{
+    ""messageDirection"": ""INBOUND"",
     ""jurisdictionCode"": ""AMEA"",
-    ""additionalData"": {},
+    ""additionalData"": {
+        ""identifierValue"": ""40"",
+        ""column"": ""V_ISO3_COUNTRY_CODE"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""BFA"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
     ""businessDomainCode"": ""GEN"",
-    ""rawMessage"": ""{1:F01SCBLUS33BXXX2862690428}{2:I199CBBABRSPXXXXN}{3:{108:USPA230727001643}{433:/AOK/NON BLOCKING HIT}}{4:
-:20:USP230719-314
-:21:80235108532719
-:79:PMNT LLC KRONA BANK
-Credits monthley service fees
-Based on ussage and biling data
-Per scheduel in signed adendum
--}{5:{CHK:84A0028A6939}}""
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>40</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>BFA</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
 }",""
 "15","","{
+    ""messageDirection"": ""INBOUND"",
     ""jurisdictionCode"": ""AMEA"",
-    ""additionalData"": {},
+    ""additionalData"": {
+        ""identifierValue"": ""40"",
+        ""column"": ""V_ISO_COUNTRY_CODE"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""BF"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
     ""businessDomainCode"": ""GEN"",
-    ""rawMessage"": ""{1:F01SCBLUS33BXXX2862690428}{2:I199CBBABRSPXXXXN}{3:{108:USPA230727001643}{433:/AOK/NON BLOCKING HIT}}{4:
-:20:USP230719-315
-:21:80235108532719
-:79:PMNT SAHARA PETROLEUM
-
-PTE. LTD., Singapour
-Honors paymant on guarntee
-If condtions met by claiment
--}{5:{CHK:84A0028A6939}}""
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>40</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>BF</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
 }",""
 "16","","{
+    ""messageDirection"": ""INBOUND"",
     ""jurisdictionCode"": ""AMEA"",
-    ""additionalData"": {},
+    ""additionalData"": {
+        ""identifierValue"": ""41"",
+        ""column"": ""V_ISO3_COUNTRY_CODE"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""BDI"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
     ""businessDomainCode"": ""GEN"",
-    ""rawMessage"": ""{1:F01SCBLUS33BXXX2862690428}{2:I199CBBABRSPXXXXN}{3:{108:USPA230727001643}{433:/AOK/NON BLOCKING HIT}}{4:
-:20:USP230719-316
-:21:80235108532719
-:79:PMNT Haq Abdil, based in Xinjing,
-confirms payment obligation if
-the vendor submits Schedule B,
-signed draft, and inspection
-note from customs authority at
-Changi Logistics Hub, SG.
--}{5:{CHK:84A0028A6939}}""
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>41</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>BDI</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
 }",""
 "17","","{
+    ""messageDirection"": ""INBOUND"",
     ""jurisdictionCode"": ""AMEA"",
-    ""additionalData"": {},
+    ""additionalData"": {
+        ""identifierValue"": ""41"",
+        ""column"": ""V_ISO_COUNTRY_CODE"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""BI"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
     ""businessDomainCode"": ""GEN"",
-    ""rawMessage"": ""{1:F01SCBLUS33BXXX2862690428}{2:I199CBBABRSPXXXXN}{3:{108:USPA230727001643}{433:/AOK/NON BLOCKING HIT}}{4:
-:20:USP230719-317
-:21:80235108532719
-:79:PMNT MUJHID, Mohd Yahyaa
-related to consultancy services
-rendered across three locations
-in China, upon receipt of an
-attested summary and invoice
-approved by the client office.
--}{5:{CHK:84A0028A6939}}""
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>41</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>BI</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
 }",""
 "18","","{
+    ""messageDirection"": ""INBOUND"",
     ""jurisdictionCode"": ""AMEA"",
-    ""additionalData"": {},
+    ""additionalData"": {
+        ""identifierValue"": ""42"",
+        ""column"": ""V_COUNTRY_NAME"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""Cabo Verde"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
     ""businessDomainCode"": ""GEN"",
-    ""rawMessage"": ""{1:F01SCBLUS33BXXX2862690428}{2:I199CBBABRSPXXXXN}{3:{108:USPA230727001643}{433:/AOK/NON BLOCKING HIT}}{4:
-:20:USP230719-318
-:21:80235108532719
-:79:TORRES SOSA, Benjamin
-
-in Mexico is
-authorized to settle insurance
-reimbursements post cargo loss,
-once beneficiary provides proof
-of shipment and L/C ref FR0209.
--}{5:{CHK:84A0028A6939}}""
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>42</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>Cabo Verde</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
 }",""
 "19","","{
+    ""messageDirection"": ""INBOUND"",
     ""jurisdictionCode"": ""AMEA"",
-    ""additionalData"": {},
+    ""additionalData"": {
+        ""identifierValue"": ""42"",
+        ""column"": ""V_ISO3_COUNTRY_CODE"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""CPV"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
     ""businessDomainCode"": ""GEN"",
-    ""rawMessage"": ""{1:F01SCBLUS33BXXX2862690428}{2:I199CBBABRSPXXXXN}{3:{108:USPA230727001643}{433:/AOK/NON BLOCKING HIT}}{4:
-:20:USP230719-319
-:21:80235108532719
-:79:PMNT PASRGRAD BUNK,
-
-IRAN and BKBPIRTH
-penalty to Mega Infra Ltd. if
-construction is not completed
-by agreed date in Bronx County
-and delays exceed 45 calendar days.
--}{5:{CHK:84A0028A6939}}""
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>42</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>CPV</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
 }",""
 "20","","{
+    ""messageDirection"": ""INBOUND"",
     ""jurisdictionCode"": ""AMEA"",
-    ""additionalData"": {},
+    ""additionalData"": {
+        ""identifierValue"": ""42"",
+        ""column"": ""V_ISO_COUNTRY_CODE"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""CV"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
     ""businessDomainCode"": ""GEN"",
-    ""rawMessage"": ""{1:F01SCBLUS33BXXX2862690428}{2:I199CBBABRSPXXXXN}{3:{108:USPA230727001643}{433:/AOK/NON BLOCKING HIT}}{4:
-:20:USP230719-320
-:21:80235108532719
-:79:PMNT
-ABDALLAH AZZAM BRIGADES
-in London, United Kingdom has
-agreed to release final funds
-to the supplier upon verified
-delivery and signed acceptance
-as per agreement dated 12 Feb.
--}{5:{CHK:84A0028A6939}}""
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>42</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>CV</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
+}",""
+"21","","{
+    ""messageDirection"": ""INBOUND"",
+    ""jurisdictionCode"": ""AMEA"",
+    ""additionalData"": {
+        ""identifierValue"": ""43"",
+        ""column"": ""V_COUNTRY_NAME"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""Cambodia"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
+    ""businessDomainCode"": ""GEN"",
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>43</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>Cambodia</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
+}",""
+"22","","{
+    ""messageDirection"": ""INBOUND"",
+    ""jurisdictionCode"": ""AMEA"",
+    ""additionalData"": {
+        ""identifierValue"": ""43"",
+        ""column"": ""V_ISO3_COUNTRY_CODE"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""KHM"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
+    ""businessDomainCode"": ""GEN"",
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>43</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>KHM</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
+}",""
+"23","","{
+    ""messageDirection"": ""INBOUND"",
+    ""jurisdictionCode"": ""AMEA"",
+    ""additionalData"": {
+        ""identifierValue"": ""43"",
+        ""column"": ""V_ISO_COUNTRY_CODE"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""KH"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
+    ""businessDomainCode"": ""GEN"",
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>43</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>KH</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
+}",""
+"24","","{
+    ""messageDirection"": ""INBOUND"",
+    ""jurisdictionCode"": ""AMEA"",
+    ""additionalData"": {
+        ""identifierValue"": ""44"",
+        ""column"": ""V_COUNTRY_NAME"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""Cameroon"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
+    ""businessDomainCode"": ""GEN"",
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>44</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>Cameroon</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
+}",""
+"25","","{
+    ""messageDirection"": ""INBOUND"",
+    ""jurisdictionCode"": ""AMEA"",
+    ""additionalData"": {
+        ""identifierValue"": ""44"",
+        ""column"": ""V_ISO3_COUNTRY_CODE"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""CMR"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
+    ""businessDomainCode"": ""GEN"",
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>44</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>CMR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
+}",""
+"26","","{
+    ""messageDirection"": ""INBOUND"",
+    ""jurisdictionCode"": ""AMEA"",
+    ""additionalData"": {
+        ""identifierValue"": ""44"",
+        ""column"": ""V_ISO_COUNTRY_CODE"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""CM"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
+    ""businessDomainCode"": ""GEN"",
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>44</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>CM</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
+}",""
+"27","","{
+    ""messageDirection"": ""INBOUND"",
+    ""jurisdictionCode"": ""AMEA"",
+    ""additionalData"": {
+        ""identifierValue"": ""45"",
+        ""column"": ""V_COUNTRY_NAME"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""Canada"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
+    ""businessDomainCode"": ""GEN"",
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>45</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>Canada</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
+}",""
+"28","","{
+    ""messageDirection"": ""INBOUND"",
+    ""jurisdictionCode"": ""AMEA"",
+    ""additionalData"": {
+        ""identifierValue"": ""45"",
+        ""column"": ""V_ISO3_COUNTRY_CODE"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""CAN"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
+    ""businessDomainCode"": ""GEN"",
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>45</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>CAN</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
+}",""
+"29","","{
+    ""messageDirection"": ""INBOUND"",
+    ""jurisdictionCode"": ""AMEA"",
+    ""additionalData"": {
+        ""identifierValue"": ""45"",
+        ""column"": ""V_ISO_COUNTRY_CODE"",
+        ""identifierToken"": ""__IDENTIFIER__"",
+        ""MESSAGE_DIRECTION"": ""INBOUND"",
+        ""value"": ""CA"",
+        ""table"": ""FCC_TF_DIM_COUNTRY_DUMMY"",
+        ""token"": ""__TOKEN__""
+    },
+    ""businessDomainCode"": ""GEN"",
+    ""rawMessage"": ""<?xml version=\""1.0\"" encoding=\""UTF-8\"" standalone=\""yes\""?><Document xmlns=\""urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\"">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>45</MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00</CreDtTm>    <NbOfTxs>1</NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA</SttlmMtd>    </SttlmInf>   </GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>IDENTIFIER</InstrId>     <EndToEndId>E2E0000000001542</EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3</UETR>    </PmtId>    <IntrBkSttlmAmt Ccy=\""USD\"">98246.00</IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21</IntrBkSttlmDt>    <ChrgBr>SHAR</ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC</BICFI>     </FinInstnId>    </InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX</BICFI>     </FinInstnId>    </IntrmyAgt1>    <Dbtr>     <Nm>CA</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD</BICFI>     </FinInstnId>    </DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN</BICFI>     </FinInstnId>    </CdtrAgt>    <Cdtr>     <Nm>CREDITOR</Nm>     <PstlAdr>      <AdrLine>ADDRESS</AdrLine>     </PstlAdr>    </Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789</Id>      </Othr>     </Id>    </CdtrAcct>   </CdtTrfTxInf>  </FIToFICstmrCdtTrf> </Document>""
 }",""

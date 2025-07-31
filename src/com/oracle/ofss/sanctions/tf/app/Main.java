@@ -55,7 +55,8 @@ public class Main {
             if(props.containsKey("whereClause")){
                 filter = " where "+ props.get("whereClause");
             }
-            String query = "select * from "+props.get("tableName")+" "+filter;
+            String tableName = props.getProperty("tableName");
+            String query = "select * from "+tableName+" "+filter;
             System.out.println("SQL:: "+query);
             System.out.println("-------------------------------------------------------------");
             System.out.println("-------------------------------------------------------------");
@@ -82,11 +83,19 @@ public class Main {
 
                         temp = srcFile;
                         if (toBeReplaced != null) {
-                            System.out.println("toBeReplaced: " + toBeReplaced + "  token: " + token + "  column: "+ targetColumn);
+                            System.out.println("toBeReplaced: " + toBeReplaced + "  token: " + token + "  column: "+ targetColumn + "  identifier: "+ identifierToBeReplaced);
                             temp = temp.replace(token, toBeReplaced);
                             temp = temp.replace(identifierToken,identifierToBeReplaced);
-                            System.out.println("temp:" + temp);
-                            jsonArray.put(new JSONObject(temp));
+//                            System.out.println("temp:" + temp);
+                            JSONObject tempJson = new JSONObject(temp);
+                            JSONObject additionalData = tempJson.getJSONObject("additionalData");
+                            additionalData.put("table", tableName);
+                            additionalData.put("column", targetColumn);
+                            additionalData.put("token", token);
+                            additionalData.put("value", toBeReplaced);
+                            additionalData.put("identifierToken", identifierToken);
+                            additionalData.put("identifierValue", identifierToBeReplaced);
+                            jsonArray.put(tempJson);
                         }
                     }
                 }
