@@ -23,12 +23,26 @@ import java.util.regex.Pattern;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        String walletPath = "src/resources/wallet_deviut3j16";
-        String url = "jdbc:oracle:thin:@icpatomic?oracle.net.wallet_location=" + walletPath + "&TNS_ADMIN=" + walletPath;
-        //String url = "jdbc:oracle:thin:@icpatomic?oracle.net.wallet_location=src/main/resources/tfcsdev121024-prd&TNS_ADMIN=src/main/resources/tfcsdev121024-prd";
-
+        String url = prepareWalletUrl();
         generateRawMessage(url);
 //        MatchingRespJsonToExcelUtil.convertJsonToExcel(url);
+    }
+
+    private static String prepareWalletUrl() throws IOException {
+        String currentDir = System.getProperty("user.dir");
+        File parentDir = new File(currentDir).getParentFile();
+        String configFilePath = parentDir+File.separator+"bin"+File.separator+"config.properties";
+        Properties props = new Properties();
+        try (FileReader reader = new FileReader(configFilePath)) {
+            props.load(reader);
+        } catch (IOException e) {
+            System.err.println("Error reading properties file: " + e.getMessage());
+            throw e;
+        }
+        String walletPath = parentDir+File.separator+"bin"+File.separator+props.getProperty("walletName");
+
+        System.out.println("walletPath: "+walletPath);
+        return "jdbc:oracle:thin:@icpatomic?oracle.net.wallet_location=" + walletPath + "&TNS_ADMIN=" + walletPath;
     }
 
     public static void generateRawMessage(String url) throws Exception {
@@ -38,11 +52,17 @@ public class Main {
         JSONArray jsonArray = new JSONArray();
 
         try {
-            String srcFile = loadJsonFromFile("src/resources/source.json");
+            String currentDir = System.getProperty("user.dir");
+            File parentDir = new File(currentDir).getParentFile();
+            String sourceFilePath = parentDir+File.separator+"bin"+File.separator+"source.json";
+            String configFilePath = parentDir+File.separator+"bin"+File.separator+"config.properties";
+
+            String srcFile = loadJsonFromFile(sourceFilePath);
             System.out.println("srcFile:"+srcFile);
 
             Properties props = new Properties();
-            try (FileReader reader = new FileReader("src/resources/config.properties")) {
+
+            try (FileReader reader = new FileReader(configFilePath)) {
                 props.load(reader);
             } catch (IOException e) {
                 System.err.println("Error reading properties file: " + e.getMessage());
@@ -173,7 +193,14 @@ public class Main {
     }
 
     public static void writeJsonToFile(String content){
-        try (FileWriter file = new FileWriter("src/resources/output.json")) {
+        String currentDir = System.getProperty("user.dir");
+        File parentDir = new File(currentDir).getParentFile();
+        // Create a subfolder "output" inside it
+        File outputFolder = new File(parentDir, "out");
+        if (!outputFolder.exists()) {
+            outputFolder.mkdirs();  // Create the folder if it doesn't exist
+        }
+        try (FileWriter file = new FileWriter(outputFolder+File.separator+"output.json")) {
             file.write(content);
             System.out.println("Successfully wrote to file.");
         } catch (IOException e) {
@@ -227,8 +254,14 @@ public class Main {
     }
 
     public static void writeJsonAsCSVFile(JSONArray jsonArray) throws IOException {
-
-        try (CSVWriter writer = new CSVWriter(new FileWriter("src/resources/output.csv"))) {
+        String currentDir = System.getProperty("user.dir");
+        File parentDir = new File(currentDir).getParentFile();
+        // Create a subfolder "output" inside it
+        File outputFolder = new File(parentDir, "out");
+        if (!outputFolder.exists()) {
+            outputFolder.mkdirs();  // Create the folder if it doesn't exist
+        }
+        try (CSVWriter writer = new CSVWriter(new FileWriter(outputFolder+File.separator+"output.csv"))) {
             // Write the header
             String[] headers = {"SeqNo", "Rule_Name", "Message_ISO", "Message_Response"};
             writer.writeNext(headers);
