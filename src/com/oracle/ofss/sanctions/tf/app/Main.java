@@ -161,8 +161,32 @@ public class Main {
     }
 
     public static Connection getDbConnection(String url) throws Exception {
-        Class.forName("oracle.jdbc.driver.OracleDriver");
-        Connection connection = DriverManager.getConnection(url);
+
+        String currentDir = System.getProperty("user.dir");
+        File parentDir = new File(currentDir).getParentFile();
+        String configFilePath = parentDir+File.separator+"bin"+File.separator+"config.properties";
+        Properties props = new Properties();
+        try (FileReader reader = new FileReader(configFilePath)) {
+            props.load(reader);
+        } catch (IOException e) {
+            System.err.println("Error reading properties file: " + e.getMessage());
+            throw e;
+        }
+
+
+        String jdbcUrl = props.getProperty("jdbcurl");
+        String jdbcDriver = props.getProperty("jdbcdriver");
+        String username = props.getProperty("username");
+        String password = props.getProperty("password");
+        String walletname = props.getProperty("walletName");
+        String tnsAdminPath = parentDir+File.separator+"bin"+File.separator+walletname;
+
+        Properties properties = new Properties();
+        properties.setProperty("user", username);
+        properties.setProperty("password", password);
+        properties.setProperty("oracle.net.tns_admin", tnsAdminPath);
+        Class.forName(jdbcDriver);
+        Connection connection = DriverManager.getConnection(jdbcUrl,properties);
         System.out.println("Connection established successfully!");
         return connection;
     }
