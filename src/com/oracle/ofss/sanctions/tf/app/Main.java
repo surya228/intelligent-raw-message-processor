@@ -41,10 +41,15 @@ public class Main {
             String srcFile = loadJsonFromFile("src/resources/source.json");
             System.out.println("srcFile:"+srcFile);
 
-            Map<String, String> replaceMap = loadReplaceProps();
-            Map<String, String> props = loadProps();
-            System.out.println("props::"+props);
-            System.out.println("replaceMap::"+replaceMap);
+            Properties props = new Properties();
+            try (FileReader reader = new FileReader("src/resources/config.properties")) {
+                props.load(reader);
+            } catch (IOException e) {
+                System.err.println("Error reading properties file: " + e.getMessage());
+                throw e;
+            }
+            int maxIndex = getMaxIndex(props, "replace.src");
+
             connection = getDbConnection(url);
             String filter="";
             if(props.containsKey("whereClause")){
@@ -52,27 +57,32 @@ public class Main {
             }
             String query = "select * from "+props.get("tableName")+" "+filter;
             System.out.println("SQL:: "+query);
+            System.out.println("-------------------------------------------------------------");
+            System.out.println("-------------------------------------------------------------");
             pst = connection.prepareStatement(query);
 
             rs = pst.executeQuery();
             String temp;
-            outerLoop:
-            while(rs.next()){
-                temp = srcFile;
+
+            while(rs.next()) {
+                temp=srcFile;
                 if(temp != null) {
-                    for (Map.Entry<String, String> entry : replaceMap.entrySet()) {
-                        String toBeReplaced = rs.getString(entry.getValue());
-                        if(entry.getKey().equalsIgnoreCase(props.get("validateColumn")) && toBeReplaced == null){
-                            continue outerLoop;
-                        }
-                        if(toBeReplaced != null) {
-                            System.out.println("Key:"+entry.getKey()+";toBeReplaced:"+toBeReplaced);
-                            temp = temp.replace(entry.getKey(), toBeReplaced);
+                    for (int i = 1; i <= maxIndex; i++) {
+                        String srcKey = "replace.src[" + i + "]";
+                        String targetColumnKey = "replace.targetColumn[" + i + "]";
+
+                        String src = props.getProperty(srcKey);
+                        String targetColumn = props.getProperty(targetColumnKey);
+
+                        String toBeReplaced = rs.getString(targetColumn);
+                        temp = srcFile;
+                        if (toBeReplaced != null) {
+                            System.out.println("toBeReplaced: " + toBeReplaced + "  token: " + src + "  column: "+ targetColumn);
+                            temp = temp.replace(src, toBeReplaced);
+                            System.out.println("temp:" + temp);
+                            jsonArray.put(new JSONObject(temp));
                         }
                     }
-//                    temp = replaceNewlinesInJsonStrings(temp); // not required for iso
-                    System.out.println("temp:"+temp);
-                    jsonArray.put(new JSONObject(temp));
                 }
             }
 
@@ -99,6 +109,20 @@ public class Main {
                 }
             }
         }
+    }
+    private static int getMaxIndex(Properties props, String prefix) throws Exception {
+        int maxIndex = 0;
+        for (String key : props.stringPropertyNames()) {
+            if (key.startsWith(prefix + "[")) {
+                try {
+                    int index = Integer.parseInt(key.substring(prefix.length() + 1, key.length() - 1));
+                    maxIndex = Math.max(maxIndex, index);
+                } catch (NumberFormatException e) {
+                    throw new Exception("Something went wrong while getting maxIndex",e);
+                }
+            }
+        }
+        return maxIndex;
     }
 
     public static Connection getDbConnection(String url) throws Exception {
