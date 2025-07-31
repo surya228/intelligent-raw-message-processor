@@ -66,7 +66,7 @@ public class Main {
 
             rs = pst.executeQuery();
             String temp;
-
+            int updatedCount = 0;
             while(rs.next()) {
                 temp=srcFile;
                 if(temp != null) {
@@ -98,10 +98,12 @@ public class Main {
                             additionalData.put("identifierToken", identifierToken);
                             additionalData.put("identifierValue", identifierToBeReplaced);
                             jsonArray.put(tempJson);
+                            updatedCount++;
                         }
                     }
                 }
             }
+            System.out.println("No. of raw message created:: "+ updatedCount);
 
 //            System.out.println(jsonArray.toString(4).replace("<\\/", "</"));
             writeJsonToFile(jsonArray.toString(4).replace("\\r", "\r").replace("\\n", "\n").replace("<\\/", "</"));
