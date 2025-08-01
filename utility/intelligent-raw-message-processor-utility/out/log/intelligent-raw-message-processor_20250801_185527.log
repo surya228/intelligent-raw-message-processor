@@ -1,0 +1,59 @@
+srcFile:{
+    "messageDirection": "INBOUND",
+    "jurisdictionCode": "AMEA",
+    "additionalData": {"MESSAGE_DIRECTION": "INBOUND"},
+    "businessDomainCode": "GEN",
+    "rawMessage": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08\">  <FIToFICstmrCdtTrf>   <GrpHdr>    <MsgId>__IDENTIFIER__<\/MsgId>    <CreDtTm>2024-10-21T12:43:41.960-05:00<\/CreDtTm>    <NbOfTxs>1<\/NbOfTxs>    <SttlmInf>     <SttlmMtd>INGA<\/SttlmMtd>    <\/SttlmInf>   <\/GrpHdr>   <CdtTrfTxInf>    <PmtId>     <InstrId>__IDENTIFIER__<\/InstrId>     <EndToEndId>E2E0000000001542<\/EndToEndId>     <UETR>b1b25497-c299-454e-8bac-dffde67ac1d3<\/UETR>    <\/PmtId>    <IntrBkSttlmAmt Ccy=\"USD\">98246.00<\/IntrBkSttlmAmt>    <IntrBkSttlmDt>2024-10-21<\/IntrBkSttlmDt>    <ChrgBr>SHAR<\/ChrgBr>    <InstgAgt>     <FinInstnId>      <BICFI>CTRYREPC<\/BICFI>     <\/FinInstnId>    <\/InstgAgt>    <InstdAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN<\/BICFI>     <\/FinInstnId>    <\/InstdAgt>    <IntrmyAgt1>     <FinInstnId>      <BICFI>HBUKGB4BXXX<\/BICFI>     <\/FinInstnId>    <\/IntrmyAgt1>    <Dbtr>     <Nm>__TOKEN__<\/Nm>     <PstlAdr>      <AdrLine>ADDRESS<\/AdrLine>     <\/PstlAdr>    <\/Dbtr>    <DbtrAcct>     <Id>      <Othr>       <Id>01234567890123456789<\/Id>      <\/Othr>     <\/Id>    <\/DbtrAcct>    <DbtrAgt>     <FinInstnId>      <BICFI>CTRYREPD<\/BICFI>     <\/FinInstnId>    <\/DbtrAgt>    <CdtrAgt>     <FinInstnId>      <BICFI>SWHQBEBBFIN<\/BICFI>     <\/FinInstnId>    <\/CdtrAgt>    <Cdtr>     <Nm>CREDITOR<\/Nm>     <PstlAdr>      <AdrLine>ADDRESS<\/AdrLine>     <\/PstlAdr>    <\/Cdtr>    <CdtrAcct>     <Id>      <Othr>       <Id>01234567890123456789<\/Id>      <\/Othr>     <\/Id>    <\/CdtrAcct>   <\/CdtTrfTxInf>  <\/FIToFICstmrCdtTrf> <\/Document>"
+}
+Connection established successfully!
+SQL:: select * from FCC_TF_DIM_COUNTRY_DUMMY 
+-------------------------------------------------------------
+-------------------------------------------------------------
+toBeReplaced: Brazil  token: __TOKEN__  column: V_COUNTRY_NAME  identifier: 36
+toBeReplaced: BRA  token: __TOKEN__  column: V_ISO3_COUNTRY_CODE  identifier: 36
+toBeReplaced: BR  token: __TOKEN__  column: V_ISO_COUNTRY_CODE  identifier: 36
+toBeReplaced: British Indian Ocean Territory (the)  token: __TOKEN__  column: V_COUNTRY_NAME  identifier: 37
+toBeReplaced: IOT  token: __TOKEN__  column: V_ISO3_COUNTRY_CODE  identifier: 37
+toBeReplaced: IO  token: __TOKEN__  column: V_ISO_COUNTRY_CODE  identifier: 37
+toBeReplaced: Brunei Darussalam  token: __TOKEN__  column: V_COUNTRY_NAME  identifier: 38
+toBeReplaced: BRN  token: __TOKEN__  column: V_ISO3_COUNTRY_CODE  identifier: 38
+toBeReplaced: BN  token: __TOKEN__  column: V_ISO_COUNTRY_CODE  identifier: 38
+toBeReplaced: Bulgaria  token: __TOKEN__  column: V_COUNTRY_NAME  identifier: 39
+toBeReplaced: BGR  token: __TOKEN__  column: V_ISO3_COUNTRY_CODE  identifier: 39
+toBeReplaced: BG  token: __TOKEN__  column: V_ISO_COUNTRY_CODE  identifier: 39
+toBeReplaced: Burkina Faso  token: __TOKEN__  column: V_COUNTRY_NAME  identifier: 40
+toBeReplaced: BFA  token: __TOKEN__  column: V_ISO3_COUNTRY_CODE  identifier: 40
+toBeReplaced: BF  token: __TOKEN__  column: V_ISO_COUNTRY_CODE  identifier: 40
+toBeReplaced: BDI  token: __TOKEN__  column: V_ISO3_COUNTRY_CODE  identifier: 41
+toBeReplaced: BI  token: __TOKEN__  column: V_ISO_COUNTRY_CODE  identifier: 41
+toBeReplaced: Cabo Verde  token: __TOKEN__  column: V_COUNTRY_NAME  identifier: 42
+toBeReplaced: CPV  token: __TOKEN__  column: V_ISO3_COUNTRY_CODE  identifier: 42
+toBeReplaced: CV  token: __TOKEN__  column: V_ISO_COUNTRY_CODE  identifier: 42
+toBeReplaced: Cambodia  token: __TOKEN__  column: V_COUNTRY_NAME  identifier: 43
+toBeReplaced: KHM  token: __TOKEN__  column: V_ISO3_COUNTRY_CODE  identifier: 43
+toBeReplaced: KH  token: __TOKEN__  column: V_ISO_COUNTRY_CODE  identifier: 43
+toBeReplaced: Cameroon  token: __TOKEN__  column: V_COUNTRY_NAME  identifier: 44
+toBeReplaced: CMR  token: __TOKEN__  column: V_ISO3_COUNTRY_CODE  identifier: 44
+toBeReplaced: CM  token: __TOKEN__  column: V_ISO_COUNTRY_CODE  identifier: 44
+toBeReplaced: Canada  token: __TOKEN__  column: V_COUNTRY_NAME  identifier: 45
+toBeReplaced: CAN  token: __TOKEN__  column: V_ISO3_COUNTRY_CODE  identifier: 45
+toBeReplaced: CA  token: __TOKEN__  column: V_ISO_COUNTRY_CODE  identifier: 45
+No. of raw message created:: 29
+Successfully wrote to file.
+Successfully wrote to CSV file.
+Successfully wrote to Excel (.xlsx) file.
+Connection closed.
+Inside MessageProcessingUtility main method
+filePath: C:\Users\Suryansh\Documents\CODES\raw-message-generator-utility\out\output.xlsx
+tokenUrl: https://idcs-d2710fa4e7124eff94d2e21268d142ad.identity.pint.oc9qadev.com/oauth2/v1/token
+usernm: deviut3j16-prd_APPID
+pwd: idcscs-c1f7a3c2-c333-4aad-9afd-8920088b25e0
+url: https://devcorp7.fccmcloud.us-phoenix-1.ocs.oc-test.com/deviut3j16-prd/iso20022-transaction-service/sync/process
+UserDefinedParams:::retryRequiredFlag=Y; retryMaxCount=5; bearerTokenRefreshInterval=30min(s); restartFlag=N
+[2025-08-01 18:55:36.555] Message Processing Started...
+[2025-08-01 18:55:36.743] size of seqIdToRequestMap is 29
+AuthToken response: {"access_token":"eyJ4NXQjUzI1NiI6IjBucWpEU2JSZ2p1MXdOMEFSQXVYR0JtQUZNY1RIY0xER1h3RXVmQ1dRbGsiLCJ4NXQiOiJ2amxaSUR5czBuOGo0cjBqUGYxcEhwdDJPdnciLCJraWQiOiJTSUdOSU5HX0tFWSIsImFsZyI6IlJTMjU2In0.eyJjbGllbnRfb2NpZCI6Im9jaWQxLmRvbWFpbmFwcC5vYzEuaWFkLmFtYWFhYWFhYXF0cDViYWFlM2hmYmYzeXl0ZDdkNTNkZGx2bGdncmZmdzJ1d2M1bXdsaHJlbnB0dHp0YSIsInN1YiI6ImRldml1dDNqMTYtcHJkX0FQUElEIiwic2lkbGUiOjQ4MCwidXNlci50ZW5hbnQubmFtZSI6ImlkY3MtZDI3MTBmYTRlNzEyNGVmZjk0ZDJlMjEyNjhkMTQyYWQiLCJpc3MiOiJodHRwczovL2lkZW50aXR5Lm9yYWNsZWNsb3VkLmNvbS8iLCJkb21haW5faG9tZSI6InVzLWFzaGJ1cm4tMSIsImNhX29jaWQiOiJvY2lkMS50ZW5hbmN5Lm9jMS4uYWFhYWFhYWFxejNucjRuaHRodnVmY3JsdHVkcnh1Z21ldjdka2VodTZrN2NncHdlanl5d3Z6cTdibzZhIiwiY2xpZW50X2lkIjoiZGV2aXV0M2oxNi1wcmRfQVBQSUQiLCJkb21haW5faWQiOiJvY2lkMS5kb21haW4ub2MxLi5hYWFhYWFhYWpmeHc0dmFvcXozaW1vdXRzaGpjaWVjdWVja2ZobWRnc2p3cGlseGZpdHRud20yZWoyd3EiLCJzdWJfdHlwZSI6ImNsaWVudCIsInNjb3BlIjoidXJuOm9wYzppZG06dC5jbG91ZGdhdGVfciB1cm46b3BjOmlkbTp0LmFwcHNlcnZpY2VzIHVybjpvcGM6aWRtOnQubWNzIHVybjpvcGM6aWRtOmcuY2VydCB1cm46b3BjOmlkbTp0LmRpYWdub3N0aWNzIHVybjpvcGM6aWRtOnQubmFtZWRhcHBhZG1pbiB1cm46b3BjOmlkbTp0LnNlc3Npb24gdXJuOm9wYzppZG06dC51c2VyLmF1dGhuLmZhY3RvcnMgdXJuOm9wYzppZG06dC51c2Vyc19yIHVybjpvcGM6aWRtOnQuc2VjdXJpdHkuY2xpZW50IHVybjpvcGM6aWRtOnQudXNlci5hdXRoZW50aWNhdGUgdXJuOm9wYzppZG06dC5zZXR0aW5nc19yIHVybjpvcGM6aWRtOnQuZW5jcnlwdGlvbmtleSB1cm46b3BjOmlkbTp0LmFwcG9ubHlfciIsImNsaWVudF90ZW5hbnRuYW1lIjoiaWRjcy1kMjcxMGZhNGU3MTI0ZWZmOTRkMmUyMTI2OGQxNDJhZCIsInJlZ2lvbl9uYW1lIjoidXMtYXNoYnVybi0xIiwiZXhwIjoxNzU0MDU4MzM4LCJpYXQiOjE3NTQwNTQ3MzgsImNsaWVudF9ndWlkIjoiNDhlYmM5NWE1YTM4NGJiY2IyOTJhMjZiMmFkZDI5NTgiLCJjbGllbnRfbmFtZSI6IkFNTENTIGRldml1dDNqMTYtcHJkIiwidGVuYW50IjoiaWRjcy1kMjcxMGZhNGU3MTI0ZWZmOTRkMmUyMTI2OGQxNDJhZCIsImp0aSI6IjEzZDcwZDhlOTBlNjRhNzFhOWM3ZmJkZTgyNmRiYjBmIiwiZ3RwIjoiY2MiLCJvcGMiOnRydWUsInN1Yl9tYXBwaW5nYXR0ciI6InVzZXJOYW1lIiwicHJpbVRlbmFudCI6ZmFsc2UsInRva190eXBlIjoiQVQiLCJhdWQiOlsiaHR0cHM6Ly9pZGNzLWQyNzEwZmE0ZTcxMjRlZmY5NGQyZTIxMjY4ZDE0MmFkLnVzLWFzaGJ1cm4tMS5zZWN1cmUuaWRlbnRpdHkucGludC5vYzlxYWRldi5jb20iLCJ1cm46b3BjOmxiYWFzOmxvZ2ljYWxndWlkPWlkY3MtZDI3MTBmYTRlNzEyNGVmZjk0ZDJlMjEyNjhkMTQyYWQiLCJodHRwczovL2lkY3MtZDI3MTBmYTRlNzEyNGVmZjk0ZDJlMjEyNjhkMTQyYWQuaWRlbnRpdHkucGludC5vYzlxYWRldi5jb20iXSwiY2FfbmFtZSI6ImFmY3NkZXZjb3JwIiwiZG9tYWluIjoiYW1sY3Nkb21haW43IiwiY2xpZW50QXBwUm9sZXMiOlsiQXV0aGVudGljYXRlZCBDbGllbnQiLCJDbG91ZCBHYXRlIl0sInRlbmFudF9pc3MiOiJodHRwczovL2lkY3MtZDI3MTBmYTRlNzEyNGVmZjk0ZDJlMjEyNjhkMTQyYWQuaWRlbnRpdHkucGludC5vYzlxYWRldi5jb206NDQzIn0.NOIl3oQY38dOvx8M9FstCPE2ltsQ54aVO1-avp6WiA6EOqlS9wCtpySbLBXtroiztgARie8uX9S2KYAo_tMozum6bXpMhMXscCFrLd2660ZY2W3ZLQiY4_nx1jUyjC1HTQr_bRuA8oJgnU8SGyr_JtZR8-O0Vmc4_EvhQpFL8EDR7vTRT-HOAcmMtlyTW_Zs_lqcpJYS-BQnkTcG-J3ABmA6we3vshvkIThUJhHG69JFQOjvPBog_LHNXCwPfU1M0WtvCpMMjVybMy6j_jG-4UDFibvcPDfPpgc4qAkCBUkVA2KIpYnp_e1ljRXgIgHXF7_7VytmqTrv5_dbJZvWxA","token_type":"Bearer","expires_in":3600}
+AuthToken status: 200
+Access token: eyJ4NXQjUzI1NiI6IjBucWpEU2JSZ2p1MXdOMEFSQXVYR0JtQUZNY1RIY0xER1h3RXVmQ1dRbGsiLCJ4NXQiOiJ2amxaSUR5czBuOGo0cjBqUGYxcEhwdDJPdnciLCJraWQiOiJTSUdOSU5HX0tFWSIsImFsZyI6IlJTMjU2In0.eyJjbGllbnRfb2NpZCI6Im9jaWQxLmRvbWFpbmFwcC5vYzEuaWFkLmFtYWFhYWFhYXF0cDViYWFlM2hmYmYzeXl0ZDdkNTNkZGx2bGdncmZmdzJ1d2M1bXdsaHJlbnB0dHp0YSIsInN1YiI6ImRldml1dDNqMTYtcHJkX0FQUElEIiwic2lkbGUiOjQ4MCwidXNlci50ZW5hbnQubmFtZSI6ImlkY3MtZDI3MTBmYTRlNzEyNGVmZjk0ZDJlMjEyNjhkMTQyYWQiLCJpc3MiOiJodHRwczovL2lkZW50aXR5Lm9yYWNsZWNsb3VkLmNvbS8iLCJkb21haW5faG9tZSI6InVzLWFzaGJ1cm4tMSIsImNhX29jaWQiOiJvY2lkMS50ZW5hbmN5Lm9jMS4uYWFhYWFhYWFxejNucjRuaHRodnVmY3JsdHVkcnh1Z21ldjdka2VodTZrN2NncHdlanl5d3Z6cTdibzZhIiwiY2xpZW50X2lkIjoiZGV2aXV0M2oxNi1wcmRfQVBQSUQiLCJkb21haW5faWQiOiJvY2lkMS5kb21haW4ub2MxLi5hYWFhYWFhYWpmeHc0dmFvcXozaW1vdXRzaGpjaWVjdWVja2ZobWRnc2p3cGlseGZpdHRud20yZWoyd3EiLCJzdWJfdHlwZSI6ImNsaWVudCIsInNjb3BlIjoidXJuOm9wYzppZG06dC5jbG91ZGdhdGVfciB1cm46b3BjOmlkbTp0LmFwcHNlcnZpY2VzIHVybjpvcGM6aWRtOnQubWNzIHVybjpvcGM6aWRtOmcuY2VydCB1cm46b3BjOmlkbTp0LmRpYWdub3N0aWNzIHVybjpvcGM6aWRtOnQubmFtZWRhcHBhZG1pbiB1cm46b3BjOmlkbTp0LnNlc3Npb24gdXJuOm9wYzppZG06dC51c2VyLmF1dGhuLmZhY3RvcnMgdXJuOm9wYzppZG06dC51c2Vyc19yIHVybjpvcGM6aWRtOnQuc2VjdXJpdHkuY2xpZW50IHVybjpvcGM6aWRtOnQudXNlci5hdXRoZW50aWNhdGUgdXJuOm9wYzppZG06dC5zZXR0aW5nc19yIHVybjpvcGM6aWRtOnQuZW5jcnlwdGlvbmtleSB1cm46b3BjOmlkbTp0LmFwcG9ubHlfciIsImNsaWVudF90ZW5hbnRuYW1lIjoiaWRjcy1kMjcxMGZhNGU3MTI0ZWZmOTRkMmUyMTI2OGQxNDJhZCIsInJlZ2lvbl9uYW1lIjoidXMtYXNoYnVybi0xIiwiZXhwIjoxNzU0MDU4MzM4LCJpYXQiOjE3NTQwNTQ3MzgsImNsaWVudF9ndWlkIjoiNDhlYmM5NWE1YTM4NGJiY2IyOTJhMjZiMmFkZDI5NTgiLCJjbGllbnRfbmFtZSI6IkFNTENTIGRldml1dDNqMTYtcHJkIiwidGVuYW50IjoiaWRjcy1kMjcxMGZhNGU3MTI0ZWZmOTRkMmUyMTI2OGQxNDJhZCIsImp0aSI6IjEzZDcwZDhlOTBlNjRhNzFhOWM3ZmJkZTgyNmRiYjBmIiwiZ3RwIjoiY2MiLCJvcGMiOnRydWUsInN1Yl9tYXBwaW5nYXR0ciI6InVzZXJOYW1lIiwicHJpbVRlbmFudCI6ZmFsc2UsInRva190eXBlIjoiQVQiLCJhdWQiOlsiaHR0cHM6Ly9pZGNzLWQyNzEwZmE0ZTcxMjRlZmY5NGQyZTIxMjY4ZDE0MmFkLnVzLWFzaGJ1cm4tMS5zZWN1cmUuaWRlbnRpdHkucGludC5vYzlxYWRldi5jb20iLCJ1cm46b3BjOmxiYWFzOmxvZ2ljYWxndWlkPWlkY3MtZDI3MTBmYTRlNzEyNGVmZjk0ZDJlMjEyNjhkMTQyYWQiLCJodHRwczovL2lkY3MtZDI3MTBmYTRlNzEyNGVmZjk0ZDJlMjEyNjhkMTQyYWQuaWRlbnRpdHkucGludC5vYzlxYWRldi5jb20iXSwiY2FfbmFtZSI6ImFmY3NkZXZjb3JwIiwiZG9tYWluIjoiYW1sY3Nkb21haW43IiwiY2xpZW50QXBwUm9sZXMiOlsiQXV0aGVudGljYXRlZCBDbGllbnQiLCJDbG91ZCBHYXRlIl0sInRlbmFudF9pc3MiOiJodHRwczovL2lkY3MtZDI3MTBmYTRlNzEyNGVmZjk0ZDJlMjEyNjhkMTQyYWQuaWRlbnRpdHkucGludC5vYzlxYWRldi5jb206NDQzIn0.NOIl3oQY38dOvx8M9FstCPE2ltsQ54aVO1-avp6WiA6EOqlS9wCtpySbLBXtroiztgARie8uX9S2KYAo_tMozum6bXpMhMXscCFrLd2660ZY2W3ZLQiY4_nx1jUyjC1HTQr_bRuA8oJgnU8SGyr_JtZR8-O0Vmc4_EvhQpFL8EDR7vTRT-HOAcmMtlyTW_Zs_lqcpJYS-BQnkTcG-J3ABmA6we3vshvkIThUJhHG69JFQOjvPBog_LHNXCwPfU1M0WtvCpMMjVybMy6j_jG-4UDFibvcPDfPpgc4qAkCBUkVA2KIpYnp_e1ljRXgIgHXF7_7VytmqTrv5_dbJZvWxA
+[2025-08-01 18:55:37.843] Executing REST call......1 with SeqId: 1
+^C

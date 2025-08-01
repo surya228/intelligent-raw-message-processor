@@ -1,0 +1,42 @@
+-------------------------------------------------------------
+-------------------------------------------------------------
+-----------------RESPONSE ANALYZER STARTED-------------------
+-------------------------------------------------------------
+-------------------------------------------------------------
+tagName: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+[WARN] Invalid JSON at row 2: Expected a ',' or '}' at 3910 [character 3911 line 1]
+java.lang.Exception: org.json.JSONException: Expected a ',' or '}' at 3910 [character 3911 line 1]
+	at com.oracle.ofss.sanctions.tf.app.MessageResponseAnalyzer.processEachJsonInExcel(MessageResponseAnalyzer.java:78)
+	at com.oracle.ofss.sanctions.tf.app.MessageResponseAnalyzer.analyseResponseAndPrepareResults(MessageResponseAnalyzer.java:40)
+	at com.oracle.ofss.sanctions.tf.app.Main.main(Main.java:7)
+Caused by: org.json.JSONException: Expected a ',' or '}' at 3910 [character 3911 line 1]
+	at org.json.JSONTokener.syntaxError(JSONTokener.java:433)
+	at org.json.JSONObject.<init>(JSONObject.java:229)
+	at org.json.JSONTokener.nextValue(JSONTokener.java:363)
+	at org.json.JSONArray.<init>(JSONArray.java:115)
+	at org.json.JSONTokener.nextValue(JSONTokener.java:366)
+	at org.json.JSONObject.<init>(JSONObject.java:214)
+	at org.json.JSONTokener.nextValue(JSONTokener.java:363)
+	at org.json.JSONObject.<init>(JSONObject.java:214)
+	at org.json.JSONObject.<init>(JSONObject.java:321)
+	at com.oracle.ofss.sanctions.tf.app.MessageResponseAnalyzer.processEachJsonInExcel(MessageResponseAnalyzer.java:74)
+	... 2 more
+Exception in thread "main" java.lang.Exception: Something went wrong while analyzing responses
+	at com.oracle.ofss.sanctions.tf.app.MessageResponseAnalyzer.analyseResponseAndPrepareResults(MessageResponseAnalyzer.java:48)
+	at com.oracle.ofss.sanctions.tf.app.Main.main(Main.java:7)
+Caused by: java.lang.Exception: org.json.JSONException: Expected a ',' or '}' at 3910 [character 3911 line 1]
+	at com.oracle.ofss.sanctions.tf.app.MessageResponseAnalyzer.processEachJsonInExcel(MessageResponseAnalyzer.java:78)
+	at com.oracle.ofss.sanctions.tf.app.MessageResponseAnalyzer.analyseResponseAndPrepareResults(MessageResponseAnalyzer.java:40)
+	... 1 more
+Caused by: org.json.JSONException: Expected a ',' or '}' at 3910 [character 3911 line 1]
+	at org.json.JSONTokener.syntaxError(JSONTokener.java:433)
+	at org.json.JSONObject.<init>(JSONObject.java:229)
+	at org.json.JSONTokener.nextValue(JSONTokener.java:363)
+	at org.json.JSONArray.<init>(JSONArray.java:115)
+	at org.json.JSONTokener.nextValue(JSONTokener.java:366)
+	at org.json.JSONObject.<init>(JSONObject.java:214)
+	at org.json.JSONTokener.nextValue(JSONTokener.java:363)
+	at org.json.JSONObject.<init>(JSONObject.java:214)
+	at org.json.JSONObject.<init>(JSONObject.java:321)
+	at com.oracle.ofss.sanctions.tf.app.MessageResponseAnalyzer.processEachJsonInExcel(MessageResponseAnalyzer.java:74)
+	... 2 more

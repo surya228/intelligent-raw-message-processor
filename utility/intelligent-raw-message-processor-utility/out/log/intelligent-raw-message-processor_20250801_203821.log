@@ -1,0 +1,245 @@
+-------------------------------------------------------------
+-------------------------------------------------------------
+-----------------RESPONSE ANALYZER STARTED-------------------
+-------------------------------------------------------------
+-------------------------------------------------------------
+tagName: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+[INFO] Processing row 1...
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/DbtrAgt/FinInstnId[1]/BICFI
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/InstgAgt/FinInstnId[1]/BICFI
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/IntrmyAgt1/FinInstnId[1]/BICFI
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 1: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: Genadz Andreevich;Gennady Andreievich;Генадзь � ндр� евiч;Геннадий � ндреевич;Геннадий � ндреевич БОГД� � ;Генадзь � ндр� евiч БОГД� � ;Gennady Andreievich BOGDAN;Genadz Andreevich BOGDAN;;Геннадий� ндреевичБОГД� � ;Генадзь� ндр� евiчБОГД� � ;GennadyAndreievichBOGDAN;GenadzAndreevichBOGDAN;BOGDAN;БОГД� � 
+? Score: 85
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 1: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: SKOCHVarvaraAndreyevna
+? Score: 75
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 1: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: ;Mexico
+? Score: 85
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 1: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: Mexico;;-- 
+? Score: 95
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 1: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: RUS;ООО “РЕДУТ БЕЗОП� С� ОСТЬ� ;Редут � нтитеррор;ЧВК Редут;PMC Redoubt;PMC Redut;società militare privata Redut;privates Militärunternehmen Redut;société militaire privée Redut;Empresa Militar Privada Redut;Det privata militära företaget Redut;Prywatne przedsiębiorstwo wojskowe Redut;Gruparea militară privată Redut;Privatno vojno društvo Redut;Súkromná vojenská spolo� nosť Redut;soukromá vojenská spole� nost Redut;Erőd katonai magánvállalat;Redut katonai magánvállalat;ιδιωτική στ� ατιωτική εται� εία Redut;Ча� тното военно друже� тво Redut;private militære virksomhed Redut;;Moscow
+? Score: 100
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 1: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: AndreyFyodorovichTRIFONOV
+? Score: 75
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 1: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: KadriJAMEEL;KadriJAMIL;QadriJAMEEL;QadriJAMIL
+? Score: 85
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 1: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: BRAZIL;AO DOROFEEVA;IP &&;SAVIN;DMITRIEV I EFREMOVA&gt;&gt
+? Score: 95
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 1: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: Andrey Leonidovich;� ндрей Леонидович;� ндрій Леонідович;SIGUTA;СИГУТ� ;СІГУТ� ;� ндрей Леонидович СИГУТ� ;� ндрій Леонідович СІГУТ� ;Andrey Leonidovich SIGUTA;;� ндрейЛеонидовичСИГУТ� ;� ндрійЛеонідовичСІГУТ� ;AndreyLeonidovichSIGUTA
+? Score: 75
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 1: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: SHOKHIN;ШОХИ� ;Andrey Stanislavovich;� ндрей Стани� лавович;RUS;� ндрей Стани� лавович ШОХИ� ;Andrey Stanislavovich SHOKHIN;;� ндрейСтани� лавовичШОХИ� ;AndreyStanislavovichSHOKHIN
+? Score: 85
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 1: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: VALUEADDEDSERVICESLABORATORYVASL
+? Score: 75
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 1: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: Sweden;United Arab Emirates;AHMEDAbduAbdullah;AHMEDAbdooAbdullahDael;DAILAbduh;-- ;Dubai
+? Score: 95
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 1: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: کربلا سپاه پاسداران انقلاب اسلامی;Islamic Revolutionary Guard Corps  IRGC Operational Base Karbala;Operationsbasis Karbala  Korps der Islamischen Revolutionsgarde  Islamic  Revolutionary Guard Corps, IRGC;Base operativa Karbala del Corpo delle  guardie rivoluzionarie islamiche  IRGC;Base opérationnelle  Karbala  Corps  gardiens  la révolution islamique  IRGC;Επιχει� ησιακή βάση Karbala του Στ� ατο�  των Φ� ου� ών της Ισλαμικής Επανάστασης  IRGC;Należąca do Korpusu Strażników Rewolucji Islamskiej  IRGC baza  operacyjna Karbala;Base  operaciones  Karbala del Cuerpo  los Guardianes  la Revolución  Islámica;Operationele basis “Karbala�  van   Islamitische Revolutionaire Garde  IRG;Baza operațională «Karbala» a Corpului  Gardienilor Revoluției Iraniene  IRGC;Оперативна база Karbala на Корпу� а на  гвардейците на и� л� м� ката революци�   IRGC;Opera� ní základna Islámských revolu� ních gard  IRGC Karbala;Islamiska revolutionsgardets operativa bas Karbala;Az Iszlám Forradalmi Gárda Karbala műveleti bázisa;operativna baza  Islamske revolucionarne garde Karbala;Opera� ná základňa Zboru islamských  revolu� ných gárd  IRGC Karbala;Operativna baza Karbala Islamske revolucionarne garde  IRGC;Islamilaisen vallankumous kaartin  IRGC  operatiivinen keskus Karbala;Bunáit Oibriúcháin Karbala an Islamic  Revolutionary Guard Corps  IRGC;Bażi Operattiva Karbala tal Korp tal Gwardjani tar Rivoluzzjoni Iżlamika  IRGC;Islamo revoliucijos gvardijos  IRGC Karbala operacijų bazė;Isl� ma revolucion� ro gvardu korpusa  IRGC operacion� l�  b� ze Karbala;islami revolutsioonilise kaardiväe  IRGC operatsioonide baas Karbala
+? Score: 85
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 1: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: BOLDREKS
+? Score: 75
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 1: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: AndreiMikhaylovichTAMBOVTSEV;AndreyMikhailovichTAMBOVTSEV
+? Score: 75
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 1: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: ;Slovakia
+? Score: 85
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 1: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: OOO KHESH MEYKER;OOOKHESHMEYKER
+? Score: 75
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 1: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: PETROVAndreyYuvenalyevich;Desnogorsk 
+? Score: 85
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 1: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: Andrej;Andrej Igorevi� ;Andrey Igorevich;Andriej;� ндрей Игоревич;Melni� enko;Meľni� enko;MELNICHENKO;Mielniczenko;МЕЛЬ� ИЧЕ� КО;� ндрей Игоревич МЕЛЬ� ИЧЕ� КО;Andrey Igorevich MELNICHENKO;Andrej Melni� enko;Andrej Igorevi�  Melni� enko;Andrej Meľni� enko;Andriej Mielniczenko;;� ндрейИгоревичМЕЛЬ� ИЧЕ� КО;AndreyIgorevichMELNICHENKO;AndrejMelni� enko;AndrejIgorevi� Melni� enko;AndrejMeľni� enko;AndriejMielniczenko
+? Score: 75
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 1: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: IZO
+? Score: 75
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 1: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: TRAVNIKOVAndreiAlexandrovich;TRAVNIKOVAndreyAlexandrovich
+? Score: 75
+[NO MATCH] Tag not found in row 1: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+[INFO] Processing row 2...
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: Andrei Ramanavich;Andrei Romanovich;Andrej;Andrej Ramanavitj;Andrej Ramanavi� ;Andrej Romanovitj;� ндрей Романович;� ндр� й Раманавіч;TARASEVICH;Tarasevi� ;TARASEVITJ;TARASEVIČ;Т� Р� СЕВИЧ;Т� Р� СЕВІЧ;� ндр� й Раманавіч Т� Р� СЕВІЧ;� ндрей Романович Т� Р� СЕВИЧ;Andrei Romanovich TARASEVICH;Andrei Ramanavich TARASEVICH;Andrej Romanovitj TARASEVITJ;Andrej Ramanavitj TARASEVITJ;Andrej Ramanavi�  TARASEVIČ;Andrej Tarasevi� ;;� ндр� йРаманавічТ� Р� СЕВІЧ;� ндрейРомановичТ� Р� СЕВИЧ;AndreiRomanovichTARASEVICH;AndreiRamanavichTARASEVICH;AndrejRomanovitjTARASEVITJ;AndrejRamanavitjTARASEVITJ;AndrejRamanavi� TARASEVIČ;AndrejTarasevi� 
+? Score: 85
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: ASADRUZAbbas;ASDRUZAbbas;-- 
+? Score: 85
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: ALALAMIYAHEXPRESSCOMPANY;Yemen
+? Score: 85
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: AOANDREEV,FEDOROVIKUDRAVCEV;FEDOTOVA;AO ANDREEV, FEDOROV I KUDRAVCEV
+? Score: 75
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: RAO BARANOV ANTONOVA;RAO <<KONOVALOV SUBBOTIN>>
+? Score: 75
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: GAZPROMTRANSGAZUKHTA;OBSHCHESTVOSOGRANICHENNOIOTVETSTVENNOSTYUGAZPROMTRANSGAZUKHTA&apos;Ukhta, Komi resp 
+? Score: 85
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: AlexanderAndreevichYUSHCHENKO
+? Score: 75
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: INTERNATIONALBUSINESSCORPORATIONDOOBAR;IBCMNEINTERNATIONALBUSINESSCORPORATIONDOOBAR;Montenegro
+? Score: 85
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: � О “Ири� � ;ПКП “Ири� � ;� кционерное Обще� тво  “Производ� твенно Кон� труктор� кое Предпри� тие‘Ири� ’� ;Iris JSC;PKP Iris;Design  Production Enterprise “Iris�  JSC;Entreprise  conception  et  production "Iris"  S A ;sociedad anónima Design  Production Enterprise “Iris� ;empresa  conceção e produção “Iris�  JSC;»Iris« Tervező  és Termelővállalat;Întreprinderea  proiectare și  producție «Iris» SA;Konstruktions  och produktionsföretaget ’Iris’ JSC;Akciová spole� nost Projek� ní a výrobní podnik „Iris“;Dioni� ko društvo – Društvo za projektiranje i  proizvodnju ,Iris;Suunnittelu  ja tuotantoyhtiö Iris JSC;pramoninės konstrukcijos įmonė Iris JSC;Projekteerimis  ja tootmisettevõte „Iris“ JSC;Projektno in proizvodno podjetje ,Iris‘, d  d 
+? Score: 90
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: VOROBYOVAndreiYurievich;VOROBEVAndreyYurevich;Moscow
+? Score: 85
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: BRAVOTHREE;JustinGacheriMUSANGA;GaceriMUSANGA;CSBRAVOSIERRA;;COD
+? Score: 85
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: GOLDPHARMADRUGTRAFFICKINGANDMONEYLAUNDERINGORGANIZATION
+? Score: 75
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: PETROVAndreyYuvenalyevich;Desnogorsk 
+? Score: 85
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: Andrey Yurevich;Andriy Yuriyovych;� ндрей Юрьевич;� ндрій Юрійович;Andrey Yurevich PINCHUK;� ндрей Юрьевич ПИ� ЧУК;� ндрій Юрійович ПІ� ЧУК;Andriy Yuriyovych PINCHUK;;AndreyYurevichPINCHUK;� ндрейЮрьевичПИ� ЧУК;� ндрійЮрійовичПІ� ЧУК;AndriyYuriyovychPINCHUK;PINCHUK;ПИ� ЧУК;ПІ� ЧУК
+? Score: 75
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: KHANAFRIDIHajiIbrahim;KHANHajiIbrahim;IBRAHIMHajiEhai;-- 
+? Score: 85
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: JOHNSON;IZO;JOHNSON ANDRE;ANDRE
+? Score: 75
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: SEVCENKO,Orest
+? Score: 75
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: BUROVAndreiVladimirovich;-- 
+? Score: 85
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: ROSTPROGRESSOOO
+? Score: 75
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: AndreiAlexandrovichSTRIZHOV
+? Score: 75
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: ;-- 
+? Score: 85
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: AbuMuathALJUAITNI;HUSAYNJUAYTHINI;HusaynMuhamadHusaynALJUAYTHINI;HusaynMuhammadALJUAYTHINI;HusaynMuhammadHusaynALJUAYTHINI;HusaynMuhammadHusaynJUAYTHINI;HusseinMohammedHusseinALJEITHNI
+? Score: 75
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: Andrej;Andrey Vladimirovich;� ндрей Владимирович;Žuk;ZHUK;ЖУК;Andrey Vladimirovich ZHUK;� ндрей Владимирович ЖУК;Andrej Žuk;;AndreyVladimirovichZHUK;� ндрейВладимировичЖУК;AndrejŽuk
+? Score: 75
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: INDIA;AL MYD,Idrees
+? Score: 95
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: KOCHERGA;КОЧЕРГ� ;Andrey Viktorovich;� ндрей Викторович;RUS;� ндрей Викторович КОЧЕРГ� ;Andrey Viktorovich KOCHERGA;;� ндрейВикторовичКОЧЕРГ� ;AndreyViktorovichKOCHERGA
+? Score: 90
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: سراج الدين جلال الدين حقانى
+? Score: 75
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: ValeryAndreevichPONOMARYOV;Tikhoy
+? Score: 85
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: UNITED KINGDOM;TSELLOS,Bardes
+? Score: 95
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Cdtr[1]/PstlAdr/AdrLine
+tagNameCsv: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm,Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/PstlAdr/AdrLine
+[MATCH] Found matching tag in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+? Matched Data: ;-- 
+? Score: 85
+[NO MATCH] Tag not found in row 2: Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/Dbtr[1]/Nm
+-------------------------------------------------------------
+-------------------------------------------------------------
+------------------RESPONSE ANALYZER ENDED--------------------
+-------------------------------------------------------------
+-------------------------------------------------------------
