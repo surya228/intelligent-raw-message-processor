@@ -30,6 +30,11 @@ public class MessageProcessingUtility {
     private static int retryRequestNumber;
     
     public static void screenRawMsg() throws Exception {
+        System.out.println("-------------------------------------------------------------");
+        System.out.println("-------------------------------------------------------------");
+        System.out.println("-------------------MESSAGE POSTING STARTED-------------------");
+        System.out.println("-------------------------------------------------------------");
+        System.out.println("-------------------------------------------------------------");
         String currentDir = System.getProperty("user.dir");
         File parentDir = new File(currentDir).getParentFile();
         String configFilePath = parentDir+File.separator+"bin"+File.separator+"config.properties";
@@ -127,6 +132,11 @@ public class MessageProcessingUtility {
             }
 
         }
+        System.out.println("-------------------------------------------------------------");
+        System.out.println("-------------------------------------------------------------");
+        System.out.println("--------------------MESSAGE POSTING ENDED--------------------");
+        System.out.println("-------------------------------------------------------------");
+        System.out.println("-------------------------------------------------------------");
     }
 
     private static long getMaxIndex(Properties props, String prefix) throws Exception {

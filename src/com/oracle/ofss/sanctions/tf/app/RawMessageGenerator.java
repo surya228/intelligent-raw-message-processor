@@ -20,6 +20,11 @@ import java.util.regex.Pattern;
 
 public class RawMessageGenerator {
     public static void generateRawMessage() throws Exception {
+        System.out.println("-------------------------------------------------------------");
+        System.out.println("-------------------------------------------------------------");
+        System.out.println("--------------RAW MESSAGE GENERATOR STARTED------------------");
+        System.out.println("-------------------------------------------------------------");
+        System.out.println("-------------------------------------------------------------");
         Connection connection = null;
         JSONArray rawMessageJsonArray = null;
         ResultSet rs = null;
@@ -54,6 +59,12 @@ public class RawMessageGenerator {
             writeJsonToFile(rawMessageJsonArray.toString(4).replace("\\r", "\r").replace("\\n", "\n").replace("<\\/", "</"));
             writeJsonAsCSVFile(rawMessageJsonArray,tansactionService);
             writeJsonAsExcelFile(rawMessageJsonArray,tansactionService);
+
+            System.out.println("-------------------------------------------------------------");
+            System.out.println("-------------------------------------------------------------");
+            System.out.println("---------------RAW MESSAGE GENERATOR ENDED-------------------");
+            System.out.println("-------------------------------------------------------------");
+            System.out.println("-------------------------------------------------------------");
 
         } catch (Exception e) {
             e.printStackTrace();
