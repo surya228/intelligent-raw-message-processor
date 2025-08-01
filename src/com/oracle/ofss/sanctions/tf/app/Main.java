@@ -10,7 +10,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.opencsv.CSVWriter;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.json.JSONTokener;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -29,9 +28,9 @@ public class Main {
 
     public static void generateRawMessage() throws Exception {
         Connection connection = null;
-        PreparedStatement pst = null;
+        JSONArray rawMessageJsonArray = null;
         ResultSet rs = null;
-        JSONArray jsonArray = new JSONArray();
+
 
         try {
             String currentDir = System.getProperty("user.dir");
@@ -50,73 +49,23 @@ public class Main {
                 System.err.println("Error reading properties file: " + e.getMessage());
                 throw e;
             }
-            int maxIndex = getMaxIndex(props, "replace.src");
 
             connection = getDbConnection();
-            String filter="";
-            if(props.containsKey("whereClause")){
-                filter = " where "+ props.get("whereClause");
-            }
             String tableName = props.getProperty("tableName");
-            String query = "select * from "+tableName+" "+filter;
-            System.out.println("SQL:: "+query);
-            System.out.println("-------------------------------------------------------------");
-            System.out.println("-------------------------------------------------------------");
-            pst = connection.prepareStatement(query);
 
-            rs = pst.executeQuery();
-            String temp;
-            int updatedCount = 0;
-            while(rs.next()) {
-                temp=srcFile;
-                if(temp != null) {
-                    for (int i = 1; i <= maxIndex; i++) {
-                        String srcKey = "replace.src[" + i + "]";
-                        String targetColumnKey = "replace.targetColumn[" + i + "]";
+            rs = prepareQueryAndGetTableData(connection, props, tableName);
 
-                        String token = props.getProperty(srcKey);
-                        String targetColumn = props.getProperty(targetColumnKey);
+            rawMessageJsonArray = generateRawMessageJsonArray(rs,props,srcFile,tableName);
 
-                        String identifierToken =  props.getProperty("replace.src[0]");
-                        String identifierTargetColumn = props.getProperty("replace.targetColumn[0]");
-
-                        String toBeReplaced = rs.getString(targetColumn);
-                        String identifierToBeReplaced = rs.getString(identifierTargetColumn);
-
-                        temp = srcFile;
-                        if (toBeReplaced != null) {
-                            System.out.println("toBeReplaced: " + toBeReplaced + "  token: " + token + "  column: "+ targetColumn + "  identifier: "+ identifierToBeReplaced);
-                            temp = temp.replace(token, toBeReplaced);
-                            temp = temp.replace(identifierToken,identifierToBeReplaced);
-//                            System.out.println("temp:" + temp);
-                            JSONObject tempJson = new JSONObject(temp);
-                            JSONObject additionalData = tempJson.getJSONObject("additionalData");
-                            additionalData.put("table", tableName);
-                            additionalData.put("column", targetColumn);
-                            additionalData.put("token", token);
-                            additionalData.put("value", toBeReplaced);
-                            additionalData.put("identifierToken", identifierToken);
-                            additionalData.put("identifierValue", identifierToBeReplaced);
-                            jsonArray.put(tempJson);
-                            updatedCount++;
-                        }
-                    }
-                }
-            }
-            System.out.println("No. of raw message created:: "+ updatedCount);
-
-//            System.out.println(jsonArray.toString(4).replace("<\\/", "</"));
-            writeJsonToFile(jsonArray.toString(4).replace("\\r", "\r").replace("\\n", "\n").replace("<\\/", "</"));
-            writeJsonAsCSVFile(jsonArray);
+//            System.out.println(rawMessageJsonArray.toString(4).replace("<\\/", "</"));
+            writeJsonToFile(rawMessageJsonArray.toString(4).replace("\\r", "\r").replace("\\n", "\n").replace("<\\/", "</"));
+            writeJsonAsCSVFile(rawMessageJsonArray);
 
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
             if (rs != null) {
                 rs.close();
-            }
-            if (pst != null) {
-                pst.close();
             }
             if (connection != null) {
                 try {
@@ -129,6 +78,75 @@ public class Main {
             }
         }
     }
+
+    private static ResultSet prepareQueryAndGetTableData(Connection connection, Properties props, String tableName) throws Exception {
+        PreparedStatement pst = null;
+        ResultSet rs = null;
+        String filter="";
+        if(props.containsKey("whereClause")){
+            filter = " where "+ props.get("whereClause");
+        }
+
+        String query = "select * from "+tableName+" "+filter;
+        System.out.println("SQL:: "+query);
+        System.out.println("-------------------------------------------------------------");
+        System.out.println("-------------------------------------------------------------");
+        try {
+            pst = connection.prepareStatement(query);
+            rs = pst.executeQuery();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new Exception("Something went wrong while preparing Query: ", e);
+        }
+        return rs;
+    }
+
+    private static JSONArray generateRawMessageJsonArray(ResultSet rs, Properties props, String srcFile, String tableName) throws Exception {
+        JSONArray jsonArray = new JSONArray();
+        int maxIndex = getMaxIndex(props, "replace.src");
+        String temp;
+        int updatedCount = 0;
+        while(rs.next()) {
+            temp=srcFile;
+            if(temp != null) {
+                for (int i = 1; i <= maxIndex; i++) {
+                    String srcKey = "replace.src[" + i + "]";
+                    String targetColumnKey = "replace.targetColumn[" + i + "]";
+
+                    String token = props.getProperty(srcKey);
+                    String targetColumn = props.getProperty(targetColumnKey);
+
+                    String identifierToken =  props.getProperty("replace.src[0]");
+                    String identifierTargetColumn = props.getProperty("replace.targetColumn[0]");
+
+                    String toBeReplaced = rs.getString(targetColumn);
+                    String identifierToBeReplaced = rs.getString(identifierTargetColumn);
+
+                    temp = srcFile;
+                    if (toBeReplaced != null) {
+                        System.out.println("toBeReplaced: " + toBeReplaced + "  token: " + token + "  column: "+ targetColumn + "  identifier: "+ identifierToBeReplaced);
+                        temp = temp.replace(token, toBeReplaced);
+                        temp = temp.replace(identifierToken,identifierToBeReplaced);
+//                            System.out.println("temp:" + temp);
+                        JSONObject tempJson = new JSONObject(temp);
+                        JSONObject additionalData = tempJson.getJSONObject("additionalData");
+                        additionalData.put("table", tableName);
+                        additionalData.put("column", targetColumn);
+                        additionalData.put("token", token);
+                        additionalData.put("value", toBeReplaced);
+                        additionalData.put("identifierToken", identifierToken);
+                        additionalData.put("identifierValue", identifierToBeReplaced);
+                        jsonArray.put(tempJson);
+                        updatedCount++;
+                    }
+                }
+            }
+        }
+        System.out.println("No. of raw message created:: "+ updatedCount);
+        return jsonArray;
+
+    }
+
     private static int getMaxIndex(Properties props, String prefix) throws Exception {
         int maxIndex = 0;
         for (String key : props.stringPropertyNames()) {
