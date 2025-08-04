@@ -229,7 +229,13 @@ public class MessageProcessingUtility {
             }
             
             long startAddToMapTime = System.currentTimeMillis();
-            writeRecordIntoExcelCell(myFile, entry.getKey(), apiResponse.toString(), formatter);
+            JSONObject responseJson = new JSONObject(apiResponse.toString());
+            long transactionToken = responseJson.getLong("transactionToken");
+            long matchCount = responseJson.getJSONObject("feedbackData").getLong("matchCount");
+            String status = responseJson.getString("status");
+            String feedbackStatus = responseJson.getJSONObject("feedbackData").getString("status");
+            Object[] excelParams = new Object[]{transactionToken,matchCount,status,feedbackStatus};
+            writeRecordIntoExcelCell(myFile, entry.getKey(), excelParams, formatter);
             long endAddToMapTime = System.currentTimeMillis();
             System.out.println("Time taken for Persisting a Record into File: " + (endAddToMapTime - startAddToMapTime) / 1000L + " seconds");
             System.out.println("===========================================================================================================");
@@ -237,7 +243,7 @@ public class MessageProcessingUtility {
         
     }
     
-    private static void writeRecordIntoExcelCell(File myFile, String processedSeqId, String apiResponse, DataFormatter formatter) {
+    private static void writeRecordIntoExcelCell(File myFile, String processedSeqId, Object[] excelParams, DataFormatter formatter) {
     	try(FileInputStream fs = new FileInputStream(myFile);
                 XSSFWorkbook workBook = new XSSFWorkbook(fs)) {
     		
@@ -254,15 +260,14 @@ public class MessageProcessingUtility {
                     if(processedSeqId.equalsIgnoreCase(seqId)) {
                         System.out.println("Writing output to file for seqId: " + seqId);
                         Cell cell;
-                        if (row.getCell(3) == null) {
-                            cell = row.createCell(3);
-                        } else {
-                            cell = row.getCell(3);
-                        }
-                        if (apiResponse.length() < 32000) {
-                            cell.setCellValue(apiResponse);
-                        } else {
-                            cell.setCellValue(apiResponse.substring(0, 32000));
+                        int startWithCell=3;
+                        for(int i=startWithCell;i<startWithCell+excelParams.length;i++){
+                            if (row.getCell(i) == null) {
+                                cell = row.createCell(i);
+                            } else {
+                                cell = row.getCell(i);
+                            }
+                            cell.setCellValue(excelParams[i-startWithCell].toString());
                         }
                         break;
                     }

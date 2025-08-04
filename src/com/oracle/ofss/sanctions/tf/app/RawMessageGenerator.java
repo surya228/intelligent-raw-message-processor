@@ -49,15 +49,15 @@ public class RawMessageGenerator {
             }
 
             connection = getDbConnection();
-            String tableName = props.getProperty("tableName");
+            String tableName = Constants.TABLE_WL_MAP.get(props.getProperty("watchListType"));
             String tansactionService = props.getProperty("msgPosting.transactionService");
             rs = prepareQueryAndGetTableData(connection, props, tableName);
 
             rawMessageJsonArray = generateRawMessageJsonArray(rs,props,srcFile,tableName);
 
 //            System.out.println(rawMessageJsonArray.toString(4).replace("<\\/", "</"));
-            writeJsonToFile(rawMessageJsonArray.toString(4).replace("\\r", "\r").replace("\\n", "\n").replace("<\\/", "</"));
-            writeJsonAsCSVFile(rawMessageJsonArray,tansactionService);
+//            writeJsonToFile(rawMessageJsonArray.toString(4).replace("\\r", "\r").replace("\\n", "\n").replace("<\\/", "</"));
+//            writeJsonAsCSVFile(rawMessageJsonArray,tansactionService);
             writeJsonAsExcelFile(rawMessageJsonArray,tansactionService);
 
             System.out.println("-------------------------------------------------------------");
@@ -325,7 +325,7 @@ public class RawMessageGenerator {
 
         // Header row
         String thirdColumn = "Message " + transactionService.toUpperCase();
-        String[] headers = {"SeqNo", "Rule Name", thirdColumn, "Message Response"};
+        String[] headers = {"SeqNo", "Rule Name", thirdColumn, "Transaction Token", "Match Count", "Status", "Feedback Status"};
 
         Row headerRow = sheet.createRow(0);
         for (int i = 0; i < headers.length; i++) {
@@ -346,7 +346,10 @@ public class RawMessageGenerator {
             row.createCell(0).setCellValue(i + 1);      // SeqNo
             row.createCell(1).setCellValue("");         // Rule Name
             row.createCell(2).setCellValue(messageIso); // Message <SERVICE>
-            row.createCell(3).setCellValue("");         // Message Response
+            row.createCell(3).setCellValue("");         // Transaction Token
+            row.createCell(4).setCellValue("");         // Match Count
+            row.createCell(5).setCellValue("");         // Status
+            row.createCell(6).setCellValue("");         // Feedback Status
         }
 
         // Auto-size columns
