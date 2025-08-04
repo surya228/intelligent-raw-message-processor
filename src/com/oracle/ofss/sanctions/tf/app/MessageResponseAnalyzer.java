@@ -15,13 +15,11 @@ import java.util.*;
 public class MessageResponseAnalyzer {
     public static void analyseResponseAndPrepareResults() throws Exception {
         try {
+            long startTime = System.currentTimeMillis();
 
-
-            System.out.println("-------------------------------------------------------------");
-            System.out.println("-------------------------------------------------------------");
-            System.out.println("-----------------RESPONSE ANALYZER STARTED-------------------");
-            System.out.println("-------------------------------------------------------------");
-            System.out.println("-------------------------------------------------------------");
+            System.out.println("\n=============================================================");
+            System.out.println("                  RESPONSE ANALYZER STARTED                  ");
+            System.out.println("=============================================================");
             String currentDir = System.getProperty("user.dir");
             File parentDir = new File(currentDir).getParentFile();
             String configFilePath = parentDir + File.separator + "bin" + File.separator + "config.properties";
@@ -44,11 +42,13 @@ public class MessageResponseAnalyzer {
             System.out.println("tagName: " + tagName);
             File excelFile = new File(filePath);
             processAllResponses(excelFile, tagName, msgCategory, watchListType);
-            System.out.println("-------------------------------------------------------------");
-            System.out.println("-------------------------------------------------------------");
-            System.out.println("------------------RESPONSE ANALYZER ENDED--------------------");
-            System.out.println("-------------------------------------------------------------");
-            System.out.println("-------------------------------------------------------------");
+            System.out.println("\n=============================================================");
+            System.out.println("                   RESPONSE ANALYZER ENDED                   ");
+            System.out.println("=============================================================");
+            long endTime = System.currentTimeMillis();
+
+            System.out.println("Time taken by Message Response Analyzer: " + (endTime - startTime) / 1000L + " seconds");
+
         } catch (Exception e){
             e.printStackTrace();
             throw new Exception("Something went wrong while analyzing responses",e);
@@ -97,8 +97,6 @@ public class MessageResponseAnalyzer {
         Connection connection = getDbConnection();
         String query = "select C_FEEDBACK_MESSAGE from fcc_tf_feedback where N_TRAX_TOKEN = ? and V_MSG_CATEGORY = ?";
         System.out.println("SQL:: "+query);
-        System.out.println("-------------------------------------------------------------");
-        System.out.println("-------------------------------------------------------------");
         try {
             pst = connection.prepareStatement(query);
             pst.setLong(1, transactionToken);              // parameter 1: N_TRAX_TOKEN
@@ -181,10 +179,9 @@ public class MessageResponseAnalyzer {
                 }
             }
         }
-
+        System.out.println("-------------------------------------------------------------");
         System.out.println("No. of True Positives: " + truePositives);
         System.out.println("No. of Matches: " + matches.length());
-        System.out.println("-------------------------------------------------------------");
         System.out.println("-------------------------------------------------------------");
 
     }

@@ -20,11 +20,10 @@ import java.util.regex.Pattern;
 
 public class RawMessageGenerator {
     public static void generateRawMessage() throws Exception {
-        System.out.println("-------------------------------------------------------------");
-        System.out.println("-------------------------------------------------------------");
-        System.out.println("--------------RAW MESSAGE GENERATOR STARTED------------------");
-        System.out.println("-------------------------------------------------------------");
-        System.out.println("-------------------------------------------------------------");
+        long startTime = System.currentTimeMillis();
+        System.out.println("\n=============================================================");
+        System.out.println("                RAW MESSAGE GENERATOR STARTED                ");
+        System.out.println("=============================================================");
         Connection connection = null;
         JSONArray rawMessageJsonArray = null;
         ResultSet rs = null;
@@ -37,7 +36,7 @@ public class RawMessageGenerator {
             String configFilePath = parentDir+File.separator+"bin"+File.separator+"config.properties";
 
             String srcFile = loadJsonFromFile(sourceFilePath);
-            System.out.println("srcFile:"+srcFile);
+            System.out.println("srcFile: "+srcFile);
 
             Properties props = new Properties();
 
@@ -60,11 +59,12 @@ public class RawMessageGenerator {
 //            writeJsonAsCSVFile(rawMessageJsonArray,tansactionService);
             writeJsonAsExcelFile(rawMessageJsonArray,tansactionService);
 
-            System.out.println("-------------------------------------------------------------");
-            System.out.println("-------------------------------------------------------------");
-            System.out.println("---------------RAW MESSAGE GENERATOR ENDED-------------------");
-            System.out.println("-------------------------------------------------------------");
-            System.out.println("-------------------------------------------------------------");
+            System.out.println("\n=============================================================");
+            System.out.println("                 RAW MESSAGE GENERATOR ENDED                 ");
+            System.out.println("=============================================================");
+            long endTime = System.currentTimeMillis();
+
+            System.out.println("Time taken by Raw Message Generator: " + (endTime - startTime) / 1000L + " seconds");
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -93,9 +93,7 @@ public class RawMessageGenerator {
         }
 
         String query = "select * from "+tableName+" "+filter;
-        System.out.println("SQL:: "+query);
-        System.out.println("-------------------------------------------------------------");
-        System.out.println("-------------------------------------------------------------");
+        System.out.println("SQL Query generated:: "+query);
         try {
             pst = connection.prepareStatement(query);
             rs = pst.executeQuery();
@@ -363,7 +361,7 @@ public class RawMessageGenerator {
         fileOut.close();
         workbook.close();
 
-        System.out.println("Successfully wrote to Excel (.xlsx) file.");
+        System.out.println("Successfully wrote to Excel (output.xlsx) file.");
     }
 
 

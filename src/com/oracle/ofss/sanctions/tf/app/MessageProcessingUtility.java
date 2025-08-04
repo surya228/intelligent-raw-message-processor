@@ -30,11 +30,11 @@ public class MessageProcessingUtility {
     private static int retryRequestNumber;
     
     public static void screenRawMsg() throws Exception {
-        System.out.println("-------------------------------------------------------------");
-        System.out.println("-------------------------------------------------------------");
-        System.out.println("-------------------MESSAGE POSTING STARTED-------------------");
-        System.out.println("-------------------------------------------------------------");
-        System.out.println("-------------------------------------------------------------");
+        long startTime = System.currentTimeMillis();
+
+        System.out.println("=============================================================");
+        System.out.println("                   MESSAGE POSTING STARTED                   ");
+        System.out.println("=============================================================");
         String currentDir = System.getProperty("user.dir");
         File parentDir = new File(currentDir).getParentFile();
         String configFilePath = parentDir+File.separator+"bin"+File.separator+"config.properties";
@@ -64,9 +64,9 @@ public class MessageProcessingUtility {
 
 
             System.out.println("filePath: "+filePath);
-            System.out.println("tokenUrl: "+tokenUrl);
-            System.out.println("usernm: "+usernm);
-            System.out.println("pwd: "+pwd);
+//            System.out.println("tokenUrl: "+tokenUrl);
+//            System.out.println("usernm: "+usernm);
+//            System.out.println("pwd: "+pwd);
             System.out.println("url: "+url);
 
 
@@ -132,11 +132,13 @@ public class MessageProcessingUtility {
             }
 
         }
-        System.out.println("-------------------------------------------------------------");
-        System.out.println("-------------------------------------------------------------");
-        System.out.println("--------------------MESSAGE POSTING ENDED--------------------");
-        System.out.println("-------------------------------------------------------------");
-        System.out.println("-------------------------------------------------------------");
+        System.out.println("=============================================================");
+        System.out.println("                   MESSAGE POSTING ENDED                     ");
+        System.out.println("=============================================================");
+        long endTime = System.currentTimeMillis();
+
+        System.out.println("Time taken by Message Processor: " + (endTime - startTime) / 1000L + " seconds");
+
     }
 
     private static long getMaxIndex(Properties props, String prefix) throws Exception {
@@ -218,17 +220,16 @@ public class MessageProcessingUtility {
             System.out.println("["+sdf.format(new Date())+"] ResponseCode: " + responseCode);
             
             long endTime = System.currentTimeMillis();
-            System.out.println("-----------------------------------------------------------------------");
+            System.out.println("=============================================================----------");
             System.out.println("Time taken for rest call: " + (endTime - startTime) / 1000L + " seconds");
-            System.out.println("-----------------------------------------------------------------------");
-            System.out.println("Response: " + apiResponse.toString());
-            System.out.println("-----------------------------------------------------------------------------------------------------------");
+            System.out.println("=============================================================----------");
+//            System.out.println("Response: " + apiResponse.toString());
+            System.out.println("=============================================================----------------------------------------------");
             
             if(responseCode > 399 && failedRequestMap != null) {
             	failedRequestMap.put(entry.getKey(), entry.getValue());
             }
             
-            long startAddToMapTime = System.currentTimeMillis();
             JSONObject responseJson = new JSONObject(apiResponse.toString());
             long transactionToken = responseJson.getLong("transactionToken");
             long matchCount = responseJson.getJSONObject("feedbackData").getLong("matchCount");
@@ -236,8 +237,6 @@ public class MessageProcessingUtility {
             String feedbackStatus = responseJson.getJSONObject("feedbackData").getString("status");
             Object[] excelParams = new Object[]{transactionToken,matchCount,status,feedbackStatus};
             writeRecordIntoExcelCell(myFile, entry.getKey(), excelParams, formatter);
-            long endAddToMapTime = System.currentTimeMillis();
-            System.out.println("Time taken for Persisting a Record into File: " + (endAddToMapTime - startAddToMapTime) / 1000L + " seconds");
             System.out.println("===========================================================================================================");
         }
         
