@@ -192,7 +192,7 @@ public class MessageResponseAnalyzer {
         Row row = sheet.getRow(rowNum);
         if (row == null) row = sheet.createRow(rowNum);
 
-        Cell cell = row.getCell(7); // Column C (0-indexed: A=0, B=1, C=2)
+        Cell cell = row.getCell(7);
         if (cell == null) cell = row.createCell(7);
         cell.setCellValue(truePositives);
 
