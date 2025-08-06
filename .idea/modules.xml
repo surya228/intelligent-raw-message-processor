@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/raw-message-generator.iml" filepath="$PROJECT_DIR$/raw-message-generator.iml" />
+      <module fileurl="file://$PROJECT_DIR$/intelligent-raw-message-processor.iml" filepath="$PROJECT_DIR$/intelligent-raw-message-processor.iml" />
     </modules>
   </component>
 </project>
