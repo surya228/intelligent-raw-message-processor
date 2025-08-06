@@ -8,7 +8,7 @@ public class Constants {
     public static final Map<String, String> TABLE_WL_MAP;
     static {
         Map<String, String> map = new HashMap<>();
-        map.put("COUNTRY", "FCC_TF_DIM_COUNTRY_DUMMY");
+        map.put("COUNTRY", "FCC_TF_DIM_COUNTRY");
         map.put("CITY", "FCC_TF_DIM_CITY");
         map.put("GOODS", "FCC_TF_DIM_GOODS");
         map.put("PORT", "FCC_TF_DIM_PORT");
