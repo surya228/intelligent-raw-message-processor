@@ -84,7 +84,7 @@ public class MessageResponseAnalyzer {
                     JSONObject eachResponse = getResponseFromFeedbackTable(transactionToken,msgCategory);
                     if (eachResponse!=null) {
 //                        System.out.println("feedback: " + eachResponse.toString());
-                        processEachResponse(eachResponse, row.getRowNum(), tagName, watchListType);
+                        processEachResponse(eachResponse, row.getRowNum(), tagName, watchListType, sheet, workbook, excelFile);
                     }
                 }
             }
@@ -153,7 +153,7 @@ public class MessageResponseAnalyzer {
     }
 
 
-    private static void processEachResponse(JSONObject eachResponse, int rowNum, String inputTagName, String watchListType) {
+    private static void processEachResponse(JSONObject eachResponse, int rowNum, String inputTagName, String watchListType, Sheet sheet, Workbook workbook, File excelFile) {
         System.out.println("[INFO] Processing row " + rowNum + "...");
 //        System.out.println(eachResponse.toString(2));
 
@@ -184,7 +184,23 @@ public class MessageResponseAnalyzer {
         System.out.println("No. of Matches: " + matches.length());
         System.out.println("-------------------------------------------------------------");
 
+        writeTruePositivesToExcel(rowNum, truePositives, sheet, workbook, excelFile);
+
     }
 
+    public static void writeTruePositivesToExcel(int rowNum, int truePositives, Sheet sheet, Workbook workbook, File excelFile) {
+        Row row = sheet.getRow(rowNum);
+        if (row == null) row = sheet.createRow(rowNum);
+
+        Cell cell = row.getCell(7);
+        if (cell == null) cell = row.createCell(7);
+        cell.setCellValue(truePositives);
+
+        try (FileOutputStream fos = new FileOutputStream(excelFile)) {
+            workbook.write(fos);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
 }

@@ -231,8 +231,8 @@ public class MessageProcessingUtility {
             }
             
             JSONObject responseJson = new JSONObject(apiResponse.toString());
-            long transactionToken = responseJson.getLong("transactionToken");
-            long matchCount = responseJson.getJSONObject("feedbackData").getLong("matchCount");
+            long transactionToken = responseJson.has("transactionToken")? responseJson.getLong("transactionToken"):-1;
+            long matchCount = responseJson.has("feedbackData")? responseJson.getJSONObject("feedbackData").has("matchCount")? responseJson.getJSONObject("feedbackData").getLong("matchCount"):0:0;
             String status = responseJson.getString("status");
             String feedbackStatus = responseJson.getJSONObject("feedbackData").getString("status");
             Object[] excelParams = new Object[]{transactionToken,matchCount,status,feedbackStatus};
