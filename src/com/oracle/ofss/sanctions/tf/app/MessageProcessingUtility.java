@@ -35,13 +35,9 @@ public class MessageProcessingUtility {
         System.out.println("=============================================================");
         System.out.println("                   MESSAGE POSTING STARTED                   ");
         System.out.println("=============================================================");
-        String currentDir = System.getProperty("user.dir");
-        File parentDir = new File(currentDir).getParentFile();
-        String configFilePath = parentDir+File.separator+"bin"+File.separator+"config.properties";
-        String filePath = parentDir+File.separator+"out"+File.separator+"output.xlsx";
         Properties props = new Properties();
 
-        try (FileReader reader = new FileReader(configFilePath)) {
+        try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
             props.load(reader);
         } catch (IOException e) {
             System.err.println("Error reading properties file: " + e.getMessage());
@@ -63,7 +59,6 @@ public class MessageProcessingUtility {
 
 
 
-            System.out.println("filePath: "+filePath);
 //            System.out.println("tokenUrl: "+tokenUrl);
 //            System.out.println("usernm: "+usernm);
 //            System.out.println("pwd: "+pwd);
@@ -93,8 +88,7 @@ public class MessageProcessingUtility {
 
             try {
                 System.out.println("["+sdf.format(new Date())+"] Message Processing Started...");
-                File myFile = new File(filePath);
-                FileInputStream fis = new FileInputStream(myFile);
+                FileInputStream fis = new FileInputStream(Constants.OUTPUT_XLSX_FILE);
                 XSSFWorkbook myWorkBook = new XSSFWorkbook(fis);
                 XSSFSheet mySheet = myWorkBook.getSheetAt(0);
                 Iterator<Row> rowIterator = mySheet.iterator();
@@ -117,10 +111,10 @@ public class MessageProcessingUtility {
                 Map<String, String> failedRequestMap = new LinkedHashMap<>();
                 retryRequestNumber = 0;
 
-                processMapAndMakeRestCall(seqIdToRequestMap, tokenUrl, usernm, pwd, url, myFile, failedRequestMap);
+                processMapAndMakeRestCall(seqIdToRequestMap, tokenUrl, usernm, pwd, url, failedRequestMap);
                 if(!failedRequestMap.isEmpty()) {
                 	System.out.println("Job is not done yet...");
-                	processMapAndMakeRestCall(failedRequestMap, tokenUrl, usernm, pwd, url, myFile, null);
+                	processMapAndMakeRestCall(failedRequestMap, tokenUrl, usernm, pwd, url, null);
                 }
 
                 System.out.println("["+sdf.format(new Date())+"] Message Processing Completed");
@@ -150,7 +144,7 @@ public class MessageProcessingUtility {
     }
     
     
-    private static void processMapAndMakeRestCall(Map<String, String> seqIdToRequestMap, String tokenUrl, String usernm, String pwd, String url, File myFile, Map<String, String> failedRequestMap) throws Exception {
+    private static void processMapAndMakeRestCall(Map<String, String> seqIdToRequestMap, String tokenUrl, String usernm, String pwd, String url, Map<String, String> failedRequestMap) throws Exception {
     	
     	int requestNumber = 1;
     	DataFormatter formatter = new DataFormatter();
@@ -237,14 +231,14 @@ public class MessageProcessingUtility {
             String feedbackStatus = responseJson.getJSONObject("feedbackData").getString("status");
             System.out.println("transactionToken: " + transactionToken + " matchCount: " + matchCount + " status: " + status + " feedbackStatus: " + feedbackStatus);
             Object[] excelParams = new Object[]{transactionToken,matchCount,status,feedbackStatus};
-            writeRecordIntoExcelCell(myFile, entry.getKey(), excelParams, formatter);
+            writeRecordIntoExcelCell(entry.getKey(), excelParams, formatter);
             System.out.println("===========================================================================================================");
         }
         
     }
     
-    private static void writeRecordIntoExcelCell(File myFile, String processedSeqId, Object[] excelParams, DataFormatter formatter) {
-    	try(FileInputStream fs = new FileInputStream(myFile);
+    private static void writeRecordIntoExcelCell(String processedSeqId, Object[] excelParams, DataFormatter formatter) {
+    	try(FileInputStream fs = new FileInputStream(Constants.OUTPUT_XLSX_FILE);
                 XSSFWorkbook workBook = new XSSFWorkbook(fs)) {
     		
             XSSFSheet newSheet = workBook.getSheetAt(0);
@@ -274,7 +268,7 @@ public class MessageProcessingUtility {
                 }
             }
 
-            FileOutputStream outFile = new FileOutputStream(myFile);
+            FileOutputStream outFile = new FileOutputStream(Constants.OUTPUT_XLSX_FILE);
             workBook.write(outFile);
             outFile.close();
         } catch (Exception e) {

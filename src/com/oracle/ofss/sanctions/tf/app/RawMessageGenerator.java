@@ -32,17 +32,13 @@ public class RawMessageGenerator {
 
 
         try {
-            String currentDir = System.getProperty("user.dir");
-            File parentDir = new File(currentDir).getParentFile();
-            String sourceFilePath = parentDir+File.separator+"bin"+File.separator+"source.json";
-            String configFilePath = parentDir+File.separator+"bin"+File.separator+"config.properties";
 
-            String srcFile = loadJsonFromFile(sourceFilePath);
+            String srcFile = loadJsonFromFile(Constants.SOURCE_FILE_PATH);
             System.out.println("srcFile: "+srcFile);
 
             Properties props = new Properties();
 
-            try (FileReader reader = new FileReader(configFilePath)) {
+            try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
                 props.load(reader);
             } catch (IOException e) {
                 System.err.println("Error reading properties file: " + e.getMessage());
@@ -257,11 +253,8 @@ public class RawMessageGenerator {
 
     public static Connection getDbConnection() throws Exception {
 
-        String currentDir = System.getProperty("user.dir");
-        File parentDir = new File(currentDir).getParentFile();
-        String configFilePath = parentDir+File.separator+"bin"+File.separator+"config.properties";
         Properties props = new Properties();
-        try (FileReader reader = new FileReader(configFilePath)) {
+        try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
             props.load(reader);
         } catch (IOException e) {
             System.err.println("Error reading properties file: " + e.getMessage());
@@ -273,7 +266,7 @@ public class RawMessageGenerator {
         String username = props.getProperty("username");
         String password = props.getProperty("password");
         String walletname = props.getProperty("walletName");
-        String tnsAdminPath = parentDir+File.separator+"bin"+File.separator+walletname;
+        String tnsAdminPath = Constants.PARENT_DIRECTORY+File.separator+"bin"+File.separator+walletname;
 
         Properties properties = new Properties();
         properties.setProperty("user", username);
@@ -311,14 +304,12 @@ public class RawMessageGenerator {
     }
 
     public static void writeJsonToFile(String content){
-        String currentDir = System.getProperty("user.dir");
-        File parentDir = new File(currentDir).getParentFile();
-        // Create a subfolder "output" inside it
-        File outputFolder = new File(parentDir, "out");
+
+        File outputFolder = new File(Constants.PARENT_DIRECTORY, "out");
         if (!outputFolder.exists()) {
             outputFolder.mkdirs();  // Create the folder if it doesn't exist
         }
-        try (FileWriter file = new FileWriter(outputFolder+File.separator+"output.json")) {
+        try (FileWriter file = new FileWriter(Constants.OUTPUT_JSON_FILENAME)) {
             file.write(content);
             System.out.println("Successfully wrote to file.");
         } catch (IOException e) {
@@ -327,14 +318,11 @@ public class RawMessageGenerator {
     }
 
     public static void writeJsonAsCSVFile(JSONArray jsonArray, String tansactionService) throws IOException {
-        String currentDir = System.getProperty("user.dir");
-        File parentDir = new File(currentDir).getParentFile();
         // Create a subfolder "output" inside it
-        File outputFolder = new File(parentDir, "out");
-        if (!outputFolder.exists()) {
-            outputFolder.mkdirs();  // Create the folder if it doesn't exist
+        if (!Constants.OUTPUT_FOLDER.exists()) {
+            Constants.OUTPUT_FOLDER.mkdirs();  // Create the folder if it doesn't exist
         }
-        try (CSVWriter writer = new CSVWriter(new FileWriter(outputFolder+File.separator+"output.csv"))) {
+        try (CSVWriter writer = new CSVWriter(new FileWriter(Constants.OUTPUT_CSV_FILENAME))) {
             // Write the header
             String thirdColumn = "Message "+tansactionService.toUpperCase();
             String[] headers = {"SeqNo", "Rule Name", thirdColumn, "Message Response"};
@@ -353,13 +341,10 @@ public class RawMessageGenerator {
 
 
     public static void writeJsonAsExcelFile(JSONArray jsonArray, String transactionService) throws IOException {
-        String currentDir = System.getProperty("user.dir");
-        File parentDir = new File(currentDir).getParentFile();
 
         // Create a subfolder "out" inside it
-        File outputFolder = new File(parentDir, "out");
-        if (!outputFolder.exists()) {
-            outputFolder.mkdirs(); // Create the folder if it doesn't exist
+        if (!Constants.OUTPUT_FOLDER.exists()) {
+            Constants.OUTPUT_FOLDER.mkdirs();  // Create the folder if it doesn't exist
         }
 
         // Create the Excel workbook and sheet
@@ -402,7 +387,7 @@ public class RawMessageGenerator {
         }
 
         // Write to file
-        FileOutputStream fileOut = new FileOutputStream(new File(outputFolder, "output.xlsx"));
+        FileOutputStream fileOut = new FileOutputStream(Constants.OUTPUT_XLSX_FILE);
         workbook.write(fileOut);
         fileOut.close();
         workbook.close();
