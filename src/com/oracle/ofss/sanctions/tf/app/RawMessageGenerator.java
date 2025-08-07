@@ -14,6 +14,8 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -125,22 +127,31 @@ public class RawMessageGenerator {
                     String toBeReplaced = rs.getString(targetColumn);
                     String identifierToBeReplaced = rs.getString(identifierTargetColumn);
 
-                    temp = srcFile;
-                    if (toBeReplaced != null) {
-                        System.out.println("toBeReplaced: " + toBeReplaced + "  token: " + token + "  column: "+ targetColumn + "  identifier: "+ identifierToBeReplaced);
-                        temp = temp.replace(token, toBeReplaced);
-                        temp = temp.replace(identifierToken,identifierToBeReplaced);
-//                            System.out.println("temp:" + temp);
-                        JSONObject tempJson = new JSONObject(temp);
-                        JSONObject additionalData = tempJson.getJSONObject("additionalData");
-                        additionalData.put("table", tableName);
-                        additionalData.put("column", targetColumn);
-                        additionalData.put("token", token);
-                        additionalData.put("value", toBeReplaced);
-                        additionalData.put("identifierToken", identifierToken);
-                        additionalData.put("identifierValue", identifierToBeReplaced);
-                        jsonArray.put(tempJson);
-                        updatedCount++;
+                    // 0 ced -> exact
+                    updatedCount = createRawMsg(temp,toBeReplaced,identifierToBeReplaced,token,targetColumn,identifierToken,tableName,jsonArray,updatedCount,toBeReplaced,0);
+
+                    if(props.getProperty("ced1").equalsIgnoreCase("Y")){ // 1 ced
+                        List<String> oneCedList = generate1CedVariants(toBeReplaced);
+                        for(String value : oneCedList){
+                            temp = srcFile;
+                            updatedCount = createRawMsg(temp,value,identifierToBeReplaced,token,targetColumn,identifierToken,tableName,jsonArray,updatedCount,toBeReplaced,1);
+                        }
+                    }
+
+                    if(props.getProperty("ced2").equalsIgnoreCase("Y")){ // 2 ced
+                        List<String> twoCedList = generate2CedVariants(toBeReplaced);
+                        for(String value : twoCedList){
+                            temp = srcFile;
+                            updatedCount = createRawMsg(temp,value,identifierToBeReplaced,token,targetColumn,identifierToken,tableName,jsonArray,updatedCount,toBeReplaced,2);
+                        }
+                    }
+
+                    if(props.getProperty("ced3").equalsIgnoreCase("Y")){ // 3 ced
+                        List<String> threeCedList = generate3CedVariants(toBeReplaced);
+                        for(String value : threeCedList){
+                            temp = srcFile;
+                            updatedCount = createRawMsg(temp,value,identifierToBeReplaced,token,targetColumn,identifierToken,tableName,jsonArray,updatedCount,toBeReplaced,3);
+                        }
                     }
                 }
             }
@@ -148,6 +159,85 @@ public class RawMessageGenerator {
         System.out.println("No. of raw message created:: "+ updatedCount);
         return jsonArray;
 
+    }
+
+    public static int createRawMsg(String temp, String value, String identifierToBeReplaced,
+                      String token, String targetColumn, String identifierToken,
+                      String tableName, JSONArray jsonArray, int updatedCount, String originalValue, int ced){
+        if (value != null) {
+            System.out.println("toBeReplaced: " + value + " originalValue: " + originalValue + "  token: " + token + "  column: "+ targetColumn + "  identifier: "+ identifierToBeReplaced + " ced: "+ ced);
+            temp = temp.replace(token, value);
+            temp = temp.replace(identifierToken,identifierToBeReplaced);
+
+            JSONObject tempJson = new JSONObject(temp);
+            JSONObject additionalData = tempJson.getJSONObject("additionalData");
+            additionalData.put("table", tableName);
+            additionalData.put("column", targetColumn);
+            additionalData.put("token", token);
+            additionalData.put("value", value);
+            additionalData.put("originalValue", originalValue);
+            additionalData.put("ced", ced);
+            additionalData.put("identifierToken", identifierToken);
+            additionalData.put("identifierValue", identifierToBeReplaced);
+            jsonArray.put(tempJson);
+
+            updatedCount++;
+        }
+        return updatedCount;
+    }
+    public static List<String> generate1CedVariants(String input) {
+        List<String> variants = new ArrayList<>();
+        int len = input.length();
+
+        // Delete
+        if (len >= 1) variants.add(input.substring(1)); // remove first
+        if (len >= 3) variants.add(input.substring(0, len / 2) + input.substring((len / 2) + 1)); // remove middle
+        if (len >= 1) variants.add(input.substring(0, len - 1)); // remove last
+
+//        // Insert
+//        variants.add(INSERT_CHAR + input); // insert at start
+//        variants.add(input.substring(0, len / 2) + INSERT_CHAR + input.substring(len / 2)); // middle
+//        variants.add(input + INSERT_CHAR); // insert at end
+
+        return variants;
+    }
+
+    public static List<String> generate2CedVariants(String input) {
+        List<String> variants = new ArrayList<>();
+        int len = input.length();
+
+        // Delete 2 characters
+        if (len >= 3) {
+            variants.add(input.substring(2)); // remove first two
+            variants.add(input.substring(0, len / 2 - 1) + input.substring((len / 2) + 1)); // remove around middle
+            variants.add(input.substring(0, len - 2)); // remove last two
+        }
+
+//        // Insert 2 characters
+//        variants.add(INSERT_CHAR + INSERT_CHAR + input); // insert two at start
+//        variants.add(input.substring(0, len / 2) + INSERT_CHAR + INSERT_CHAR + input.substring(len / 2)); // middle
+//        variants.add(input + INSERT_CHAR + INSERT_CHAR); // insert two at end
+
+        return variants;
+    }
+
+    public static List<String> generate3CedVariants(String input) {
+        List<String> variants = new ArrayList<>();
+        int len = input.length();
+
+        // Delete 3 characters
+        if (len >= 4) {
+            variants.add(input.substring(3)); // remove first 3
+            variants.add(input.substring(0, len / 2 - 1) + input.substring((len / 2) + 2)); // remove around middle
+            variants.add(input.substring(0, len - 3)); // remove last 3
+        }
+
+//        // Insert 3 characters
+//        variants.add("" + INSERT_CHAR + INSERT_CHAR + INSERT_CHAR + input); // insert 3 at start
+//        variants.add(input.substring(0, len / 2) + INSERT_CHAR + INSERT_CHAR + INSERT_CHAR + input.substring(len / 2)); // middle
+//        variants.add(input + INSERT_CHAR + INSERT_CHAR + INSERT_CHAR); // end
+
+        return variants;
     }
 
     private static int getMaxIndex(Properties props, String prefix) throws Exception {
@@ -235,51 +325,6 @@ public class RawMessageGenerator {
             System.err.println("Error writing to file: " + e.getMessage());
         }
     }
-
-//    public static Map<String, String> loadReplaceProps() throws IOException {
-//
-//        Properties props = new Properties();
-//        try (FileReader reader = new FileReader("src/resources/config.properties")) {
-//            props.load(reader);
-//        } catch (IOException e) {
-//            System.err.println("Error reading properties file: " + e.getMessage());
-//            throw e;
-//        }
-//
-//        Map<String, String> out = new HashMap<>();
-//
-//        for (String propName : props.stringPropertyNames()) {
-//            if (propName.contains(".src[")) {
-//                String src = props.getProperty(propName);
-//                String targetColumnPropName = propName.replace(".src[", ".targetColumn[");
-//                String targetColumn = props.getProperty(targetColumnPropName);
-//                out.put(src, targetColumn);
-//            }
-//        }
-//
-//        return out;
-//    }
-
-//    public static Map<String, String> loadProps() throws IOException {
-//
-//        Properties props = new Properties();
-//        try (FileReader reader = new FileReader("src/resources/config.properties")) {
-//            props.load(reader);
-//        } catch (IOException e) {
-//            System.err.println("Error reading properties file: " + e.getMessage());
-//            throw e;
-//        }
-//
-//        Map<String, String> out = new HashMap<>();
-//
-//        for (String propName : props.stringPropertyNames()) {
-//            if (!propName.contains("replace")) {
-//                out.put(propName, props.getProperty(propName));
-//            }
-//        }
-//
-//        return out;
-//    }
 
     public static void writeJsonAsCSVFile(JSONArray jsonArray, String tansactionService) throws IOException {
         String currentDir = System.getProperty("user.dir");
