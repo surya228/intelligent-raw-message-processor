@@ -235,6 +235,7 @@ public class MessageProcessingUtility {
             long matchCount = responseJson.has("feedbackData")? responseJson.getJSONObject("feedbackData").has("matchCount")? responseJson.getJSONObject("feedbackData").getLong("matchCount"):0:0;
             String status = responseJson.getString("status");
             String feedbackStatus = responseJson.getJSONObject("feedbackData").getString("status");
+            System.out.println("transactionToken: " + transactionToken + " matchCount: " + matchCount + " status: " + status + " feedbackStatus: " + feedbackStatus);
             Object[] excelParams = new Object[]{transactionToken,matchCount,status,feedbackStatus};
             writeRecordIntoExcelCell(myFile, entry.getKey(), excelParams, formatter);
             System.out.println("===========================================================================================================");
