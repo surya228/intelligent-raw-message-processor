@@ -32,11 +32,12 @@ public class MessageResponseAnalyzer {
             String msgCategory = "";
             String transactionService = props.getProperty("msgPosting.transactionService");
             String watchListType = props.getProperty("watchListType");
+            String webServiceId = props.getProperty("webServiceId");
             if(transactionService.equalsIgnoreCase("SWIFT")) msgCategory="SWIFT";
             else if(transactionService.equalsIgnoreCase("FEDWIRE")) msgCategory="FEDWIRE";
             else if(transactionService.equalsIgnoreCase("ISO20022")) msgCategory="SEPA";
             System.out.println("tagName: " + tagName);
-            processAllResponses(tagName, msgCategory, watchListType);
+            processAllResponses(tagName, msgCategory, watchListType, webServiceId);
             System.out.println("\n=============================================================");
             System.out.println("                   RESPONSE ANALYZER ENDED                   ");
             System.out.println("=============================================================");
@@ -50,7 +51,7 @@ public class MessageResponseAnalyzer {
         }
     }
 
-    public static void processAllResponses(String tagName, String msgCategory, String watchListType) throws Exception {
+    public static void processAllResponses(String tagName, String msgCategory, String watchListType, String webServiceId) throws Exception {
 
         try (FileInputStream fis = new FileInputStream(Constants.OUTPUT_XLSX_FILE);
              Workbook workbook = new XSSFWorkbook(fis)) {
@@ -79,7 +80,7 @@ public class MessageResponseAnalyzer {
                     JSONObject eachResponse = getResponseFromFeedbackTable(transactionToken,msgCategory);
                     if (eachResponse!=null) {
 //                        System.out.println("feedback: " + eachResponse.toString());
-                        processEachResponse(eachResponse, row.getRowNum(), tagName, watchListType, sheet, workbook);
+                        processEachResponse(eachResponse, row.getRowNum(), tagName, watchListType, webServiceId, sheet, workbook);
                     }
                 }
             }
@@ -144,7 +145,7 @@ public class MessageResponseAnalyzer {
     }
 
 
-    private static void processEachResponse(JSONObject eachResponse, int rowNum, String inputTagName, String watchListType, Sheet sheet, Workbook workbook) {
+    private static void processEachResponse(JSONObject eachResponse, int rowNum, String inputTagName, String watchListType, String webServiceId, Sheet sheet, Workbook workbook) {
         System.out.println("[INFO] Processing row " + rowNum + "...");
 //        System.out.println(eachResponse.toString(2));
 
@@ -157,9 +158,10 @@ public class MessageResponseAnalyzer {
 //            System.out.println("tagNameCsv: "+tagNameCsv);
             String[] tagNames = tagNameCsv.split(",");
 
+
             for (String tag : tagNames) {
-                if (inputTagName.equals(tag.trim()) &&
-                        watchListType.equalsIgnoreCase(match.optString("watchlistType"))) {
+                boolean truePositiveFlag  = inputTagName.equals(tag.trim()) && watchListType.equalsIgnoreCase(match.optString("watchlistType")) && webServiceId.equalsIgnoreCase(String.valueOf(match.getInt("webServiceID")));
+                if (truePositiveFlag) {
 //                    System.out.println("[MATCH] Found matching tag in row " + rowNum + ": " + inputTagName);
 //                    System.out.println("Matched Data: " + match.optString("matchedData"));
 //                    System.out.println("Score: " + match.optInt("score"));

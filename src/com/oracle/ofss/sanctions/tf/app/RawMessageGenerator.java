@@ -1,6 +1,8 @@
 package com.oracle.ofss.sanctions.tf.app;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.json.JsonReadFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.CSVWriter;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -290,9 +292,12 @@ public class RawMessageGenerator {
 
             // Read the entire file content
             String jsonContent = Files.readString(Path.of(file.getPath()));
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.enable(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS.mappedFeature());
+            SourceInputModel sourceInputModel = objectMapper.readValue(jsonContent, SourceInputModel.class);
 
             // Parse the JSON data using JSONObject
-            JSONObject jsonObject = new JSONObject(jsonContent);
+            JSONObject jsonObject = new JSONObject(sourceInputModel);
 
             // Convert the parsed JSON back to a string
             return jsonObject.toString(4);
