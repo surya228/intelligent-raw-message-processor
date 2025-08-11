@@ -185,9 +185,16 @@ public class MessageResponseAnalyzer {
         Row row = sheet.getRow(rowNum);
         if (row == null) row = sheet.createRow(rowNum);
 
-        Cell cell = row.getCell(7);
-        if (cell == null) cell = row.createCell(7);
-        cell.setCellValue(truePositives);
+        Cell cell7 = row.getCell(7);
+        if (cell7 == null) cell7 = row.createCell(7);
+        cell7.setCellValue(truePositives);
+
+
+        Cell cell8 = row.getCell(8);
+        if (cell8 == null) cell8 = row.createCell(8);
+
+        if(truePositives<=0) cell8.setCellValue(Constants.FAIL);
+        else cell8.setCellValue(Constants.PASS);
 
         try (FileOutputStream fos = new FileOutputStream(Constants.OUTPUT_XLSX_FILE)) {
             workbook.write(fos);

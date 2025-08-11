@@ -358,7 +358,7 @@ public class RawMessageGenerator {
 
         // Header row
         String thirdColumn = "Message " + transactionService.toUpperCase();
-        String[] headers = {"SeqNo", "Rule Name", thirdColumn, "Transaction Token", "Match Count", "Status", "Feedback Status", "# True Positives"};
+        String[] headers = {"SeqNo", "Rule Name", thirdColumn, "Transaction Token", "Match Count", "Status", "Feedback Status", "# True Positives", "Test Status"};
 
         Row headerRow = sheet.createRow(0);
         for (int i = 0; i < headers.length; i++) {
@@ -384,6 +384,7 @@ public class RawMessageGenerator {
             row.createCell(5).setCellValue("");         // Status
             row.createCell(6).setCellValue("");         // Feedback Status
             row.createCell(7).setCellValue("");         // # True Positives
+            row.createCell(8).setCellValue("");         // Test Status
         }
 
         // Auto-size columns

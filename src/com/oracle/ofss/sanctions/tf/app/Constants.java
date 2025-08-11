@@ -36,5 +36,8 @@ public class Constants {
     public static String OUTPUT_CSV_FILENAME = OUTPUT_FOLDER+File.separator+"output.csv";
     public static File OUTPUT_XLSX_FILE= new File(OUTPUT_FOLDER,"output.xlsx");
 
+    public static String PASS = "PASS";
+    public static String FAIL = "FAIL";
+
 
 }
