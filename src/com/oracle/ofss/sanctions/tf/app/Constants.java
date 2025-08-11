@@ -1,5 +1,6 @@
 package com.oracle.ofss.sanctions.tf.app;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +27,17 @@ public class Constants {
         TABLE_WL_MAP = Collections.unmodifiableMap(map); // Make it read-only
     }
 
+    public static String CURRENT_DIRECTORY = System.getProperty("user.dir");
+    public static File PARENT_DIRECTORY = new File(CURRENT_DIRECTORY).getParentFile();
+    public static String SOURCE_FILE_PATH = PARENT_DIRECTORY+File.separator+"bin"+File.separator+"source.json";
+    public static String CONFIG_FILE_PATH = PARENT_DIRECTORY+File.separator+"bin"+File.separator+"config.properties";
+    public static File OUTPUT_FOLDER = new File(Constants.PARENT_DIRECTORY, "out");
+    public static String OUTPUT_JSON_FILENAME = OUTPUT_FOLDER+File.separator+"output.json";
+    public static String OUTPUT_CSV_FILENAME = OUTPUT_FOLDER+File.separator+"output.csv";
+    public static File OUTPUT_XLSX_FILE= new File(OUTPUT_FOLDER,"output.xlsx");
+
+    public static String PASS = "PASS";
+    public static String FAIL = "FAIL";
 
 
 }

@@ -20,13 +20,9 @@ public class MessageResponseAnalyzer {
             System.out.println("\n=============================================================");
             System.out.println("                  RESPONSE ANALYZER STARTED                  ");
             System.out.println("=============================================================");
-            String currentDir = System.getProperty("user.dir");
-            File parentDir = new File(currentDir).getParentFile();
-            String configFilePath = parentDir + File.separator + "bin" + File.separator + "config.properties";
-            String filePath = parentDir + File.separator + "out" + File.separator + "output.xlsx";
-            Properties props = new Properties();
 
-            try (FileReader reader = new FileReader(configFilePath)) {
+            Properties props = new Properties();
+            try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
                 props.load(reader);
             } catch (IOException e) {
                 System.err.println("Error reading properties file: " + e.getMessage());
@@ -36,12 +32,12 @@ public class MessageResponseAnalyzer {
             String msgCategory = "";
             String transactionService = props.getProperty("msgPosting.transactionService");
             String watchListType = props.getProperty("watchListType");
+            String webServiceId = props.getProperty("webServiceId");
             if(transactionService.equalsIgnoreCase("SWIFT")) msgCategory="SWIFT";
             else if(transactionService.equalsIgnoreCase("FEDWIRE")) msgCategory="FEDWIRE";
             else if(transactionService.equalsIgnoreCase("ISO20022")) msgCategory="SEPA";
             System.out.println("tagName: " + tagName);
-            File excelFile = new File(filePath);
-            processAllResponses(excelFile, tagName, msgCategory, watchListType);
+            processAllResponses(tagName, msgCategory, watchListType, webServiceId);
             System.out.println("\n=============================================================");
             System.out.println("                   RESPONSE ANALYZER ENDED                   ");
             System.out.println("=============================================================");
@@ -55,9 +51,9 @@ public class MessageResponseAnalyzer {
         }
     }
 
-    public static void processAllResponses(File excelFile, String tagName, String msgCategory, String watchListType) throws Exception {
+    public static void processAllResponses(String tagName, String msgCategory, String watchListType, String webServiceId) throws Exception {
 
-        try (FileInputStream fis = new FileInputStream(excelFile);
+        try (FileInputStream fis = new FileInputStream(Constants.OUTPUT_XLSX_FILE);
              Workbook workbook = new XSSFWorkbook(fis)) {
 
             Sheet sheet = workbook.getSheetAt(0);
@@ -84,7 +80,7 @@ public class MessageResponseAnalyzer {
                     JSONObject eachResponse = getResponseFromFeedbackTable(transactionToken,msgCategory);
                     if (eachResponse!=null) {
 //                        System.out.println("feedback: " + eachResponse.toString());
-                        processEachResponse(eachResponse, row.getRowNum(), tagName, watchListType, sheet, workbook, excelFile);
+                        processEachResponse(eachResponse, row.getRowNum(), tagName, watchListType, webServiceId, sheet, workbook);
                     }
                 }
             }
@@ -123,12 +119,8 @@ public class MessageResponseAnalyzer {
     }
 
     public static Connection getDbConnection() throws Exception {
-
-        String currentDir = System.getProperty("user.dir");
-        File parentDir = new File(currentDir).getParentFile();
-        String configFilePath = parentDir+File.separator+"bin"+File.separator+"config.properties";
         Properties props = new Properties();
-        try (FileReader reader = new FileReader(configFilePath)) {
+        try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
             props.load(reader);
         } catch (IOException e) {
             System.err.println("Error reading properties file: " + e.getMessage());
@@ -140,7 +132,7 @@ public class MessageResponseAnalyzer {
         String username = props.getProperty("username");
         String password = props.getProperty("password");
         String walletname = props.getProperty("walletName");
-        String tnsAdminPath = parentDir+File.separator+"bin"+File.separator+walletname;
+        String tnsAdminPath = Constants.PARENT_DIRECTORY+File.separator+"bin"+File.separator+walletname;
 
         Properties properties = new Properties();
         properties.setProperty("user", username);
@@ -153,7 +145,7 @@ public class MessageResponseAnalyzer {
     }
 
 
-    private static void processEachResponse(JSONObject eachResponse, int rowNum, String inputTagName, String watchListType, Sheet sheet, Workbook workbook, File excelFile) {
+    private static void processEachResponse(JSONObject eachResponse, int rowNum, String inputTagName, String watchListType, String webServiceId, Sheet sheet, Workbook workbook) {
         System.out.println("[INFO] Processing row " + rowNum + "...");
 //        System.out.println(eachResponse.toString(2));
 
@@ -166,9 +158,10 @@ public class MessageResponseAnalyzer {
 //            System.out.println("tagNameCsv: "+tagNameCsv);
             String[] tagNames = tagNameCsv.split(",");
 
+
             for (String tag : tagNames) {
-                if (inputTagName.equals(tag.trim()) &&
-                        watchListType.equalsIgnoreCase(match.optString("watchlistType"))) {
+                boolean truePositiveFlag  = inputTagName.equals(tag.trim()) && watchListType.equalsIgnoreCase(match.optString("watchlistType")) && webServiceId.equalsIgnoreCase(String.valueOf(match.getInt("webServiceID")));
+                if (truePositiveFlag) {
 //                    System.out.println("[MATCH] Found matching tag in row " + rowNum + ": " + inputTagName);
 //                    System.out.println("Matched Data: " + match.optString("matchedData"));
 //                    System.out.println("Score: " + match.optInt("score"));
@@ -184,19 +177,26 @@ public class MessageResponseAnalyzer {
         System.out.println("No. of Matches: " + matches.length());
         System.out.println("-------------------------------------------------------------");
 
-        writeTruePositivesToExcel(rowNum, truePositives, sheet, workbook, excelFile);
+        writeTruePositivesToExcel(rowNum, truePositives, sheet, workbook);
 
     }
 
-    public static void writeTruePositivesToExcel(int rowNum, int truePositives, Sheet sheet, Workbook workbook, File excelFile) {
+    public static void writeTruePositivesToExcel(int rowNum, int truePositives, Sheet sheet, Workbook workbook) {
         Row row = sheet.getRow(rowNum);
         if (row == null) row = sheet.createRow(rowNum);
 
-        Cell cell = row.getCell(7);
-        if (cell == null) cell = row.createCell(7);
-        cell.setCellValue(truePositives);
+        Cell cell7 = row.getCell(7);
+        if (cell7 == null) cell7 = row.createCell(7);
+        cell7.setCellValue(truePositives);
 
-        try (FileOutputStream fos = new FileOutputStream(excelFile)) {
+
+        Cell cell8 = row.getCell(8);
+        if (cell8 == null) cell8 = row.createCell(8);
+
+        if(truePositives<=0) cell8.setCellValue(Constants.FAIL);
+        else cell8.setCellValue(Constants.PASS);
+
+        try (FileOutputStream fos = new FileOutputStream(Constants.OUTPUT_XLSX_FILE)) {
             workbook.write(fos);
         } catch (IOException e) {
             e.printStackTrace();
