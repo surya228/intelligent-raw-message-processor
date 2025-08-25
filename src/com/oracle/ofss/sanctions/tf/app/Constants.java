@@ -22,7 +22,7 @@ public class Constants {
         map.put("HMT", "FCC_WL_HMT");
         map.put("EU", "FCC_WL_EUROPEAN_UNION");
         map.put("UN", "FCC_WL_UN");
-        map.put("PRIVATELIST", "FCC_WL_PRIVATELIST");
+        map.put("PRV_WL1", "FCC_WL_PRIVATELIST");
 
         TABLE_WL_MAP = Collections.unmodifiableMap(map); // Make it read-only
     }
