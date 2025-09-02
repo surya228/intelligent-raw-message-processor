@@ -129,14 +129,10 @@ public class MessageResponseAnalyzer {
 
         String jdbcUrl = props.getProperty("jdbcurl");
         String jdbcDriver = props.getProperty("jdbcdriver");
-        String username = props.getProperty("username");
-        String password = props.getProperty("password");
         String walletname = props.getProperty("walletName");
         String tnsAdminPath = Constants.PARENT_DIRECTORY+File.separator+"bin"+File.separator+walletname;
 
         Properties properties = new Properties();
-        properties.setProperty("user", username);
-        properties.setProperty("password", password);
         properties.setProperty("oracle.net.tns_admin", tnsAdminPath);
         Class.forName(jdbcDriver);
         Connection connection = DriverManager.getConnection(jdbcUrl,properties);
@@ -182,6 +178,19 @@ public class MessageResponseAnalyzer {
     }
 
     public static void writeTruePositivesToExcel(int rowNum, int truePositives, Sheet sheet, Workbook workbook) {
+        Font boldFont = workbook.createFont();
+        boldFont.setBold(true);
+
+        CellStyle passStyle = workbook.createCellStyle();
+        passStyle.setFillForegroundColor(IndexedColors.BRIGHT_GREEN.getIndex());
+        passStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        passStyle.setFont(boldFont);
+
+        CellStyle failStyle = workbook.createCellStyle();
+        failStyle.setFillForegroundColor(IndexedColors.RED.getIndex());
+        failStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        failStyle.setFont(boldFont);
+
         Row row = sheet.getRow(rowNum);
         if (row == null) row = sheet.createRow(rowNum);
 
@@ -193,8 +202,13 @@ public class MessageResponseAnalyzer {
         Cell cell8 = row.getCell(8);
         if (cell8 == null) cell8 = row.createCell(8);
 
-        if(truePositives<=0) cell8.setCellValue(Constants.FAIL);
-        else cell8.setCellValue(Constants.PASS);
+        if(truePositives<=0){
+            cell8.setCellValue(Constants.FAIL);
+            cell8.setCellStyle(failStyle);
+        } else {
+            cell8.setCellValue(Constants.PASS);
+            cell8.setCellStyle(passStyle);
+        }
 
         try (FileOutputStream fos = new FileOutputStream(Constants.OUTPUT_XLSX_FILE)) {
             workbook.write(fos);

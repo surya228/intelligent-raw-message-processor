@@ -104,7 +104,7 @@ public class RawMessageGenerator {
         return rs;
     }
 
-    private static JSONArray generateRawMessageJsonArray(ResultSet rs, Properties props, String srcFile, String tableName) throws Exception {
+    public static JSONArray generateRawMessageJsonArray(ResultSet rs, Properties props, String srcFile, String tableName) throws Exception {
         JSONArray jsonArray = new JSONArray();
         int maxIndex = getMaxIndex(props, "replace.src");
         String temp;
@@ -265,14 +265,10 @@ public class RawMessageGenerator {
 
         String jdbcUrl = props.getProperty("jdbcurl");
         String jdbcDriver = props.getProperty("jdbcdriver");
-        String username = props.getProperty("username");
-        String password = props.getProperty("password");
         String walletname = props.getProperty("walletName");
         String tnsAdminPath = Constants.PARENT_DIRECTORY+File.separator+"bin"+File.separator+walletname;
 
         Properties properties = new Properties();
-        properties.setProperty("user", username);
-        properties.setProperty("password", password);
         properties.setProperty("oracle.net.tns_admin", tnsAdminPath);
         Class.forName(jdbcDriver);
         Connection connection = DriverManager.getConnection(jdbcUrl,properties);
