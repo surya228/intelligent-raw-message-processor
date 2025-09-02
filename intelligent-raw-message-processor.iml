@@ -27,5 +27,15 @@
         <jarDirectory url="file://$MODULE_DIR$/../../3. Libs/TFCS-dep-Libs/TFCS Libs" recursive="false" />
       </library>
     </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="file://$MODULE_DIR$/../../3. Libs/TFCS-dep-Libs/JUnit Mockito" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+        <jarDirectory url="file://$MODULE_DIR$/../../3. Libs/TFCS-dep-Libs/JUnit Mockito" recursive="false" />
+      </library>
+    </orderEntry>
   </component>
 </module>
