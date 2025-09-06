@@ -47,7 +47,7 @@ public class RawMessageGenerator {
                 throw e;
             }
 
-            connection = getDbConnection();
+            connection = SQLUtility.getDbConnection();
             String watchlistType = props.getProperty(Constants.WATCHLIST_TYPE);
             String tableName = Constants.TABLE_WL_MAP.get(watchlistType);
             String tagName = props.getProperty(Constants.TAGNAME);
@@ -257,29 +257,6 @@ public class RawMessageGenerator {
             }
         }
         return maxIndex;
-    }
-
-    public static Connection getDbConnection() throws Exception {
-
-        Properties props = new Properties();
-        try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
-            props.load(reader);
-        } catch (IOException e) {
-            System.err.println("Error reading properties file: " + e.getMessage());
-            throw e;
-        }
-
-        String jdbcUrl = props.getProperty(Constants.JDBC_URL);
-        String jdbcDriver = props.getProperty(Constants.JDBC_DRIVER);
-        String walletname = props.getProperty(Constants.WALLET_NAME);
-        String tnsAdminPath = Constants.PARENT_DIRECTORY+File.separator+Constants.BIN_FOLDER_NAME+File.separator+walletname;
-
-        Properties properties = new Properties();
-        properties.setProperty("oracle.net.tns_admin", tnsAdminPath);
-        Class.forName(jdbcDriver);
-        Connection connection = DriverManager.getConnection(jdbcUrl,properties);
-        System.out.println("Connection established successfully!");
-        return connection;
     }
 
     public static String loadJsonFromFile(String filePath) {
