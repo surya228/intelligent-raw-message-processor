@@ -1,7 +1,6 @@
 package com.oracle.ofss.sanctions.tf.app;
 
 import java.io.*;
-import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
@@ -26,7 +25,7 @@ public class MessageProcessingUtility {
     private static String restartFlag = "N";
     private static int retryMaxCount = 5;
     private static String retryRequiredFlag = "Y";
-    private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    private static SimpleDateFormat sdf = new SimpleDateFormat(Constants.DATE_FORMAT);
     private static int retryRequestNumber;
     
     public static void screenRawMsg() throws Exception {
@@ -49,13 +48,13 @@ public class MessageProcessingUtility {
             System.out.println("Invalid arguments");
             System.out.println("Please send Url, filepath, tokenurl, Username and Password as arguments");
         } else {
-            String tokenUrl = props.getProperty("msgPosting.tokenUrl");
-            String usernm = props.getProperty("msgPosting.client.id");
-            String pwd = props.getProperty("msgPosting.client.secret");
-            String devcorp7 = props.getProperty("msgPosting.devcorp7");
-            String namespace = props.getProperty("msgPosting.namespace");
-            String transactionService = props.getProperty("msgPosting.transactionService").toLowerCase();
-            String url = devcorp7+"/"+namespace+"/"+transactionService+"-transaction-service/sync/process";
+            String tokenUrl = props.getProperty(Constants.TOKEN_URL);
+            String usernm = props.getProperty(Constants.CLIENT_ID);
+            String pwd = props.getProperty(Constants.CLIENT_SECRET);
+            String devcorp7 = props.getProperty(Constants.DEVCORP7);
+            String namespace = props.getProperty(Constants.NAMESPACE);
+            String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE).toLowerCase();
+            String url = devcorp7+"/"+namespace+"/"+transactionService+Constants.POSTING_ENDPOINT;
 
 
 
@@ -66,10 +65,10 @@ public class MessageProcessingUtility {
 
 
             if(maxIndex >= 10 ) {
-            	retryRequiredFlag = props.getProperty("msgPosting.retryRequiredFlag");
-	            String retryMaxArg = props.getProperty("msgPosting.retryMaxCount");
-	            String bearerTokenRefreshArg = props.getProperty("msgPosting.bearerTokenRefreshInterval");
-	            String restartFlagArg = props.getProperty("msgPosting.restartFlag");
+            	retryRequiredFlag = props.getProperty(Constants.RETRY_REQUIRED_FLAG);
+	            String retryMaxArg = props.getProperty(Constants.RETRY_MAX_COUNT);
+	            String bearerTokenRefreshArg = props.getProperty(Constants.RETRY_REFRESH_INTERVAL);
+	            String restartFlagArg = props.getProperty(Constants.RESTART_FLAG);
 	            if(!retryMaxArg.isEmpty()) {
 	            	retryMaxCount = Integer.parseInt(retryMaxArg);
 	            }
@@ -88,7 +87,7 @@ public class MessageProcessingUtility {
 
             try {
                 System.out.println("["+sdf.format(new Date())+"] Message Processing Started...");
-                FileInputStream fis = new FileInputStream(Constants.OUTPUT_XLSX_FILE);
+                FileInputStream fis = new FileInputStream(Constants.OUTPUT_XLSX_FILE_PATH);
                 XSSFWorkbook myWorkBook = new XSSFWorkbook(fis);
                 XSSFSheet mySheet = myWorkBook.getSheetAt(0);
                 Iterator<Row> rowIterator = mySheet.iterator();
@@ -226,10 +225,10 @@ public class MessageProcessingUtility {
             
             JSONObject responseJson = new JSONObject(apiResponse.toString());
             System.out.println("response: "+ responseJson);
-            long transactionToken = responseJson.has("transactionToken")? responseJson.getLong("transactionToken"):-1;
-            long matchCount = responseJson.has("feedbackData")? responseJson.getJSONObject("feedbackData").has("matchCount")? responseJson.getJSONObject("feedbackData").getLong("matchCount"):0:0;
-            String status = responseJson.getString("status");
-            String feedbackStatus = responseJson.getJSONObject("feedbackData").getString("status");
+            long transactionToken = responseJson.has(Constants.TRANSACTION_TOKEN)? responseJson.getLong(Constants.TRANSACTION_TOKEN):-1;
+            long matchCount = responseJson.has(Constants.FEEDBACK_DATA)? responseJson.getJSONObject(Constants.FEEDBACK_DATA).has(Constants.MATCHING_COUNT)? responseJson.getJSONObject(Constants.FEEDBACK_DATA).getLong(Constants.MATCHING_COUNT):0:0;
+            String status = responseJson.getString(Constants.MATCHING_STATUS);
+            String feedbackStatus = responseJson.getJSONObject(Constants.FEEDBACK_DATA).getString(Constants.MATCHING_STATUS);
             System.out.println("transactionToken: " + transactionToken + " matchCount: " + matchCount + " status: " + status + " feedbackStatus: " + feedbackStatus);
             Object[] excelParams = new Object[]{transactionToken,matchCount,status,feedbackStatus};
             writeRecordIntoExcelCell(entry.getKey(), excelParams, formatter);
@@ -239,8 +238,8 @@ public class MessageProcessingUtility {
     }
     
     private static void writeRecordIntoExcelCell(String processedSeqId, Object[] excelParams, DataFormatter formatter) {
-    	try(FileInputStream fs = new FileInputStream(Constants.OUTPUT_XLSX_FILE);
-                XSSFWorkbook workBook = new XSSFWorkbook(fs)) {
+    	try(FileInputStream fs = new FileInputStream(Constants.OUTPUT_XLSX_FILE_PATH);
+            XSSFWorkbook workBook = new XSSFWorkbook(fs)) {
     		
             XSSFSheet newSheet = workBook.getSheetAt(0);
             Iterator<Row> rowItr = newSheet.iterator();
@@ -255,21 +254,21 @@ public class MessageProcessingUtility {
                     if(processedSeqId.equalsIgnoreCase(seqId)) {
                         System.out.println("Writing output to file for seqId: " + seqId);
                         Cell cell;
-                        int startWithCell=3;
-                        for(int i=startWithCell;i<startWithCell+excelParams.length;i++){
+                        int msgProcessorStartCell=Constants.PROCESSOR_COLUMN_NUMBER;
+                        for(int i=msgProcessorStartCell;i<msgProcessorStartCell+excelParams.length;i++){
                             if (row.getCell(i) == null) {
                                 cell = row.createCell(i);
                             } else {
                                 cell = row.getCell(i);
                             }
-                            cell.setCellValue(excelParams[i-startWithCell].toString());
+                            cell.setCellValue(excelParams[i-msgProcessorStartCell].toString());
                         }
                         break;
                     }
                 }
             }
 
-            FileOutputStream outFile = new FileOutputStream(Constants.OUTPUT_XLSX_FILE);
+            FileOutputStream outFile = new FileOutputStream(Constants.OUTPUT_XLSX_FILE_PATH);
             workBook.write(outFile);
             outFile.close();
         } catch (Exception e) {
@@ -341,7 +340,7 @@ public class MessageProcessingUtility {
         }
 
         try {
-            result = postData.toString().getBytes("UTF-8");
+            result = postData.toString().getBytes(Constants.ENCODER);
         } catch (UnsupportedEncodingException var5) {
             var5.printStackTrace();
         }
@@ -353,7 +352,7 @@ public class MessageProcessingUtility {
         String result = "";
 
         try {
-            result = URLEncoder.encode(data, "UTF-8");
+            result = URLEncoder.encode(data, Constants.ENCODER);
         } catch (UnsupportedEncodingException var3) {
             var3.printStackTrace();
         }
@@ -396,7 +395,7 @@ public class MessageProcessingUtility {
                     result.write(buffer, 0, length);
                 }
 
-                response = result.toString("UTF-8");
+                response = result.toString(Constants.ENCODER);
                 System.out.println("AuthToken response: " + response);
                 JSONObject jsonObject = new JSONObject(response);
                 bearerToken = jsonObject.getString("access_token");
@@ -418,19 +417,19 @@ public class MessageProcessingUtility {
     	
         switch(code) {
         case 502:
-        	msg = "Wait for a while...It's gonna finish";
+        	msg = Constants.WAIT_MSG;
         	break;
         case 504:
-        	msg = "Hold on...It's almost completed";
+        	msg = Constants.HOLD_ON_MSG_1;
         	break;
         case 503:
-        	msg = "Looking for Tortoise...Will find it soon";
+        	msg = Constants.HOLD_ON_MSG_2;
         	break;
         case 200:
-        	msg = "Heyy...Here it is";
+        	msg = Constants.SUCCESS_MSG;
         	break;
         default:
-        	msg = "zzzz...on the way";
+        	msg = Constants.LOAD_MSG;
         	break;
         }
         return msg;

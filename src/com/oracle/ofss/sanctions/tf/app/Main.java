@@ -16,13 +16,13 @@ public class Main {
         }
 
         long startTime = System.currentTimeMillis();
-        if(props.getProperty("module.rawMsgGenerator").equalsIgnoreCase("Y"))
+        if(props.getProperty(Constants.MODULE_RAW_MSG_GENERATOR).equalsIgnoreCase("Y"))
             RawMessageGenerator.generateRawMessage();
 
-        if(props.getProperty("module.rawMsgProcessor").equalsIgnoreCase("Y"))
+        if(props.getProperty(Constants.MODULE_RAW_MSG_PROCESSOR).equalsIgnoreCase("Y"))
             MessageProcessingUtility.screenRawMsg();
 
-        if(props.getProperty("module.rawMsgAnalyzer").equalsIgnoreCase("Y"))
+        if(props.getProperty(Constants.MODULE_RAW_MSG_ANALYZER).equalsIgnoreCase("Y"))
             MessageResponseAnalyzer.analyseResponseAndPrepareResults();
 
 
