@@ -47,9 +47,12 @@ public class RawMessageGenerator {
                 throw e;
             }
 
-            connection = getDbConnection();
-            String tableName = Constants.TABLE_WL_MAP.get(props.getProperty("watchListType"));
-            String tansactionService = props.getProperty("msgPosting.transactionService");
+            connection = SQLUtility.getDbConnection();
+            String watchlistType = props.getProperty(Constants.WATCHLIST_TYPE);
+            String tableName = Constants.TABLE_WL_MAP.get(watchlistType);
+            String tagName = props.getProperty(Constants.TAGNAME);
+            String webService = props.getProperty(Constants.WEBSERVICE);
+            String tansactionService = props.getProperty(Constants.TRANSACTION_SERVICE);
             rs = prepareQueryAndGetTableData(connection, props, tableName);
 
             rawMessageJsonArray = generateRawMessageJsonArray(rs,props,srcFile,tableName);
@@ -57,7 +60,7 @@ public class RawMessageGenerator {
 //            System.out.println(rawMessageJsonArray.toString(4).replace("<\\/", "</"));
 //            writeJsonToFile(rawMessageJsonArray.toString(4).replace("\\r", "\r").replace("\\n", "\n").replace("<\\/", "</"));
 //            writeJsonAsCSVFile(rawMessageJsonArray,tansactionService);
-            writeJsonAsExcelFile(rawMessageJsonArray,tansactionService);
+            writeJsonAsExcelFile(rawMessageJsonArray,tansactionService,tagName,webService,watchlistType);
 
             System.out.println("\n=============================================================");
             System.out.println("                 RAW MESSAGE GENERATOR ENDED                 ");
@@ -88,8 +91,8 @@ public class RawMessageGenerator {
         PreparedStatement pst = null;
         ResultSet rs = null;
         String filter="";
-        if(props.containsKey("whereClause")){
-            filter = " where "+ props.get("whereClause");
+        if(props.containsKey(Constants.WHERE_CLAUSE)){
+            filter = " where "+ props.get(Constants.WHERE_CLAUSE);
         }
 
         String query = "select * from "+tableName+" "+filter;
@@ -106,49 +109,51 @@ public class RawMessageGenerator {
 
     public static JSONArray generateRawMessageJsonArray(ResultSet rs, Properties props, String srcFile, String tableName) throws Exception {
         JSONArray jsonArray = new JSONArray();
-        int maxIndex = getMaxIndex(props, "replace.src");
+        int maxIndex = getMaxIndex(props, Constants.REPLACE_SRC);
         String temp;
         int updatedCount = 0;
         while(rs.next()) {
             temp=srcFile;
             if(temp != null) {
                 for (int i = 1; i <= maxIndex; i++) {
-                    String srcKey = "replace.src[" + i + "]";
-                    String targetColumnKey = "replace.targetColumn[" + i + "]";
+                    String srcKey = Constants.REPLACE_SRC+"[" + i + "]";
+                    String targetColumnKey = Constants.REPLACE_TARGET_COLUMN+"[" + i + "]";
 
                     String token = props.getProperty(srcKey);
                     String targetColumn = props.getProperty(targetColumnKey);
 
-                    String identifierToken =  props.getProperty("replace.src[0]");
-                    String identifierTargetColumn = props.getProperty("replace.targetColumn[0]");
+                    String identifierToken =  props.getProperty(Constants.REPLACE_SRC+"[0]");
+                    String identifierTargetColumn = props.getProperty(Constants.REPLACE_TARGET_COLUMN+"[0]");
 
                     String toBeReplaced = rs.getString(targetColumn);
                     String identifierToBeReplaced = rs.getString(identifierTargetColumn);
 
-                    // 0 ced -> exact
-                    updatedCount = createRawMsg(temp,toBeReplaced,identifierToBeReplaced,token,targetColumn,identifierToken,tableName,jsonArray,updatedCount,toBeReplaced,0);
+                    String uid = rs.getString(Constants.NUID);
 
-                    if(props.getProperty("ced1").equalsIgnoreCase("Y")){ // 1 ced
+                    // 0 ced -> exact
+                    updatedCount = createRawMsg(temp,toBeReplaced,identifierToBeReplaced,token,targetColumn,identifierToken,tableName,jsonArray,updatedCount,toBeReplaced,0,uid);
+
+                    if(props.getProperty(Constants.CED1).equalsIgnoreCase("Y")){ // 1 ced
                         List<String> oneCedList = generate1CedVariants(toBeReplaced);
                         for(String value : oneCedList){
                             temp = srcFile;
-                            updatedCount = createRawMsg(temp,value,identifierToBeReplaced,token,targetColumn,identifierToken,tableName,jsonArray,updatedCount,toBeReplaced,1);
+                            updatedCount = createRawMsg(temp,value,identifierToBeReplaced,token,targetColumn,identifierToken,tableName,jsonArray,updatedCount,toBeReplaced,1,uid);
                         }
                     }
 
-                    if(props.getProperty("ced2").equalsIgnoreCase("Y")){ // 2 ced
+                    if(props.getProperty(Constants.CED2).equalsIgnoreCase("Y")){ // 2 ced
                         List<String> twoCedList = generate2CedVariants(toBeReplaced);
                         for(String value : twoCedList){
                             temp = srcFile;
-                            updatedCount = createRawMsg(temp,value,identifierToBeReplaced,token,targetColumn,identifierToken,tableName,jsonArray,updatedCount,toBeReplaced,2);
+                            updatedCount = createRawMsg(temp,value,identifierToBeReplaced,token,targetColumn,identifierToken,tableName,jsonArray,updatedCount,toBeReplaced,2,uid);
                         }
                     }
 
-                    if(props.getProperty("ced3").equalsIgnoreCase("Y")){ // 3 ced
+                    if(props.getProperty(Constants.CED3).equalsIgnoreCase("Y")){ // 3 ced
                         List<String> threeCedList = generate3CedVariants(toBeReplaced);
                         for(String value : threeCedList){
                             temp = srcFile;
-                            updatedCount = createRawMsg(temp,value,identifierToBeReplaced,token,targetColumn,identifierToken,tableName,jsonArray,updatedCount,toBeReplaced,3);
+                            updatedCount = createRawMsg(temp,value,identifierToBeReplaced,token,targetColumn,identifierToken,tableName,jsonArray,updatedCount,toBeReplaced,3,uid);
                         }
                     }
                 }
@@ -161,22 +166,23 @@ public class RawMessageGenerator {
 
     public static int createRawMsg(String temp, String value, String identifierToBeReplaced,
                       String token, String targetColumn, String identifierToken,
-                      String tableName, JSONArray jsonArray, int updatedCount, String originalValue, int ced){
+                      String tableName, JSONArray jsonArray, int updatedCount, String originalValue, int ced, String uid){
         if (value != null) {
             System.out.println("toBeReplaced: " + value + " originalValue: " + originalValue + "  token: " + token + "  column: "+ targetColumn + "  identifier: "+ identifierToBeReplaced + " ced: "+ ced);
             temp = temp.replace(token, value);
             temp = temp.replace(identifierToken,identifierToBeReplaced);
 
             JSONObject tempJson = new JSONObject(temp);
-            JSONObject additionalData = tempJson.getJSONObject("additionalData");
-            additionalData.put("table", tableName);
-            additionalData.put("column", targetColumn);
-            additionalData.put("token", token);
-            additionalData.put("value", value);
-            additionalData.put("originalValue", originalValue);
-            additionalData.put("ced", ced);
-            additionalData.put("identifierToken", identifierToken);
-            additionalData.put("identifierValue", identifierToBeReplaced);
+            JSONObject additionalData = tempJson.getJSONObject(Constants.ADDITIONAL_DATA);
+            additionalData.put(Constants.TABLE, tableName);
+            additionalData.put(Constants.UID,uid);
+            additionalData.put(Constants.COLUMN, targetColumn);
+            additionalData.put(Constants.TOKEN, token);
+            additionalData.put(Constants.VALUE, value);
+            additionalData.put(Constants.ORIGINAL_VALUE, originalValue);
+            additionalData.put(Constants.CED, ced);
+            additionalData.put(Constants.IDEN_TOKEN, identifierToken);
+            additionalData.put(Constants.IDEN_VALUE, identifierToBeReplaced);
             jsonArray.put(tempJson);
 
             updatedCount++;
@@ -253,29 +259,6 @@ public class RawMessageGenerator {
         return maxIndex;
     }
 
-    public static Connection getDbConnection() throws Exception {
-
-        Properties props = new Properties();
-        try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
-            props.load(reader);
-        } catch (IOException e) {
-            System.err.println("Error reading properties file: " + e.getMessage());
-            throw e;
-        }
-
-        String jdbcUrl = props.getProperty("jdbcurl");
-        String jdbcDriver = props.getProperty("jdbcdriver");
-        String walletname = props.getProperty("walletName");
-        String tnsAdminPath = Constants.PARENT_DIRECTORY+File.separator+"bin"+File.separator+walletname;
-
-        Properties properties = new Properties();
-        properties.setProperty("oracle.net.tns_admin", tnsAdminPath);
-        Class.forName(jdbcDriver);
-        Connection connection = DriverManager.getConnection(jdbcUrl,properties);
-        System.out.println("Connection established successfully!");
-        return connection;
-    }
-
     public static String loadJsonFromFile(String filePath) {
         try {
             File file = new File(filePath);
@@ -303,45 +286,7 @@ public class RawMessageGenerator {
             return null;
         }
     }
-
-    public static void writeJsonToFile(String content){
-
-        File outputFolder = new File(Constants.PARENT_DIRECTORY, "out");
-        if (!outputFolder.exists()) {
-            outputFolder.mkdirs();  // Create the folder if it doesn't exist
-        }
-        try (FileWriter file = new FileWriter(Constants.OUTPUT_JSON_FILENAME)) {
-            file.write(content);
-            System.out.println("Successfully wrote to file.");
-        } catch (IOException e) {
-            System.err.println("Error writing to file: " + e.getMessage());
-        }
-    }
-
-    public static void writeJsonAsCSVFile(JSONArray jsonArray, String tansactionService) throws IOException {
-        // Create a subfolder "output" inside it
-        if (!Constants.OUTPUT_FOLDER.exists()) {
-            Constants.OUTPUT_FOLDER.mkdirs();  // Create the folder if it doesn't exist
-        }
-        try (CSVWriter writer = new CSVWriter(new FileWriter(Constants.OUTPUT_CSV_FILENAME))) {
-            // Write the header
-            String thirdColumn = "Message "+tansactionService.toUpperCase();
-            String[] headers = {"SeqNo", "Rule Name", thirdColumn, "Message Response"};
-            writer.writeNext(headers);
-
-            // Iterate over the JSON array and write each object as a row in the CSV file
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject jsonObject = jsonArray.getJSONObject(i);
-                String messageIso = jsonObject.toString(4).replace("\\r", "\r").replace("\\n", "\n").replace("~~~~", "\\\\").replace("<\\/", "</");
-                String[] row = {String.valueOf(i + 1), "", messageIso, ""};
-                writer.writeNext(row);
-            }
-        }
-        System.out.println("Successfully wrote to CSV file.");
-    }
-
-
-    public static void writeJsonAsExcelFile(JSONArray jsonArray, String transactionService) throws IOException {
+    public static void writeJsonAsExcelFile(JSONArray jsonArray, String transactionService, String tagName, String webService, String watchlistType) throws IOException {
 
         // Create a subfolder "out" inside it
         if (!Constants.OUTPUT_FOLDER.exists()) {
@@ -353,8 +298,23 @@ public class RawMessageGenerator {
         Sheet sheet = workbook.createSheet("Output");
 
         // Header row
-        String thirdColumn = "Message " + transactionService.toUpperCase();
-        String[] headers = {"SeqNo", "Rule Name", thirdColumn, "Transaction Token", "Match Count", "Status", "Feedback Status", "# True Positives", "Test Status"};
+        String thirdColumn = Constants.MESSAGE + transactionService.toUpperCase();
+        String[] headers = {
+                Constants.SEQ_NO,
+                Constants.RULE,
+                thirdColumn,
+                Constants.TAG,
+                Constants.SOURCE_INPUT,
+                Constants.TARGET_INPUT,
+                Constants.TARGET_COLUMN,
+                Constants.WATCHLIST,
+                Constants.NUID,
+                Constants.TRXN_TOKEN,
+                Constants.MATCH_COUNT,
+                Constants.STATUS,
+                Constants.FEEDBACK_STATUS,
+                Constants.TEST_STATUS
+        };
 
         Row headerRow = sheet.createRow(0);
         for (int i = 0; i < headers.length; i++) {
@@ -371,16 +331,35 @@ public class RawMessageGenerator {
                     .replace("~~~~", "\\\\")
                     .replace("<\\/", "</");
 
+            JSONObject additionalData = jsonObject.getJSONObject(Constants.ADDITIONAL_DATA);
+            String sourceInput = additionalData.getString(Constants.VALUE);
+            String targetInput = additionalData.getString(Constants.ORIGINAL_VALUE);
+            String targetColumn = additionalData.getString(Constants.COLUMN);
+            String uid = additionalData.getString(Constants.UID);
+            int ced = additionalData.getInt((Constants.CED));
+
+            String type = "";
+            if(ced==0) type = Constants.EXACT;
+            else type = Constants.FUZZY+ced+Constants.CED;
+
+            String ruleName = webService+" "+type;
+
             Row row = sheet.createRow(i + 1);
             row.createCell(0).setCellValue(i + 1);      // SeqNo
-            row.createCell(1).setCellValue("");         // Rule Name
+            row.createCell(1).setCellValue(ruleName);         // Rule Name
             row.createCell(2).setCellValue(messageIso); // Message <SERVICE>
-            row.createCell(3).setCellValue("");         // Transaction Token
-            row.createCell(4).setCellValue("");         // Match Count
-            row.createCell(5).setCellValue("");         // Status
-            row.createCell(6).setCellValue("");         // Feedback Status
-            row.createCell(7).setCellValue("");         // # True Positives
-            row.createCell(8).setCellValue("");         // Test Status
+            row.createCell(3).setCellValue(tagName);         // Tag
+            row.createCell(4).setCellValue(sourceInput);         // Source Input
+            row.createCell(5).setCellValue(targetInput);         // Target Input
+            row.createCell(6).setCellValue(targetColumn);         // Target Column
+            row.createCell(7).setCellValue(watchlistType);         // Watchlist
+            row.createCell(8).setCellValue(uid);         // N_UID
+            row.createCell(9).setCellValue("");         // Transaction Token
+            row.createCell(10).setCellValue("");        // Match Count
+            row.createCell(11).setCellValue("");        // Status
+            row.createCell(12).setCellValue("");        // Feedback Status
+            row.createCell(13).setCellValue("");        // Test Status
+
         }
 
         // Auto-size columns
@@ -389,35 +368,11 @@ public class RawMessageGenerator {
         }
 
         // Write to file
-        FileOutputStream fileOut = new FileOutputStream(Constants.OUTPUT_XLSX_FILE);
+        FileOutputStream fileOut = new FileOutputStream(Constants.OUTPUT_XLSX_FILE_PATH);
         workbook.write(fileOut);
         fileOut.close();
         workbook.close();
 
-        System.out.println("Successfully wrote to Excel (output.xlsx) file.");
-    }
-
-
-    public static String replaceNewlinesInJsonStrings(String json) throws JsonProcessingException {
-
-        Pattern pattern = Pattern.compile("\"rawMessage\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*?)\"", Pattern.DOTALL);
-        Matcher matcher = pattern.matcher(json);
-
-        StringBuffer result = new StringBuffer();
-        while (matcher.find()) {
-            String rawValue = matcher.group(1);
-            System.out.println("matched rawValue:"+rawValue);
-            String escaped = rawValue
-                    .replace("\\\\", "\\")
-                    .replace("\\r", "\r")
-                    .replace("\\n", "\n")
-                    .replace("\\", "\\\\")   // escape existing backslashes
-                    .replace("\r", "\\r")    // escape CR
-                    .replace("\n", "\\n");   // escape LF
-            matcher.appendReplacement(result, "\"rawMessage\": \"" + Matcher.quoteReplacement(escaped) + "\"");
-        }
-        matcher.appendTail(result);
-
-        return result.toString();
+        System.out.println("Successfully wrote to Excel ("+Constants.OUTPUT_FILE_NAME+".xlsx) file.");
     }
 }
