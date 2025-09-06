@@ -286,44 +286,6 @@ public class RawMessageGenerator {
             return null;
         }
     }
-
-    public static void writeJsonToFile(String content){
-
-        File outputFolder = new File(Constants.PARENT_DIRECTORY, "out");
-        if (!outputFolder.exists()) {
-            outputFolder.mkdirs();  // Create the folder if it doesn't exist
-        }
-        try (FileWriter file = new FileWriter(Constants.OUTPUT_JSON_FILE_PATH)) {
-            file.write(content);
-            System.out.println("Successfully wrote to file.");
-        } catch (IOException e) {
-            System.err.println("Error writing to file: " + e.getMessage());
-        }
-    }
-
-    public static void writeJsonAsCSVFile(JSONArray jsonArray, String tansactionService) throws IOException {
-        // Create a subfolder "output" inside it
-        if (!Constants.OUTPUT_FOLDER.exists()) {
-            Constants.OUTPUT_FOLDER.mkdirs();  // Create the folder if it doesn't exist
-        }
-        try (CSVWriter writer = new CSVWriter(new FileWriter(Constants.OUTPUT_CSV_FILE_PATH))) {
-            // Write the header
-            String thirdColumn = "Message "+tansactionService.toUpperCase();
-            String[] headers = {"SeqNo", "Rule Name", thirdColumn, "Message Response"};
-            writer.writeNext(headers);
-
-            // Iterate over the JSON array and write each object as a row in the CSV file
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject jsonObject = jsonArray.getJSONObject(i);
-                String messageIso = jsonObject.toString(4).replace("\\r", "\r").replace("\\n", "\n").replace("~~~~", "\\\\").replace("<\\/", "</");
-                String[] row = {String.valueOf(i + 1), "", messageIso, ""};
-                writer.writeNext(row);
-            }
-        }
-        System.out.println("Successfully wrote to CSV file.");
-    }
-
-
     public static void writeJsonAsExcelFile(JSONArray jsonArray, String transactionService, String tagName, String webService, String watchlistType) throws IOException {
 
         // Create a subfolder "out" inside it
@@ -412,29 +374,5 @@ public class RawMessageGenerator {
         workbook.close();
 
         System.out.println("Successfully wrote to Excel ("+Constants.OUTPUT_FILE_NAME+".xlsx) file.");
-    }
-
-
-    public static String replaceNewlinesInJsonStrings(String json) throws JsonProcessingException {
-
-        Pattern pattern = Pattern.compile("\"rawMessage\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*?)\"", Pattern.DOTALL);
-        Matcher matcher = pattern.matcher(json);
-
-        StringBuffer result = new StringBuffer();
-        while (matcher.find()) {
-            String rawValue = matcher.group(1);
-            System.out.println("matched rawValue:"+rawValue);
-            String escaped = rawValue
-                    .replace("\\\\", "\\")
-                    .replace("\\r", "\r")
-                    .replace("\\n", "\n")
-                    .replace("\\", "\\\\")   // escape existing backslashes
-                    .replace("\r", "\\r")    // escape CR
-                    .replace("\n", "\\n");   // escape LF
-            matcher.appendReplacement(result, "\"rawMessage\": \"" + Matcher.quoteReplacement(escaped) + "\"");
-        }
-        matcher.appendTail(result);
-
-        return result.toString();
     }
 }
