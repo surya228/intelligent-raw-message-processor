@@ -55,6 +55,7 @@ public class Constants {
     public static String MATCHING_STATUS =  "status";
     public static String MATCHING_COUNT =  "matchCount";
     public static String WEBSERVICE_ID =  "webServiceId";
+    public static final String COMMENTS = "Comments";
 
 
     public static String CED1 =  "ced1";
@@ -78,6 +79,7 @@ public class Constants {
     public static String CED =  "ced";
     public static String IDEN_TOKEN =  "identifierToken";
     public static String IDEN_VALUE =  "identifierValue";
+    public static String IDEN_PREFIX =  "ID";
 
     public static String DATE_FORMAT =  "yyyy-MM-dd HH:mm:ss.SSS";
 
@@ -95,16 +97,11 @@ public class Constants {
     public static String OUTPUT_FOLDER_NAME = "out";
     public static String BIN_FOLDER_NAME = "bin";
 
-    public static String FEEDBACK_QUERY = "select C_FEEDBACK_MESSAGE from fcc_tf_feedback where N_TRAX_TOKEN = ? and V_MSG_CATEGORY = ? ";
-    public static String WLS_RESPONSE_QUERY = "select N_RESPONSE_ID, V_COLUMN_NAME from fcc_tf_rt_wls_response where n_grp_msg_id = ? and n_msg_category = ? ";
-
     public static String CURRENT_DIRECTORY = System.getProperty("user.dir");
     public static File PARENT_DIRECTORY = new File(CURRENT_DIRECTORY).getParentFile();
     public static String SOURCE_FILE_PATH = PARENT_DIRECTORY+File.separator+Constants.BIN_FOLDER_NAME+File.separator+Constants.SOURCE_FILE_NAME+".json";
     public static String CONFIG_FILE_PATH = PARENT_DIRECTORY+File.separator+Constants.BIN_FOLDER_NAME+File.separator+Constants.CONFIG_FILE_NAME+".properties";
     public static File OUTPUT_FOLDER = new File(Constants.PARENT_DIRECTORY, Constants.OUTPUT_FOLDER_NAME);
-    public static String OUTPUT_JSON_FILE_PATH = OUTPUT_FOLDER+File.separator+Constants.OUTPUT_FILE_NAME+".json";
-    public static String OUTPUT_CSV_FILE_PATH = OUTPUT_FOLDER+File.separator+Constants.OUTPUT_FILE_NAME+".csv";
     public static File OUTPUT_XLSX_FILE_PATH = new File(OUTPUT_FOLDER,Constants.OUTPUT_FILE_NAME+".xlsx");
 
     public static String PASS = "PASS";
@@ -124,6 +121,10 @@ public class Constants {
     public static String STATUS = "Status";
     public static String FEEDBACK_STATUS = "Feedback Status";
     public static String TEST_STATUS = "Test Status";
+
+    public static final String COLUMN_MISMATCH_COMMENT = "Column name didn't match";
+    public static final String NO_MATCH_COMMENT = "No Match";
+
 
     public static int PROCESSOR_COLUMN_NUMBER = 9;
     public static int ANALYZER_COLUMN_NUMBER = 13;

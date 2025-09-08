@@ -125,35 +125,38 @@ public class RawMessageGenerator {
                     String identifierToken =  props.getProperty(Constants.REPLACE_SRC+"[0]");
                     String identifierTargetColumn = props.getProperty(Constants.REPLACE_TARGET_COLUMN+"[0]");
 
-                    String toBeReplaced = rs.getString(targetColumn);
+                    String tokenValue = rs.getString(targetColumn);
                     String identifierToBeReplaced = rs.getString(identifierTargetColumn);
-
                     String uid = rs.getString(Constants.NUID);
 
-                    // 0 ced -> exact
-                    updatedCount = createRawMsg(temp,toBeReplaced,identifierToBeReplaced,token,targetColumn,identifierToken,tableName,jsonArray,updatedCount,toBeReplaced,0,uid);
+                    String[] toBeReplacedValues = tokenValue.split(";");
 
-                    if(props.getProperty(Constants.CED1).equalsIgnoreCase("Y")){ // 1 ced
-                        List<String> oneCedList = generate1CedVariants(toBeReplaced);
-                        for(String value : oneCedList){
-                            temp = srcFile;
-                            updatedCount = createRawMsg(temp,value,identifierToBeReplaced,token,targetColumn,identifierToken,tableName,jsonArray,updatedCount,toBeReplaced,1,uid);
+                    for(String toBeReplaced : toBeReplacedValues) {
+                        // 0 ced -> exact
+                        updatedCount = createRawMsg(temp, toBeReplaced, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 0, uid);
+
+                        if (props.getProperty(Constants.CED1).equalsIgnoreCase("Y")) { // 1 ced
+                            List<String> oneCedList = generate1CedVariants(toBeReplaced);
+                            for (String value : oneCedList) {
+                                temp = srcFile;
+                                updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 1, uid);
+                            }
                         }
-                    }
 
-                    if(props.getProperty(Constants.CED2).equalsIgnoreCase("Y")){ // 2 ced
-                        List<String> twoCedList = generate2CedVariants(toBeReplaced);
-                        for(String value : twoCedList){
-                            temp = srcFile;
-                            updatedCount = createRawMsg(temp,value,identifierToBeReplaced,token,targetColumn,identifierToken,tableName,jsonArray,updatedCount,toBeReplaced,2,uid);
+                        if (props.getProperty(Constants.CED2).equalsIgnoreCase("Y")) { // 2 ced
+                            List<String> twoCedList = generate2CedVariants(toBeReplaced);
+                            for (String value : twoCedList) {
+                                temp = srcFile;
+                                updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 2, uid);
+                            }
                         }
-                    }
 
-                    if(props.getProperty(Constants.CED3).equalsIgnoreCase("Y")){ // 3 ced
-                        List<String> threeCedList = generate3CedVariants(toBeReplaced);
-                        for(String value : threeCedList){
-                            temp = srcFile;
-                            updatedCount = createRawMsg(temp,value,identifierToBeReplaced,token,targetColumn,identifierToken,tableName,jsonArray,updatedCount,toBeReplaced,3,uid);
+                        if (props.getProperty(Constants.CED3).equalsIgnoreCase("Y")) { // 3 ced
+                            List<String> threeCedList = generate3CedVariants(toBeReplaced);
+                            for (String value : threeCedList) {
+                                temp = srcFile;
+                                updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 3, uid);
+                            }
                         }
                     }
                 }
@@ -169,6 +172,7 @@ public class RawMessageGenerator {
                       String tableName, JSONArray jsonArray, int updatedCount, String originalValue, int ced, String uid){
         if (value != null) {
             System.out.println("toBeReplaced: " + value + " originalValue: " + originalValue + "  token: " + token + "  column: "+ targetColumn + "  identifier: "+ identifierToBeReplaced + " ced: "+ ced);
+            identifierToBeReplaced = Constants.IDEN_PREFIX+identifierToBeReplaced;
             temp = temp.replace(token, value);
             temp = temp.replace(identifierToken,identifierToBeReplaced);
 
@@ -313,7 +317,8 @@ public class RawMessageGenerator {
                 Constants.MATCH_COUNT,
                 Constants.STATUS,
                 Constants.FEEDBACK_STATUS,
-                Constants.TEST_STATUS
+                Constants.TEST_STATUS,
+                Constants.COMMENTS
         };
 
         Row headerRow = sheet.createRow(0);
@@ -359,6 +364,7 @@ public class RawMessageGenerator {
             row.createCell(11).setCellValue("");        // Status
             row.createCell(12).setCellValue("");        // Feedback Status
             row.createCell(13).setCellValue("");        // Test Status
+            row.createCell(14).setCellValue("");        // Comments
 
         }
 

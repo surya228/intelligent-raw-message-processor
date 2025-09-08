@@ -17,9 +17,9 @@ public class SQLUtility {
             throw e;
         }
 
-        String jdbcUrl = props.getProperty("jdbcurl");
-        String jdbcDriver = props.getProperty("jdbcdriver");
-        String walletname = props.getProperty("walletName");
+        String jdbcUrl = props.getProperty(Constants.JDBC_URL);
+        String jdbcDriver = props.getProperty(Constants.JDBC_DRIVER);
+        String walletname = props.getProperty(Constants.WALLET_NAME);
         String tnsAdminPath = Constants.PARENT_DIRECTORY+ File.separator+Constants.BIN_FOLDER_NAME+File.separator+walletname;
 
         Properties properties = new Properties();
