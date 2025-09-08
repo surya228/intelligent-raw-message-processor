@@ -111,19 +111,19 @@ public class MessageResponseAnalyzer {
             Font boldFont = workbook.createFont();
             boldFont.setBold(true);
 
-            CellStyle passStyle = workbook.createCellStyle();
-            passStyle.setFillForegroundColor(IndexedColors.BRIGHT_GREEN.getIndex());
-            passStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            passStyle.setFont(boldFont);
+            CellStyle highlightGreen = workbook.createCellStyle();
+            highlightGreen.setFillForegroundColor(IndexedColors.BRIGHT_GREEN.getIndex());
+            highlightGreen.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            highlightGreen.setFont(boldFont);
 
-            CellStyle failStyle = workbook.createCellStyle();
-            failStyle.setFillForegroundColor(IndexedColors.RED.getIndex());
-            failStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            failStyle.setFont(boldFont);
+            CellStyle highlightRed = workbook.createCellStyle();
+            highlightRed.setFillForegroundColor(IndexedColors.RED.getIndex());
+            highlightRed.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            highlightRed.setFont(boldFont);
 
-            CellStyle columnMismatchStyle = workbook.createCellStyle();
-            columnMismatchStyle.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
-            columnMismatchStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            CellStyle highlightYellow = workbook.createCellStyle();
+            highlightYellow.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
+            highlightYellow.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
 
             // Parallel processing of rows
@@ -175,12 +175,12 @@ public class MessageResponseAnalyzer {
                             Cell testStatusCell = row.getCell(Constants.ANALYZER_COLUMN_NUMBER);
                             if (testStatusCell == null) testStatusCell = row.createCell(Constants.ANALYZER_COLUMN_NUMBER);
                             testStatusCell.setCellValue(testStatus);
-                            testStatusCell.setCellStyle(testStatus.equalsIgnoreCase(Constants.PASS) ? passStyle : failStyle);
+                            testStatusCell.setCellStyle(testStatus.equalsIgnoreCase(Constants.PASS) ? highlightGreen : highlightRed);
 
                             if(failedDueToColumnMismatch){
                                 Cell trxnTokenCell = row.getCell(Constants.PROCESSOR_COLUMN_NUMBER);
                                 if (trxnTokenCell == null) trxnTokenCell = row.createCell(Constants.PROCESSOR_COLUMN_NUMBER);
-                                trxnTokenCell.setCellStyle(columnMismatchStyle);
+                                trxnTokenCell.setCellStyle(highlightYellow);
                             }
                         }
 
