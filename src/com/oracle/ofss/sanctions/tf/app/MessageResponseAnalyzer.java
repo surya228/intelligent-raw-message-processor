@@ -1,16 +1,26 @@
 package com.oracle.ofss.sanctions.tf.app;
 
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.*;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 public class MessageResponseAnalyzer {
     public static void analyseResponseAndPrepareResults() throws Exception {
@@ -52,208 +62,211 @@ public class MessageResponseAnalyzer {
     }
 
     public static void processAllResponses(String tagName, String msgCategory, String watchListType, String webServiceId) throws Exception {
-
         try (FileInputStream fis = new FileInputStream(Constants.OUTPUT_XLSX_FILE_PATH);
              Workbook workbook = new XSSFWorkbook(fis)) {
 
             Sheet sheet = workbook.getSheetAt(0);
-            Iterator<Row> rowIterator = sheet.iterator();
 
-            // Skip header row
-            if (rowIterator.hasNext()) rowIterator.next();
+            // Collect all transactionTokens and row data in memory
+            List<Long> transactionTokens = new ArrayList<>();
+            Map<Long, Integer> tokenToRowNum = new HashMap<>();
+            Map<Long, String> tokenToTargetColumn = new HashMap<>();
+            Map<Long, String> tokenToUid = new HashMap<>();
 
-            long transactionToken = 0;
-            while (rowIterator.hasNext()) {
-                Row row = rowIterator.next();
-                Cell jsonCell = row.getCell(Constants.PROCESSOR_COLUMN_NUMBER); // transactionToken
+            int rowNum = 1; // Skip header
+            for (Row row : sheet) {
+                if (row.getRowNum() == 0) continue; // Skip header
 
-                if (jsonCell != null) {
-                    if (jsonCell.getCellType() == CellType.NUMERIC) {
-                        transactionToken = (long) jsonCell.getNumericCellValue();
-                    } else if (jsonCell.getCellType() == CellType.STRING) {
-                        String value = jsonCell.getStringCellValue().trim();
-                        if (!value.isEmpty()) {
-                            transactionToken = Long.parseLong(value);
-                        }
-                    }
-                    System.out.println("getting response from feedback table for transactionToken:   "+transactionToken);
-                    JSONObject eachResponse = getResponseFromFeedbackTable(transactionToken,msgCategory);
-                    int msgCategoryNumber;
-                    if (msgCategory.equalsIgnoreCase("SWIFT")) msgCategoryNumber=1;
-                    else if (msgCategory.equalsIgnoreCase("FEDWIRE")) msgCategoryNumber=2;
-                    else msgCategoryNumber=3;
-                    Map<Long,String> csvColumnNamesMap = getColumnNameCsvWLS(transactionToken,msgCategoryNumber);
-                    if (eachResponse!=null) {
-//                        System.out.println("feedback: " + eachResponse.toString());
-                        processEachResponse(eachResponse, row.getRowNum(), tagName, watchListType, webServiceId, sheet, workbook, csvColumnNamesMap);
+                Cell tokenCell = row.getCell(Constants.PROCESSOR_COLUMN_NUMBER);
+                if (tokenCell == null) continue;
+
+                long transactionToken = 0;
+                if (tokenCell.getCellType() == CellType.NUMERIC) {
+                    transactionToken = (long) tokenCell.getNumericCellValue();
+                } else if (tokenCell.getCellType() == CellType.STRING) {
+                    String value = tokenCell.getStringCellValue().trim();
+                    if (!value.isEmpty()) {
+                        transactionToken = Long.parseLong(value);
                     }
                 }
-            }
-        }
-    }
+                if (transactionToken == 0) continue;
 
-    private static JSONObject getResponseFromFeedbackTable(long transactionToken, String msgCategory) throws Exception {
-        PreparedStatement pst = null;
-        ResultSet rs = null;
-        Connection connection = SQLUtility.getDbConnection();
-        try {
-            pst = connection.prepareStatement(Constants.FEEDBACK_QUERY);
-            pst.setLong(1, transactionToken);              // parameter 1: N_TRAX_TOKEN
-            pst.setString(2, msgCategory);
-            rs = pst.executeQuery();
+                transactionTokens.add(transactionToken);
+                tokenToRowNum.put(transactionToken, row.getRowNum());
 
-            if (rs.next()) {
-                String jsonString = rs.getString("C_FEEDBACK_MESSAGE");
-                if (jsonString != null && !jsonString.isEmpty()) {
-                    return new JSONObject(jsonString);
-                }
+                Cell targetColumnCell = row.getCell(6);
+                Cell uidCell = row.getCell(8);
+                tokenToTargetColumn.put(transactionToken, targetColumnCell != null ? targetColumnCell.getStringCellValue() : "");
+                tokenToUid.put(transactionToken, uidCell != null ? uidCell.getStringCellValue() : "");
             }
 
-            return null;
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new Exception("Something went wrong while preparing Query: ", e);
-        } finally {
-            // Always close resources in finally block
-            if (rs != null) try { rs.close(); } catch (Exception ignore) {}
-            if (pst != null) try { pst.close(); } catch (Exception ignore) {}
-            if (connection != null) try { connection.close(); } catch (Exception ignore) {}
-        }
-    }
+            // Bulk fetch feedback responses
+            Map<Long, JSONObject> feedbackMap = getBulkResponsesFromFeedbackTable(transactionTokens, msgCategory);
+
+            // Bulk fetch WLS column names
+            int msgCategoryNumber = msgCategory.equalsIgnoreCase("SWIFT") ? 1 : msgCategory.equalsIgnoreCase("FEDWIRE") ? 2 : 3;
+            Map<Long, Map<Long, String>> tokenToCsvColumnNamesMap = getBulkColumnNameCsvWLS(transactionTokens, msgCategoryNumber);
+
+            // Prepare styles
+            Font boldFont = workbook.createFont();
+            boldFont.setBold(true);
+
+            CellStyle passStyle = workbook.createCellStyle();
+            passStyle.setFillForegroundColor(IndexedColors.BRIGHT_GREEN.getIndex());
+            passStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            passStyle.setFont(boldFont);
+
+            CellStyle failStyle = workbook.createCellStyle();
+            failStyle.setFillForegroundColor(IndexedColors.RED.getIndex());
+            failStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            failStyle.setFont(boldFont);
+
+            CellStyle columnMismatchStyle = workbook.createCellStyle();
+            columnMismatchStyle.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
+            columnMismatchStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
 
+            // Parallel processing of rows
+            ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+            List<CompletableFuture<Void>> futures = new ArrayList<>();
 
+            for (long transactionToken : transactionTokens) {
+                CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                    try {
+                        JSONObject eachResponse = feedbackMap.get(transactionToken);
+                        if (eachResponse == null || !eachResponse.has("matches")) return;
 
-    private static void processEachResponse(JSONObject eachResponse, int rowNum, String inputTagName, String watchListType, String webServiceId, Sheet sheet, Workbook workbook, Map<Long,String> csvColumnNamesMap) throws Exception {
-        System.out.println("[INFO] Processing row " + rowNum + "...");
-//        System.out.println("response::: "+eachResponse);
+                        JSONArray matches = eachResponse.getJSONArray("matches");
+                        int truePositives = 0;
+                        String targetColumnName = tokenToTargetColumn.get(transactionToken);
+                        String uid = tokenToUid.get(transactionToken);
+                        Map<Long, String> csvColumnNamesMap = tokenToCsvColumnNamesMap.getOrDefault(transactionToken, Collections.emptyMap());
 
-        String targetColumnName = "";
-        String uid = "";
+                        boolean failedDueToColumnMismatch = false;
+                        for (int i = 0; i < matches.length(); i++) {
+                            JSONObject match = matches.getJSONObject(i);
+                            String tagNameCsv = match.optString("tagName", "");
+                            Set<String> tagNames = Arrays.stream(tagNameCsv.split(",")).map(String::trim).collect(Collectors.toSet());
 
-        Row row = sheet.getRow(rowNum);
-        if (row != null) {
+                            String targetUid = match.getString("matchedWatchlistId");
+                            Long responseId = match.getLong("responseID");
+                            String columnNamesCsvWLS = csvColumnNamesMap.get(responseId);
+                            Set<String> columnNames = columnNamesCsvWLS != null ? Arrays.stream(columnNamesCsvWLS.split(",")).collect(Collectors.toSet()) : Collections.emptySet();
 
-            Cell targetColumnNameCell = row.getCell(6);
-            Cell uidCell = row.getCell(8);
+                            boolean flag = uid.equals(targetUid)
+                                    && watchListType.equalsIgnoreCase(match.optString("watchlistType"))
+                                    && webServiceId.equalsIgnoreCase(String.valueOf(match.getInt("webServiceID")));
 
-            if (targetColumnNameCell != null)
-                targetColumnName = targetColumnNameCell.getStringCellValue();
-
-            if (uidCell != null)
-                uid = uidCell.getStringCellValue();
-
-        } else return;
-
-        if (!eachResponse.has("matches")) return;
-        JSONArray matches = eachResponse.getJSONArray("matches");
-        int truePositives = 0;
-        foundTruePositive:
-        for (int i = 0; i < matches.length(); i++) {
-            JSONObject match = matches.getJSONObject(i);
-            String tagNameCsv = match.optString("tagName", "");
-            String[] tagNames = tagNameCsv.split(",");
-
-            String targetUid = match.getString("matchedWatchlistId");
-
-            Long responseId = match.getLong("responseID");
-            String columnNamesCsvWLS = csvColumnNamesMap.get(responseId); //comma separetd value will come
-            String[] columnName = columnNamesCsvWLS.split(",");
-
-            boolean flag = uid.equals(targetUid)
-                    && watchListType.equalsIgnoreCase(match.optString("watchlistType"))
-                    && webServiceId.equalsIgnoreCase(String.valueOf(match.getInt("webServiceID")));
-
-            if(flag){ // if nuid, watchlistType and webServiceId matches then check for further scenario
-                for (String tag : tagNames) {
-                    if(inputTagName.equals(tag.trim())) { // if tagName matches then check for further scenario
-                        for (String wlColumn : columnName) {
-                            boolean truePositiveFlag = targetColumnName.equalsIgnoreCase(wlColumn); // if column name matches from wls table
-                            if (truePositiveFlag) {
-                                truePositives++;
-                                break foundTruePositive;
+                            if (flag && tagNames.contains(tagName)) {
+                                if (columnNames.stream().anyMatch(col -> col.equalsIgnoreCase(targetColumnName))) { // Case-insensitive match
+                                    truePositives++;failedDueToColumnMismatch = false;
+                                    break; // Early exit if we only need count >=1
+                                } else {
+                                    failedDueToColumnMismatch = true;
+                                }
                             }
                         }
+
+                        String testStatus = truePositives > 0 ? Constants.PASS : Constants.FAIL;
+
+                        // Update sheet in synchronized block for thread safety
+                        synchronized (sheet) {
+                            Row row = sheet.getRow(tokenToRowNum.get(transactionToken));
+                            Cell testStatusCell = row.getCell(Constants.ANALYZER_COLUMN_NUMBER);
+                            if (testStatusCell == null) testStatusCell = row.createCell(Constants.ANALYZER_COLUMN_NUMBER);
+                            testStatusCell.setCellValue(testStatus);
+                            testStatusCell.setCellStyle(testStatus.equalsIgnoreCase(Constants.PASS) ? passStyle : failStyle);
+
+                            if(failedDueToColumnMismatch){
+                                Cell trxnTokenCell = row.getCell(Constants.PROCESSOR_COLUMN_NUMBER);
+                                if (trxnTokenCell == null) trxnTokenCell = row.createCell(Constants.PROCESSOR_COLUMN_NUMBER);
+                                trxnTokenCell.setCellStyle(columnMismatchStyle);
+                            }
+                        }
+
+                        System.out.println("------------------------------------------------------------");
+                        System.out.println("transactionToken::: "+ transactionToken);
+                        System.out.println("testStatus::: "+ testStatus);
+                        System.out.println("------------------------------------------------------------");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }, executor);
+                futures.add(future);
+            }
+
+            // Wait for all tasks to complete
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+            executor.shutdown();
+
+            // Write the updated workbook once
+            try (FileOutputStream fos = new FileOutputStream(Constants.OUTPUT_XLSX_FILE_PATH)) {
+                workbook.write(fos);
+            }
+
+        }
+    }
+
+    private static Map<Long, JSONObject> getBulkResponsesFromFeedbackTable(List<Long> transactionTokens, String msgCategory) throws Exception {
+        Map<Long, JSONObject> feedbackMap = new HashMap<>();
+        if (transactionTokens.isEmpty()) return feedbackMap;
+
+        Connection connection = SQLUtility.getDbConnection();
+        try {
+            // Batch in chunks to avoid IN clause limits
+            int batchSize = 1000;
+            for (int i = 0; i < transactionTokens.size(); i += batchSize) {
+                List<Long> batch = transactionTokens.subList(i, Math.min(i + batchSize, transactionTokens.size()));
+                String placeholders = String.join(",", Collections.nCopies(batch.size(), "?"));
+                String query = "SELECT N_TRAX_TOKEN, C_FEEDBACK_MESSAGE FROM fcc_tf_feedback WHERE N_TRAX_TOKEN IN (" + placeholders + ") AND V_MSG_CATEGORY = ?";
+                PreparedStatement pst = connection.prepareStatement(query);
+                for (int j = 0; j < batch.size(); j++) {
+                    pst.setLong(j + 1, batch.get(j));
+                }
+                pst.setString(batch.size() + 1, msgCategory);
+                try (ResultSet rs = pst.executeQuery()) {
+                    while (rs.next()) {
+                        String jsonString = rs.getString("C_FEEDBACK_MESSAGE");
+                        if (jsonString != null && !jsonString.isEmpty()) {
+                            feedbackMap.put(rs.getLong("N_TRAX_TOKEN"), new JSONObject(jsonString));
+                        }
                     }
                 }
             }
-
-
-
-
+        } finally {
+            if (connection != null) connection.close();
         }
-        String testStatus = truePositives!=0?Constants.PASS:Constants.FAIL;
-        System.out.println("-------------------------------------------------------------");
-        System.out.println("ANALYZER TEST STATUS " + testStatus);
-        System.out.println("No. of Matches: " + matches.length());
-        System.out.println("-------------------------------------------------------------");
-
-        writeTruePositivesToExcel(rowNum, truePositives, sheet, workbook, testStatus);
-
+        return feedbackMap;
     }
 
-    private static Map<Long, String> getColumnNameCsvWLS(long transactionToken, int msgCategory) throws Exception {
-        Map<Long, String> columnNamesMap = new HashMap<>();
-        PreparedStatement pst = null;
-        ResultSet rs = null;
+    private static Map<Long, Map<Long, String>> getBulkColumnNameCsvWLS(List<Long> transactionTokens, int msgCategory) throws Exception {
+        Map<Long, Map<Long, String>> tokenToColumnMap = new HashMap<>();
+        if (transactionTokens.isEmpty()) return tokenToColumnMap;
+
         Connection connection = SQLUtility.getDbConnection();
         try {
-            pst = connection.prepareStatement(Constants.WLS_RESPONSE_QUERY);
-            pst.setLong(1, transactionToken);
-            pst.setLong(2, msgCategory);
-            rs = pst.executeQuery();
-
-            while (rs.next()) {
-                long responseId = rs.getLong("N_RESPONSE_ID");
-                String columnName = rs.getString("V_COLUMN_NAME");
-                columnNamesMap.put(responseId,columnName);
+            int batchSize = 1000;
+            for (int i = 0; i < transactionTokens.size(); i += batchSize) {
+                List<Long> batch = transactionTokens.subList(i, Math.min(i + batchSize, transactionTokens.size()));
+                String placeholders = String.join(",", Collections.nCopies(batch.size(), "?"));
+                String query = "SELECT N_GRP_MSG_ID, N_RESPONSE_ID, V_COLUMN_NAME FROM fcc_tf_rt_wls_response WHERE n_grp_msg_id IN (" + placeholders + ") AND n_msg_category = ?";
+                PreparedStatement pst = connection.prepareStatement(query);
+                for (int j = 0; j < batch.size(); j++) {
+                    pst.setLong(j + 1, batch.get(j));
+                }
+                pst.setInt(batch.size() + 1, msgCategory);
+                try (ResultSet rs = pst.executeQuery()) {
+                    while (rs.next()) {
+                        long token = rs.getLong("N_GRP_MSG_ID");
+                        long responseId = rs.getLong("N_RESPONSE_ID");
+                        String columnName = rs.getString("V_COLUMN_NAME");
+                        tokenToColumnMap.computeIfAbsent(token, k -> new HashMap<>()).put(responseId, columnName);
+                    }
+                }
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new Exception("Something went wrong while preparing Query: ", e);
         } finally {
-            // Always close resources in finally block
-            if (rs != null) try { rs.close(); } catch (Exception ignore) {}
-            if (pst != null) try { pst.close(); } catch (Exception ignore) {}
-            if (connection != null) try { connection.close(); } catch (Exception ignore) {}
+            if (connection != null) connection.close();
         }
-        return columnNamesMap.isEmpty() ? null : columnNamesMap;
+        return tokenToColumnMap;
     }
-
-    public static void writeTruePositivesToExcel(int rowNum, int truePositives, Sheet sheet, Workbook workbook, String testStatus) {
-        Font boldFont = workbook.createFont();
-        boldFont.setBold(true);
-
-        CellStyle passStyle = workbook.createCellStyle();
-        passStyle.setFillForegroundColor(IndexedColors.BRIGHT_GREEN.getIndex());
-        passStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-        passStyle.setFont(boldFont);
-
-        CellStyle failStyle = workbook.createCellStyle();
-        failStyle.setFillForegroundColor(IndexedColors.RED.getIndex());
-        failStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-        failStyle.setFont(boldFont);
-
-        Row row = sheet.getRow(rowNum);
-        if (row == null) row = sheet.createRow(rowNum);
-
-        Cell testStatusCell = row.getCell(Constants.ANALYZER_COLUMN_NUMBER);
-        if (testStatusCell == null) testStatusCell = row.createCell(Constants.ANALYZER_COLUMN_NUMBER);
-
-        testStatusCell.setCellValue(testStatus);
-
-        if(testStatus.equalsIgnoreCase(Constants.PASS)){
-            testStatusCell.setCellStyle(passStyle);
-        } else {
-            testStatusCell.setCellStyle(failStyle);
-        }
-
-        try (FileOutputStream fos = new FileOutputStream(Constants.OUTPUT_XLSX_FILE_PATH)) {
-            workbook.write(fos);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
 }
