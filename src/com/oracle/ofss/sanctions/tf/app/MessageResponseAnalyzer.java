@@ -155,9 +155,10 @@ public class MessageResponseAnalyzer {
 
                             boolean flag = uid.equals(targetUid)
                                     && watchListType.equalsIgnoreCase(match.optString("watchlistType"))
-                                    && webServiceId.equalsIgnoreCase(String.valueOf(match.getInt("webServiceID")));
+                                    && webServiceId.equalsIgnoreCase(String.valueOf(match.getInt("webServiceID")))
+                                    && tagNames.contains(tagName);
 
-                            if (flag && tagNames.contains(tagName)) {
+                            if (flag) {
                                 if (columnNames.stream().anyMatch(col -> col.equalsIgnoreCase(targetColumnName))) { // Case-insensitive match
                                     truePositives++;failedDueToColumnMismatch = false;
                                     break; // Early exit if we only need count >=1
