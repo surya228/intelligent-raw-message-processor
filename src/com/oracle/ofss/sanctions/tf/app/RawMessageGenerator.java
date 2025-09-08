@@ -172,6 +172,7 @@ public class RawMessageGenerator {
                       String tableName, JSONArray jsonArray, int updatedCount, String originalValue, int ced, String uid){
         if (value != null) {
             System.out.println("toBeReplaced: " + value + " originalValue: " + originalValue + "  token: " + token + "  column: "+ targetColumn + "  identifier: "+ identifierToBeReplaced + " ced: "+ ced);
+            identifierToBeReplaced = Constants.IDEN_PREFIX+identifierToBeReplaced;
             temp = temp.replace(token, value);
             temp = temp.replace(identifierToken,identifierToBeReplaced);
 
@@ -316,7 +317,8 @@ public class RawMessageGenerator {
                 Constants.MATCH_COUNT,
                 Constants.STATUS,
                 Constants.FEEDBACK_STATUS,
-                Constants.TEST_STATUS
+                Constants.TEST_STATUS,
+                Constants.COMMENTS
         };
 
         Row headerRow = sheet.createRow(0);
@@ -362,6 +364,7 @@ public class RawMessageGenerator {
             row.createCell(11).setCellValue("");        // Status
             row.createCell(12).setCellValue("");        // Feedback Status
             row.createCell(13).setCellValue("");        // Test Status
+            row.createCell(14).setCellValue("");        // Comments
 
         }
 

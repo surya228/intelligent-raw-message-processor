@@ -121,9 +121,9 @@ public class MessageResponseAnalyzer {
             highlightRed.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             highlightRed.setFont(boldFont);
 
-            CellStyle highlightYellow = workbook.createCellStyle();
-            highlightYellow.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
-            highlightYellow.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+//            CellStyle highlightYellow = workbook.createCellStyle();
+//            highlightYellow.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
+//            highlightYellow.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
 
             // Parallel processing of rows
@@ -177,17 +177,21 @@ public class MessageResponseAnalyzer {
                             testStatusCell.setCellValue(testStatus);
                             testStatusCell.setCellStyle(testStatus.equalsIgnoreCase(Constants.PASS) ? highlightGreen : highlightRed);
 
+                            Cell commentsCell = row.getCell(Constants.ANALYZER_COLUMN_NUMBER+1);
+                            if (commentsCell == null) commentsCell = row.createCell(Constants.ANALYZER_COLUMN_NUMBER+1);
+
                             if(failedDueToColumnMismatch){
-                                Cell trxnTokenCell = row.getCell(Constants.PROCESSOR_COLUMN_NUMBER);
-                                if (trxnTokenCell == null) trxnTokenCell = row.createCell(Constants.PROCESSOR_COLUMN_NUMBER);
-                                trxnTokenCell.setCellStyle(highlightYellow);
+                                commentsCell.setCellValue(Constants.COLUMN_MISMATCH_COMMENT);
+                            } else if (testStatus.equalsIgnoreCase(Constants.FAIL)) {
+                                commentsCell.setCellValue(Constants.NO_MATCH_COMMENT);
                             }
+
                         }
 
-                        System.out.println("------------------------------------------------------------");
-                        System.out.println("transactionToken::: "+ transactionToken);
-                        System.out.println("testStatus::: "+ testStatus);
-                        System.out.println("------------------------------------------------------------");
+//                        System.out.println("------------------------------------------------------------");
+//                        System.out.println("transactionToken::: "+ transactionToken);
+//                        System.out.println("testStatus::: "+ testStatus);
+//                        System.out.println("------------------------------------------------------------");
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -198,6 +202,7 @@ public class MessageResponseAnalyzer {
             // Wait for all tasks to complete
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
             executor.shutdown();
+            sheet.autoSizeColumn(Constants.ANALYZER_COLUMN_NUMBER + 1);
 
             // Write the updated workbook once
             try (FileOutputStream fos = new FileOutputStream(Constants.OUTPUT_XLSX_FILE_PATH)) {
