@@ -27,11 +27,22 @@ public class Constants {
         TABLE_WL_MAP = Collections.unmodifiableMap(map); // Make it read-only
     }
 
+    public static final Map<String, String> WEBSERVICE_MAP;
+    static {
+        Map<String, String> map = new HashMap<>();
+        map.put("1", "NameAndAddress");
+        map.put("2", "Identifier");
+        map.put("5", "Port");
+        map.put("6", "Goods");
+
+        WEBSERVICE_MAP = Collections.unmodifiableMap(map); // Make it read-only
+    }
+
     public static String ENCODER = "UTF-8";
 
     public static String MODULE_RAW_MSG_GENERATOR =  "module.rawMsgGenerator";
     public static String MODULE_RAW_MSG_PROCESSOR =  "module.rawMsgProcessor";
-    public static String MODULE_RAW_MSG_ANALYZER =  "module.rawMsgAnalyzer";
+//    public static String MODULE_RAW_MSG_ANALYZER =  "module.rawMsgAnalyzer";
 
 
     public static String TAGNAME =  "tagName";
@@ -67,6 +78,7 @@ public class Constants {
     public static String WHERE_CLAUSE =  "whereClause";
     public static String REPLACE_SRC =  "replace.src";
     public static String REPLACE_TARGET_COLUMN =  "replace.targetColumn";
+    public static final String TOGGLE_MATCHING_ENGINE = "toggleMatchingEngine";
 
 
     public static String ADDITIONAL_DATA =  "additionalData";
@@ -124,10 +136,6 @@ public class Constants {
 
     public static final String COLUMN_MISMATCH_COMMENT = "Column name didn't match";
     public static final String NO_MATCH_COMMENT = "No Match";
-
-
-    public static int PROCESSOR_COLUMN_NUMBER = 9;
-    public static int ANALYZER_COLUMN_NUMBER = 13;
 
 
 }

@@ -312,13 +312,7 @@ public class RawMessageGenerator {
                 Constants.TARGET_INPUT,
                 Constants.TARGET_COLUMN,
                 Constants.WATCHLIST,
-                Constants.NUID,
-                Constants.TRXN_TOKEN,
-                Constants.MATCH_COUNT,
-                Constants.STATUS,
-                Constants.FEEDBACK_STATUS,
-                Constants.TEST_STATUS,
-                Constants.COMMENTS
+                Constants.NUID
         };
 
         Row headerRow = sheet.createRow(0);
@@ -359,12 +353,6 @@ public class RawMessageGenerator {
             row.createCell(6).setCellValue(targetColumn);         // Target Column
             row.createCell(7).setCellValue(watchlistType);         // Watchlist
             row.createCell(8).setCellValue(uid);         // N_UID
-            row.createCell(9).setCellValue("");         // Transaction Token
-            row.createCell(10).setCellValue("");        // Match Count
-            row.createCell(11).setCellValue("");        // Status
-            row.createCell(12).setCellValue("");        // Feedback Status
-            row.createCell(13).setCellValue("");        // Test Status
-            row.createCell(14).setCellValue("");        // Comments
 
         }
 

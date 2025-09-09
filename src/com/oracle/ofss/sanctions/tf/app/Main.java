@@ -19,11 +19,26 @@ public class Main {
         if(props.getProperty(Constants.MODULE_RAW_MSG_GENERATOR).equalsIgnoreCase("Y"))
             RawMessageGenerator.generateRawMessage();
 
-        if(props.getProperty(Constants.MODULE_RAW_MSG_PROCESSOR).equalsIgnoreCase("Y"))
-            MessageProcessingUtility.screenRawMsg();
+        ToggleMatchingEngine toggleMatchingEngine = new ToggleMatchingEngine();
+        String currentMatchingEngine = toggleMatchingEngine.findCurrentMatchingEngine();
 
-        if(props.getProperty(Constants.MODULE_RAW_MSG_ANALYZER).equalsIgnoreCase("Y"))
-            MessageResponseAnalyzer.analyseResponseAndPrepareResults();
+        System.out.println("Current Matching Engine::: "+ currentMatchingEngine);
+
+        if(props.getProperty(Constants.MODULE_RAW_MSG_PROCESSOR).equalsIgnoreCase("Y")) {
+            MessageProcessingUtility.screenRawMsg(currentMatchingEngine);
+            MessageResponseAnalyzer.analyseResponseAndPrepareResults(currentMatchingEngine);
+        }
+
+
+        if(props.getProperty(Constants.TOGGLE_MATCHING_ENGINE).equalsIgnoreCase("Y")){
+            String newEsOs = toggleMatchingEngine.toggleMatchingEngine();
+            System.out.println("Matching engine set to ::: "+ newEsOs);
+
+            if(props.getProperty(Constants.MODULE_RAW_MSG_PROCESSOR).equalsIgnoreCase("Y")){
+                MessageProcessingUtility.screenRawMsg(newEsOs);
+                MessageResponseAnalyzer.analyseResponseAndPrepareResults(newEsOs);
+            }
+        }
 
 
         long endTime = System.currentTimeMillis();

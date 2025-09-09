@@ -21,6 +21,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONObject;
+import org.json.JSONArray;
 
 public class MessageProcessingUtility {
     public MessageProcessingUtility() {
@@ -36,7 +37,7 @@ public class MessageProcessingUtility {
     private static SimpleDateFormat sdf = new SimpleDateFormat(Constants.DATE_FORMAT);
     private static final AtomicInteger retryRequestNumber = new AtomicInteger(0);
     
-    public static void screenRawMsg() throws Exception {
+    public static void screenRawMsg(String matchingEngine) throws Exception {
         long startTime = System.currentTimeMillis();
 
         System.out.println("=============================================================");
@@ -71,8 +72,11 @@ public class MessageProcessingUtility {
 //            System.out.println("pwd: "+pwd);
             System.out.println("url: "+url);
 
+            String webServiceId = props.getProperty(Constants.WEBSERVICE_ID);
+            String watchlistType = props.getProperty(Constants.WATCHLIST_TYPE);
 
-                if(maxIndex >= 10 ) {
+
+            if(maxIndex >= 10 ) {
             	retryRequiredFlag = props.getProperty(Constants.RETRY_REQUIRED_FLAG);
 	            String retryMaxArg = props.getProperty(Constants.RETRY_MAX_COUNT);
 	            String bearerTokenRefreshArg = props.getProperty(Constants.RETRY_REFRESH_INTERVAL);
@@ -95,6 +99,28 @@ public class MessageProcessingUtility {
             try (FileInputStream fis = new FileInputStream(Constants.OUTPUT_XLSX_FILE_PATH);
                  Workbook workbook = new XSSFWorkbook(fis)) {
                 Sheet sheet = workbook.getSheetAt(0);
+
+                // Dynamically add processor columns
+                Row headerRow = sheet.getRow(0);
+                if (headerRow == null) headerRow = sheet.createRow(0);
+                int lastColumn = headerRow.getLastCellNum();
+                if (lastColumn < 0) lastColumn = 0;
+
+                String[] processorHeaders = {
+                        matchingEngine+" "+Constants.TRXN_TOKEN,
+                        matchingEngine+" "+Constants.MATCH_COUNT,
+                        matchingEngine+" "+Constants.STATUS,
+                        matchingEngine+" "+Constants.FEEDBACK_STATUS,
+                        matchingEngine+" # "+getMatchHeaderSuffix(webServiceId, watchlistType)+" matches",
+                        matchingEngine+" Feedback"
+                };
+                int processorStartColumn = lastColumn;
+                for (int i = 0; i < processorHeaders.length; i++) {
+                    Cell headerCell = headerRow.getCell(processorStartColumn + i);
+                    if (headerCell == null) headerCell = headerRow.createCell(processorStartColumn + i);
+                    headerCell.setCellValue(processorHeaders[i]);
+                }
+
                 Iterator<Row> rowIterator = sheet.iterator();
                 Map<String, String> seqIdToRequestMap = new LinkedHashMap<>();
                 Map<String, Integer> seqIdToRowNum = new HashMap<>();
@@ -118,11 +144,16 @@ public class MessageProcessingUtility {
 
                 System.out.println("["+sdf.format(new Date())+"] size of seqIdToRequestMap is " + seqIdToRequestMap.size());
 
-                Map<String, String> failedRequestMap = processRequests(seqIdToRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter);
+                Map<String, String> failedRequestMap = processRequests(seqIdToRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId, watchlistType);
 
                 if (!failedRequestMap.isEmpty()) {
                     System.out.println("Job is not done yet...");
-                    failedRequestMap = processRequests(failedRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter);
+                    failedRequestMap = processRequests(failedRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId, watchlistType);
+                }
+
+                // Auto-size new columns except the last (feedback) one
+                for (int i = processorStartColumn; i < processorStartColumn + processorHeaders.length - 1; i++) {
+                    sheet.autoSizeColumn(i);
                 }
 
                 FileOutputStream outFile = new FileOutputStream(Constants.OUTPUT_XLSX_FILE_PATH);
@@ -147,7 +178,7 @@ public class MessageProcessingUtility {
 
     }
 
-    private static Map<String, String> processRequests(Map<String, String> seqIdToRequestMap, String tokenUrl, String usernm, String pwd, String url, Sheet sheet, Map<String, Integer> seqIdToRowNum, DataFormatter formatter) {
+    private static Map<String, String> processRequests(Map<String, String> seqIdToRequestMap, String tokenUrl, String usernm, String pwd, String url, Sheet sheet, Map<String, Integer> seqIdToRowNum, DataFormatter formatter, int processorStartColumn, String webServiceId, String watchlistType) {
         Map<String, String> failedRequestMap = new ConcurrentHashMap<>();
 
         seqIdToRequestMap.entrySet().parallelStream().forEach(entry -> {
@@ -244,7 +275,29 @@ public class MessageProcessingUtility {
                 String status = responseJson.optString(Constants.MATCHING_STATUS, "");
                 String feedbackStatus = responseJson.has(Constants.FEEDBACK_DATA) ? responseJson.getJSONObject(Constants.FEEDBACK_DATA).optString(Constants.MATCHING_STATUS, "") : "";
                 System.out.println("transactionToken: " + transactionToken + " matchCount: " + matchCount + " status: " + status + " feedbackStatus: " + feedbackStatus);
-                Object[] excelParams = new Object[]{transactionToken, matchCount, status, feedbackStatus};
+
+                long filteredCount = 0;
+                String responseString = apiResponse.toString();
+                if (responseString.length() > 32767) {
+                    responseString = "value too large please check feedback api";
+                }
+                if (responseJson.has(Constants.FEEDBACK_DATA)) {
+                    JSONObject feedbackData = responseJson.getJSONObject(Constants.FEEDBACK_DATA);
+                    if (feedbackData.has("matches")) {
+                        JSONArray matches = feedbackData.getJSONArray("matches");
+                        for (int i = 0; i < matches.length(); i++) {
+                            JSONObject match = matches.getJSONObject(i);
+                            String matchWebServiceId = String.valueOf(match.optInt("webServiceID"));
+                            String matchWatchlistType = match.optString("watchlistType");
+                            if (matchWebServiceId.equals(webServiceId) &&
+                                (!webServiceId.equals("3") && !webServiceId.equals("4") ||
+                                 matchWatchlistType.equalsIgnoreCase(watchlistType))) {
+                                filteredCount++;
+                            }
+                        }
+                    }
+                }
+                Object[] excelParams = new Object[]{transactionToken, matchCount, status, feedbackStatus, filteredCount, responseString};
 
                 // Update sheet in synchronized block
                 synchronized (sheet) {
@@ -252,10 +305,10 @@ public class MessageProcessingUtility {
                     System.out.println("Writing output to file for seqId: " + seqId);
                     Row row = (Row) sheet.getRow(targetRowNum);
 //                    if (row == null) row = sheet.createRow(targetRowNum);
-                    int msgProcessorStartCell = Constants.PROCESSOR_COLUMN_NUMBER;
                     for (int i = 0; i < excelParams.length; i++) {
-                        Cell cell = row.getCell(msgProcessorStartCell + i);
-                        if (cell == null) cell = row.createCell(msgProcessorStartCell + i);
+                        Cell cell = row.getCell(processorStartColumn + i);
+                        if (cell == null) cell = row.createCell(processorStartColumn + i);
+                        System.out.println(excelParams[i].toString());
                         cell.setCellValue(excelParams[i].toString());
                     }
                 }
@@ -358,7 +411,7 @@ public class MessageProcessingUtility {
         return result;
     }
 
-    private static String getAccessToken(String tokenUrl, String usernm, String pwd) {
+    public static String getAccessToken(String tokenUrl, String usernm, String pwd) {
         long currentTime = System.currentTimeMillis();
         long timeDiff = (currentTime - labelledTime) / 60000L;
         if (labelledTime != 0L && timeDiff < bearerTokenRefreshInterval) {
@@ -431,5 +484,35 @@ public class MessageProcessingUtility {
         	break;
         }
         return msg;
+    }
+
+    private static String getMatchHeaderSuffix(String webServiceId, String watchlistType) {
+        if (webServiceId.equals("3")) {
+            if (watchlistType.equalsIgnoreCase("COUNTRY")) {
+                return "Country";
+            } else if (watchlistType.equalsIgnoreCase("CITY")) {
+                return "City";
+            } else {
+                return "Country-City";
+            }
+        } else if (webServiceId.equals("4")) {
+            if (watchlistType.equalsIgnoreCase("COUNTRY")) {
+                return "Narrative Country";
+            } else if (watchlistType.equalsIgnoreCase("CITY")) {
+                return "Narrative City";
+            } else if (watchlistType.equalsIgnoreCase("GOODS")) {
+                return "Narrative Goods";
+            } else if (watchlistType.equalsIgnoreCase("PORT")) {
+                return "Narrative Port";
+            } else if (watchlistType.equalsIgnoreCase("IDENTIFIER")) {
+                return "Narrative Identifier";
+            } else if (watchlistType.equalsIgnoreCase("STOP_KEYWORDS")) {
+                return "Stopkeywords";
+            } else {
+                return "Narrative NameAndAddress";
+            }
+        } else {
+            return Constants.WEBSERVICE_MAP.get(webServiceId);
+        }
     }
 }
