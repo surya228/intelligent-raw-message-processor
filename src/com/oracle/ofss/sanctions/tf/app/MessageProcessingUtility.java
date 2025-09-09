@@ -215,7 +215,7 @@ public class MessageProcessingUtility {
                     conn.setHostnameVerifier((hostname, sslSession) -> true);
                     conn.setDoOutput(true);
                     try (OutputStream os = conn.getOutputStream()) {
-                        os.write(requestBody.getBytes());
+                        os.write(requestBody.getBytes(Constants.ENCODER));
                         os.flush();
                     }
 
@@ -235,6 +235,7 @@ public class MessageProcessingUtility {
                     conn.disconnect();
 
                     System.out.println("["+sdf.format(new Date())+"] Waiting for Response: " + getResponseMsg(responseCode));
+                    System.out.println("api response::: "+ apiResponse);
                 } catch (Exception e) {
                     e.printStackTrace();
                     responseCode = 500; // Treat as error for retry
