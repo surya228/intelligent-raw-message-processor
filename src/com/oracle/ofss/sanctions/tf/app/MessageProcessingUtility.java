@@ -109,8 +109,7 @@ public class MessageProcessingUtility {
                     }
                     Cell seqCell = row.getCell(0);
                     Cell requestCell = row.getCell(2);
-                    Cell resultCell = row.getCell(3);
-                    if (seqCell != null && requestCell != null && !("Y".equalsIgnoreCase(restartFlag) && resultCell != null)) {
+                    if (seqCell != null && requestCell != null) {
                         String seqId = formatter.formatCellValue(seqCell);
                         seqIdToRequestMap.put(seqId, formatter.formatCellValue(requestCell));
                         seqIdToRowNum.put(seqId, row.getRowNum());
@@ -191,7 +190,7 @@ public class MessageProcessingUtility {
                     conn.setHostnameVerifier((hostname, sslSession) -> true);
                     conn.setDoOutput(true);
                     try (OutputStream os = conn.getOutputStream()) {
-                        os.write(requestBody.getBytes());
+                        os.write(requestBody.getBytes(Constants.ENCODER));
                         os.flush();
                     }
 
@@ -211,6 +210,7 @@ public class MessageProcessingUtility {
                     conn.disconnect();
 
                     System.out.println("["+sdf.format(new Date())+"] Waiting for Response: " + getResponseMsg(responseCode));
+                    System.out.println("api response::: "+ apiResponse);
                 } catch (Exception e) {
                     e.printStackTrace();
                     responseCode = 500; // Treat as error for retry
