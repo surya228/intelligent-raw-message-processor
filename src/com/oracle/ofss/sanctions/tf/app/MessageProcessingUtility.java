@@ -21,6 +21,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONObject;
+import org.json.JSONArray;
 
 public class MessageProcessingUtility {
     public MessageProcessingUtility() {
@@ -71,8 +72,10 @@ public class MessageProcessingUtility {
 //            System.out.println("pwd: "+pwd);
             System.out.println("url: "+url);
 
+            String webServiceId = props.getProperty(Constants.WEBSERVICE_ID);
 
-                if(maxIndex >= 10 ) {
+
+            if(maxIndex >= 10 ) {
             	retryRequiredFlag = props.getProperty(Constants.RETRY_REQUIRED_FLAG);
 	            String retryMaxArg = props.getProperty(Constants.RETRY_MAX_COUNT);
 	            String bearerTokenRefreshArg = props.getProperty(Constants.RETRY_REFRESH_INTERVAL);
@@ -106,7 +109,9 @@ public class MessageProcessingUtility {
                         matchingEngine+" "+Constants.TRXN_TOKEN,
                         matchingEngine+" "+Constants.MATCH_COUNT,
                         matchingEngine+" "+Constants.STATUS,
-                        matchingEngine+" "+Constants.FEEDBACK_STATUS
+                        matchingEngine+" "+Constants.FEEDBACK_STATUS,
+                        matchingEngine+" # "+Constants.WEBSERVICE_MAP.get(webServiceId)+" matches",
+                        matchingEngine+" Feedback"
                 };
                 int processorStartColumn = lastColumn;
                 for (int i = 0; i < processorHeaders.length; i++) {
@@ -138,11 +143,11 @@ public class MessageProcessingUtility {
 
                 System.out.println("["+sdf.format(new Date())+"] size of seqIdToRequestMap is " + seqIdToRequestMap.size());
 
-                Map<String, String> failedRequestMap = processRequests(seqIdToRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn);
+                Map<String, String> failedRequestMap = processRequests(seqIdToRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId);
 
                 if (!failedRequestMap.isEmpty()) {
                     System.out.println("Job is not done yet...");
-                    failedRequestMap = processRequests(failedRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn);
+                    failedRequestMap = processRequests(failedRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId);
                 }
 
                 // Auto-size new columns
@@ -172,7 +177,7 @@ public class MessageProcessingUtility {
 
     }
 
-    private static Map<String, String> processRequests(Map<String, String> seqIdToRequestMap, String tokenUrl, String usernm, String pwd, String url, Sheet sheet, Map<String, Integer> seqIdToRowNum, DataFormatter formatter, int processorStartColumn) {
+    private static Map<String, String> processRequests(Map<String, String> seqIdToRequestMap, String tokenUrl, String usernm, String pwd, String url, Sheet sheet, Map<String, Integer> seqIdToRowNum, DataFormatter formatter, int processorStartColumn, String webServiceId) {
         Map<String, String> failedRequestMap = new ConcurrentHashMap<>();
 
         seqIdToRequestMap.entrySet().parallelStream().forEach(entry -> {
@@ -269,7 +274,25 @@ public class MessageProcessingUtility {
                 String status = responseJson.optString(Constants.MATCHING_STATUS, "");
                 String feedbackStatus = responseJson.has(Constants.FEEDBACK_DATA) ? responseJson.getJSONObject(Constants.FEEDBACK_DATA).optString(Constants.MATCHING_STATUS, "") : "";
                 System.out.println("transactionToken: " + transactionToken + " matchCount: " + matchCount + " status: " + status + " feedbackStatus: " + feedbackStatus);
-                Object[] excelParams = new Object[]{transactionToken, matchCount, status, feedbackStatus};
+
+                long filteredCount = 0;
+                String responseString = apiResponse.toString();
+                if (responseString.length() > 32767) {
+                    responseString = "value too large please check feedback api";
+                }
+                if (responseJson.has(Constants.FEEDBACK_DATA)) {
+                    JSONObject feedbackData = responseJson.getJSONObject(Constants.FEEDBACK_DATA);
+                    if (feedbackData.has("matches")) {
+                        JSONArray matches = feedbackData.getJSONArray("matches");
+                        for (int i = 0; i < matches.length(); i++) {
+                            JSONObject match = matches.getJSONObject(i);
+                            if (String.valueOf(match.optInt("webServiceID")).equals(webServiceId)) {
+                                filteredCount++;
+                            }
+                        }
+                    }
+                }
+                Object[] excelParams = new Object[]{transactionToken, matchCount, status, feedbackStatus, filteredCount, responseString};
 
                 // Update sheet in synchronized block
                 synchronized (sheet) {
