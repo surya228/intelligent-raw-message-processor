@@ -127,8 +127,4 @@ public class Constants {
     public static final String NO_MATCH_COMMENT = "No Match";
 
 
-    public static int PROCESSOR_COLUMN_NUMBER = 9;
-    public static int ANALYZER_COLUMN_NUMBER = 13;
-
-
 }

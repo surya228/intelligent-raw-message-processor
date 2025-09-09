@@ -95,6 +95,26 @@ public class MessageProcessingUtility {
             try (FileInputStream fis = new FileInputStream(Constants.OUTPUT_XLSX_FILE_PATH);
                  Workbook workbook = new XSSFWorkbook(fis)) {
                 Sheet sheet = workbook.getSheetAt(0);
+
+                // Dynamically add processor columns
+                Row headerRow = sheet.getRow(0);
+                if (headerRow == null) headerRow = sheet.createRow(0);
+                int lastColumn = headerRow.getLastCellNum();
+                if (lastColumn < 0) lastColumn = 0;
+
+                String[] processorHeaders = {
+                    Constants.TRXN_TOKEN,
+                    Constants.MATCH_COUNT,
+                    Constants.STATUS,
+                    Constants.FEEDBACK_STATUS
+                };
+                int processorStartColumn = lastColumn;
+                for (int i = 0; i < processorHeaders.length; i++) {
+                    Cell headerCell = headerRow.getCell(processorStartColumn + i);
+                    if (headerCell == null) headerCell = headerRow.createCell(processorStartColumn + i);
+                    headerCell.setCellValue(processorHeaders[i]);
+                }
+
                 Iterator<Row> rowIterator = sheet.iterator();
                 Map<String, String> seqIdToRequestMap = new LinkedHashMap<>();
                 Map<String, Integer> seqIdToRowNum = new HashMap<>();
@@ -109,8 +129,8 @@ public class MessageProcessingUtility {
                     }
                     Cell seqCell = row.getCell(0);
                     Cell requestCell = row.getCell(2);
-                    Cell resultCell = row.getCell(3);
-                    if (seqCell != null && requestCell != null && !("Y".equalsIgnoreCase(restartFlag) && resultCell != null)) {
+//                    Cell resultCell = row.getCell(3);
+                    if (seqCell != null && requestCell != null) {
                         String seqId = formatter.formatCellValue(seqCell);
                         seqIdToRequestMap.put(seqId, formatter.formatCellValue(requestCell));
                         seqIdToRowNum.put(seqId, row.getRowNum());
@@ -119,11 +139,16 @@ public class MessageProcessingUtility {
 
                 System.out.println("["+sdf.format(new Date())+"] size of seqIdToRequestMap is " + seqIdToRequestMap.size());
 
-                Map<String, String> failedRequestMap = processRequests(seqIdToRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter);
+                Map<String, String> failedRequestMap = processRequests(seqIdToRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn);
 
                 if (!failedRequestMap.isEmpty()) {
                     System.out.println("Job is not done yet...");
-                    failedRequestMap = processRequests(failedRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter);
+                    failedRequestMap = processRequests(failedRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn);
+                }
+
+                // Auto-size new columns
+                for (int i = processorStartColumn; i < processorStartColumn + processorHeaders.length; i++) {
+                    sheet.autoSizeColumn(i);
                 }
 
                 FileOutputStream outFile = new FileOutputStream(Constants.OUTPUT_XLSX_FILE_PATH);
@@ -148,7 +173,7 @@ public class MessageProcessingUtility {
 
     }
 
-    private static Map<String, String> processRequests(Map<String, String> seqIdToRequestMap, String tokenUrl, String usernm, String pwd, String url, Sheet sheet, Map<String, Integer> seqIdToRowNum, DataFormatter formatter) {
+    private static Map<String, String> processRequests(Map<String, String> seqIdToRequestMap, String tokenUrl, String usernm, String pwd, String url, Sheet sheet, Map<String, Integer> seqIdToRowNum, DataFormatter formatter, int processorStartColumn) {
         Map<String, String> failedRequestMap = new ConcurrentHashMap<>();
 
         seqIdToRequestMap.entrySet().parallelStream().forEach(entry -> {
@@ -252,10 +277,10 @@ public class MessageProcessingUtility {
                     System.out.println("Writing output to file for seqId: " + seqId);
                     Row row = (Row) sheet.getRow(targetRowNum);
 //                    if (row == null) row = sheet.createRow(targetRowNum);
-                    int msgProcessorStartCell = Constants.PROCESSOR_COLUMN_NUMBER;
                     for (int i = 0; i < excelParams.length; i++) {
-                        Cell cell = row.getCell(msgProcessorStartCell + i);
-                        if (cell == null) cell = row.createCell(msgProcessorStartCell + i);
+                        Cell cell = row.getCell(processorStartColumn + i);
+                        if (cell == null) cell = row.createCell(processorStartColumn + i);
+                        System.out.println(excelParams[i].toString());
                         cell.setCellValue(excelParams[i].toString());
                     }
                 }
