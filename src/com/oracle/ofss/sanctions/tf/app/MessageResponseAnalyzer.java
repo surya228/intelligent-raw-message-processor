@@ -23,7 +23,7 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 public class MessageResponseAnalyzer {
-    public static void analyseResponseAndPrepareResults() throws Exception {
+    public static void analyseResponseAndPrepareResults(String matchingEngine) throws Exception {
         try {
             long startTime = System.currentTimeMillis();
 
@@ -47,7 +47,7 @@ public class MessageResponseAnalyzer {
             else if(transactionService.equalsIgnoreCase("FEDWIRE")) msgCategory="FEDWIRE";
             else if(transactionService.equalsIgnoreCase("ISO20022")) msgCategory="SEPA";
             System.out.println("tagName: " + tagName);
-            processAllResponses(tagName, msgCategory, watchListType, webServiceId);
+            processAllResponses(tagName, msgCategory, watchListType, webServiceId,matchingEngine);
             System.out.println("\n=============================================================");
             System.out.println("                   RESPONSE ANALYZER ENDED                   ");
             System.out.println("=============================================================");
@@ -61,7 +61,7 @@ public class MessageResponseAnalyzer {
         }
     }
 
-    public static void processAllResponses(String tagName, String msgCategory, String watchListType, String webServiceId) throws Exception {
+    public static void processAllResponses(String tagName, String msgCategory, String watchListType, String webServiceId, String matchingEngine) throws Exception {
         try (FileInputStream fis = new FileInputStream(Constants.OUTPUT_XLSX_FILE_PATH);
              Workbook workbook = new XSSFWorkbook(fis)) {
 
@@ -74,8 +74,8 @@ public class MessageResponseAnalyzer {
             if (lastColumn < 0) lastColumn = 0;
 
             String[] analyzerHeaders = {
-                Constants.TEST_STATUS,
-                Constants.COMMENTS
+                    matchingEngine+" "+Constants.TEST_STATUS,
+                    matchingEngine+" "+Constants.COMMENTS
             };
             int analyzerStartColumn = lastColumn;
             for (int i = 0; i < analyzerHeaders.length; i++) {
@@ -88,7 +88,7 @@ public class MessageResponseAnalyzer {
             int latestProcessorColumn = -1;
             for (int col = headerRow.getLastCellNum() - 1; col >= 0; col--) {
                 Cell cell = headerRow.getCell(col);
-                if (cell != null && Constants.TRXN_TOKEN.equals(cell.getStringCellValue())) {
+                if (cell != null && cell.getStringCellValue().contains(Constants.TRXN_TOKEN)) {
                     latestProcessorColumn = col;
                     break;
                 }

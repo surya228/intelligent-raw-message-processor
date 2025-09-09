@@ -31,7 +31,7 @@ public class Constants {
 
     public static String MODULE_RAW_MSG_GENERATOR =  "module.rawMsgGenerator";
     public static String MODULE_RAW_MSG_PROCESSOR =  "module.rawMsgProcessor";
-    public static String MODULE_RAW_MSG_ANALYZER =  "module.rawMsgAnalyzer";
+//    public static String MODULE_RAW_MSG_ANALYZER =  "module.rawMsgAnalyzer";
 
 
     public static String TAGNAME =  "tagName";

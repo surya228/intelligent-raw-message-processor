@@ -36,7 +36,7 @@ public class MessageProcessingUtility {
     private static SimpleDateFormat sdf = new SimpleDateFormat(Constants.DATE_FORMAT);
     private static final AtomicInteger retryRequestNumber = new AtomicInteger(0);
     
-    public static void screenRawMsg() throws Exception {
+    public static void screenRawMsg(String matchingEngine) throws Exception {
         long startTime = System.currentTimeMillis();
 
         System.out.println("=============================================================");
@@ -103,10 +103,10 @@ public class MessageProcessingUtility {
                 if (lastColumn < 0) lastColumn = 0;
 
                 String[] processorHeaders = {
-                    Constants.TRXN_TOKEN,
-                    Constants.MATCH_COUNT,
-                    Constants.STATUS,
-                    Constants.FEEDBACK_STATUS
+                        matchingEngine+" "+Constants.TRXN_TOKEN,
+                        matchingEngine+" "+Constants.MATCH_COUNT,
+                        matchingEngine+" "+Constants.STATUS,
+                        matchingEngine+" "+Constants.FEEDBACK_STATUS
                 };
                 int processorStartColumn = lastColumn;
                 for (int i = 0; i < processorHeaders.length; i++) {
@@ -129,7 +129,6 @@ public class MessageProcessingUtility {
                     }
                     Cell seqCell = row.getCell(0);
                     Cell requestCell = row.getCell(2);
-//                    Cell resultCell = row.getCell(3);
                     if (seqCell != null && requestCell != null) {
                         String seqId = formatter.formatCellValue(seqCell);
                         seqIdToRequestMap.put(seqId, formatter.formatCellValue(requestCell));
