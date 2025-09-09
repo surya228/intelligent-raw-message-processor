@@ -32,8 +32,6 @@ public class Constants {
         Map<String, String> map = new HashMap<>();
         map.put("1", "NameAndAddress");
         map.put("2", "Identifier");
-        map.put("3", "Country-City");
-        map.put("4", "Narrative");
         map.put("5", "Port");
         map.put("6", "Goods");
 

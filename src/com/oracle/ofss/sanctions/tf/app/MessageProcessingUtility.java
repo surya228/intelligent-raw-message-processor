@@ -73,6 +73,7 @@ public class MessageProcessingUtility {
             System.out.println("url: "+url);
 
             String webServiceId = props.getProperty(Constants.WEBSERVICE_ID);
+            String watchlistType = props.getProperty(Constants.WATCHLIST_TYPE);
 
 
             if(maxIndex >= 10 ) {
@@ -110,7 +111,7 @@ public class MessageProcessingUtility {
                         matchingEngine+" "+Constants.MATCH_COUNT,
                         matchingEngine+" "+Constants.STATUS,
                         matchingEngine+" "+Constants.FEEDBACK_STATUS,
-                        matchingEngine+" # "+Constants.WEBSERVICE_MAP.get(webServiceId)+" matches",
+                        matchingEngine+" # "+getMatchHeaderSuffix(webServiceId, watchlistType)+" matches",
                         matchingEngine+" Feedback"
                 };
                 int processorStartColumn = lastColumn;
@@ -143,15 +144,15 @@ public class MessageProcessingUtility {
 
                 System.out.println("["+sdf.format(new Date())+"] size of seqIdToRequestMap is " + seqIdToRequestMap.size());
 
-                Map<String, String> failedRequestMap = processRequests(seqIdToRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId);
+                Map<String, String> failedRequestMap = processRequests(seqIdToRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId, watchlistType);
 
                 if (!failedRequestMap.isEmpty()) {
                     System.out.println("Job is not done yet...");
-                    failedRequestMap = processRequests(failedRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId);
+                    failedRequestMap = processRequests(failedRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId, watchlistType);
                 }
 
-                // Auto-size new columns
-                for (int i = processorStartColumn; i < processorStartColumn + processorHeaders.length; i++) {
+                // Auto-size new columns except the last (feedback) one
+                for (int i = processorStartColumn; i < processorStartColumn + processorHeaders.length - 1; i++) {
                     sheet.autoSizeColumn(i);
                 }
 
@@ -177,7 +178,7 @@ public class MessageProcessingUtility {
 
     }
 
-    private static Map<String, String> processRequests(Map<String, String> seqIdToRequestMap, String tokenUrl, String usernm, String pwd, String url, Sheet sheet, Map<String, Integer> seqIdToRowNum, DataFormatter formatter, int processorStartColumn, String webServiceId) {
+    private static Map<String, String> processRequests(Map<String, String> seqIdToRequestMap, String tokenUrl, String usernm, String pwd, String url, Sheet sheet, Map<String, Integer> seqIdToRowNum, DataFormatter formatter, int processorStartColumn, String webServiceId, String watchlistType) {
         Map<String, String> failedRequestMap = new ConcurrentHashMap<>();
 
         seqIdToRequestMap.entrySet().parallelStream().forEach(entry -> {
@@ -286,7 +287,11 @@ public class MessageProcessingUtility {
                         JSONArray matches = feedbackData.getJSONArray("matches");
                         for (int i = 0; i < matches.length(); i++) {
                             JSONObject match = matches.getJSONObject(i);
-                            if (String.valueOf(match.optInt("webServiceID")).equals(webServiceId)) {
+                            String matchWebServiceId = String.valueOf(match.optInt("webServiceID"));
+                            String matchWatchlistType = match.optString("watchlistType");
+                            if (matchWebServiceId.equals(webServiceId) &&
+                                (!webServiceId.equals("3") && !webServiceId.equals("4") ||
+                                 matchWatchlistType.equalsIgnoreCase(watchlistType))) {
                                 filteredCount++;
                             }
                         }
@@ -479,5 +484,35 @@ public class MessageProcessingUtility {
         	break;
         }
         return msg;
+    }
+
+    private static String getMatchHeaderSuffix(String webServiceId, String watchlistType) {
+        if (webServiceId.equals("3")) {
+            if (watchlistType.equalsIgnoreCase("COUNTRY")) {
+                return "Country";
+            } else if (watchlistType.equalsIgnoreCase("CITY")) {
+                return "City";
+            } else {
+                return "Country-City";
+            }
+        } else if (webServiceId.equals("4")) {
+            if (watchlistType.equalsIgnoreCase("COUNTRY")) {
+                return "Narrative Country";
+            } else if (watchlistType.equalsIgnoreCase("CITY")) {
+                return "Narrative City";
+            } else if (watchlistType.equalsIgnoreCase("GOODS")) {
+                return "Narrative Goods";
+            } else if (watchlistType.equalsIgnoreCase("PORT")) {
+                return "Narrative Port";
+            } else if (watchlistType.equalsIgnoreCase("IDENTIFIER")) {
+                return "Narrative Identifier";
+            } else if (watchlistType.equalsIgnoreCase("STOP_KEYWORDS")) {
+                return "Stopkeywords";
+            } else {
+                return "Narrative NameAndAddress";
+            }
+        } else {
+            return Constants.WEBSERVICE_MAP.get(webServiceId);
+        }
     }
 }

@@ -18,7 +18,7 @@ public class ToggleMatchingEngine {
         String newEsOs = toggle();
         refreshCache("/tfcs-matching-service/refreshCacheSearchengine");
         refreshCache("/tfcs-matching-service/refreshCache");
-
+        Thread.sleep(3000); // wait for 5 seconds to refresh cache fully
         return newEsOs;
     }
 
