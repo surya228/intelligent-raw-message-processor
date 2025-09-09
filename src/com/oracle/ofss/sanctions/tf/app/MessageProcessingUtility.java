@@ -358,7 +358,7 @@ public class MessageProcessingUtility {
         return result;
     }
 
-    private static String getAccessToken(String tokenUrl, String usernm, String pwd) {
+    public static String getAccessToken(String tokenUrl, String usernm, String pwd) {
         long currentTime = System.currentTimeMillis();
         long timeDiff = (currentTime - labelledTime) / 60000L;
         if (labelledTime != 0L && timeDiff < bearerTokenRefreshInterval) {

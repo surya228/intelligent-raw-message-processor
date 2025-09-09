@@ -67,6 +67,7 @@ public class Constants {
     public static String WHERE_CLAUSE =  "whereClause";
     public static String REPLACE_SRC =  "replace.src";
     public static String REPLACE_TARGET_COLUMN =  "replace.targetColumn";
+    public static final String TOGGLE_MATCHING_ENGINE = "toggleMatchingEngine";
 
 
     public static String ADDITIONAL_DATA =  "additionalData";

@@ -26,6 +26,19 @@ public class Main {
             MessageResponseAnalyzer.analyseResponseAndPrepareResults();
 
 
+        if(props.getProperty(Constants.TOGGLE_MATCHING_ENGINE).equalsIgnoreCase("Y")){
+
+            String newEsOs = ToggleMatchingEngine.toggleMatchingEngine();
+            System.out.println("Matching engine set to ::: "+ newEsOs);
+
+            if(props.getProperty(Constants.MODULE_RAW_MSG_PROCESSOR).equalsIgnoreCase("Y"))
+                MessageProcessingUtility.screenRawMsg();
+
+            if(props.getProperty(Constants.MODULE_RAW_MSG_ANALYZER).equalsIgnoreCase("Y"))
+                MessageResponseAnalyzer.analyseResponseAndPrepareResults();
+        }
+
+
         long endTime = System.currentTimeMillis();
         System.out.println("\n==========================================================");
         System.out.println("Total time taken by utility: "+ (endTime - startTime) / 1000L + " seconds");
