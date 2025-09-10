@@ -265,53 +265,96 @@ public class MessageProcessingUtility {
             System.out.println("=============================================================----------");
             System.out.println("=============================================================----------------------------------------------");
 
-            if (responseCode > 399) {
-                failedRequestMap.put(seqId, requestBody);
-            } else {
-                JSONObject responseJson = new JSONObject(apiResponse.toString());
-                System.out.println("response: " + responseJson);
-                long transactionToken = responseJson.has(Constants.TRANSACTION_TOKEN) ? responseJson.getLong(Constants.TRANSACTION_TOKEN) : -1;
-                long matchCount = responseJson.has(Constants.FEEDBACK_DATA) ? (responseJson.getJSONObject(Constants.FEEDBACK_DATA).has(Constants.MATCHING_COUNT) ? responseJson.getJSONObject(Constants.FEEDBACK_DATA).getLong(Constants.MATCHING_COUNT) : 0) : 0;
-                String status = responseJson.optString(Constants.MATCHING_STATUS, "");
-                String feedbackStatus = responseJson.has(Constants.FEEDBACK_DATA) ? responseJson.getJSONObject(Constants.FEEDBACK_DATA).optString(Constants.MATCHING_STATUS, "") : "";
-                System.out.println("transactionToken: " + transactionToken + " matchCount: " + matchCount + " status: " + status + " feedbackStatus: " + feedbackStatus);
+            String responseString = apiResponse.toString();
+            if (responseString.length() > 32767) {
+                responseString = "value too large please check feedback api";
+            }
 
-                long filteredCount = 0;
-                String responseString = apiResponse.toString();
-                if (responseString.length() > 32767) {
-                    responseString = "value too large please check feedback api";
-                }
-                if (responseJson.has(Constants.FEEDBACK_DATA)) {
-                    JSONObject feedbackData = responseJson.getJSONObject(Constants.FEEDBACK_DATA);
-                    if (feedbackData.has("matches")) {
-                        JSONArray matches = feedbackData.getJSONArray("matches");
-                        for (int i = 0; i < matches.length(); i++) {
-                            JSONObject match = matches.getJSONObject(i);
-                            String matchWebServiceId = String.valueOf(match.optInt("webServiceID"));
-                            String matchWatchlistType = match.optString("watchlistType");
-                            if (matchWebServiceId.equals(webServiceId) &&
-                                (!webServiceId.equals("3") && !webServiceId.equals("4") ||
-                                 matchWatchlistType.equalsIgnoreCase(watchlistType))) {
-                                filteredCount++;
+            String tokenString = "NA";
+            long matchCount = 0;
+            String status = "NA";
+            String feedbackStatus = "NA";
+            long filteredCount = 0;
+
+            boolean isErrorToHandle = (responseCode <= 399 || responseCode == 400 || responseCode == 500 || responseCode == 503);
+
+            if (isErrorToHandle) {
+                // Try to parse JSON for transaction token
+                try {
+                    JSONObject responseJson = new JSONObject(apiResponse.toString());
+                    if (responseJson.has(Constants.TRANSACTION_TOKEN)) {
+                        long transactionToken = responseJson.getLong(Constants.TRANSACTION_TOKEN);
+                        tokenString = String.valueOf(transactionToken);
+                    }
+
+                    if (responseCode <= 399) {
+                        // Existing success logic
+                        System.out.println("response: " + responseJson);
+                        matchCount = responseJson.has(Constants.FEEDBACK_DATA) ? (responseJson.getJSONObject(Constants.FEEDBACK_DATA).has(Constants.MATCHING_COUNT) ? responseJson.getJSONObject(Constants.FEEDBACK_DATA).getLong(Constants.MATCHING_COUNT) : 0) : 0;
+                        status = responseJson.optString(Constants.MATCHING_STATUS, "");
+                        feedbackStatus = responseJson.has(Constants.FEEDBACK_DATA) ? responseJson.getJSONObject(Constants.FEEDBACK_DATA).optString(Constants.MATCHING_STATUS, "") : "";
+                        System.out.println("transactionToken: " + tokenString + " matchCount: " + matchCount + " status: " + status + " feedbackStatus: " + feedbackStatus);
+
+                        if (responseJson.has(Constants.FEEDBACK_DATA)) {
+                            JSONObject feedbackData = responseJson.getJSONObject(Constants.FEEDBACK_DATA);
+                            if (feedbackData.has("matches")) {
+                                JSONArray matches = feedbackData.getJSONArray("matches");
+                                for (int i = 0; i < matches.length(); i++) {
+                                    JSONObject match = matches.getJSONObject(i);
+                                    String matchWebServiceId = String.valueOf(match.optInt("webServiceID"));
+                                    String matchWatchlistType = match.optString("watchlistType");
+                                    if (matchWebServiceId.equals(webServiceId)
+                                            && (!webServiceId.equals("3")
+                                            && !webServiceId.equals("4")
+                                            || matchWatchlistType.equalsIgnoreCase(watchlistType))) {
+                                        filteredCount++;
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // Error handling for 400, 500, 503
+                        status = "ERROR: " + responseCode;
+                        // Other values remain default (0 or empty)
+                    }
+
+                    Object[] excelParams = new Object[]{tokenString, matchCount, status, feedbackStatus, filteredCount, responseString};
+
+                    // Update sheet in synchronized block
+                    synchronized (sheet) {
+                        int targetRowNum = seqIdToRowNum.get(seqId);
+                        System.out.println("Writing output to file for seqId: " + seqId);
+                        Row row = (Row) sheet.getRow(targetRowNum);
+                        for (int i = 0; i < excelParams.length; i++) {
+                            Cell cell = row.getCell(processorStartColumn + i);
+                            if (cell == null) cell = row.createCell(processorStartColumn + i);
+                            System.out.println(excelParams[i].toString());
+                            cell.setCellValue(excelParams[i].toString());
+                        }
+                    }
+                } catch (Exception e) {
+                    // If not valid JSON, use defaults and store raw response
+                    status = (isErrorToHandle ? "ERROR " + responseCode : "");
+                    Object[] excelParams = new Object[]{tokenString, matchCount, status, feedbackStatus, filteredCount, responseString};
+
+                    if (isErrorToHandle) {
+                        synchronized (sheet) {
+                            int targetRowNum = seqIdToRowNum.get(seqId);
+                            System.out.println("Writing output to file for seqId: " + seqId);
+                            Row row = (Row) sheet.getRow(targetRowNum);
+                            for (int i = 0; i < excelParams.length; i++) {
+                                Cell cell = row.getCell(processorStartColumn + i);
+                                if (cell == null) cell = row.createCell(processorStartColumn + i);
+                                System.out.println(excelParams[i].toString());
+                                cell.setCellValue(excelParams[i].toString());
                             }
                         }
                     }
                 }
-                Object[] excelParams = new Object[]{transactionToken, matchCount, status, feedbackStatus, filteredCount, responseString};
+            }
 
-                // Update sheet in synchronized block
-                synchronized (sheet) {
-                    int targetRowNum = seqIdToRowNum.get(seqId);
-                    System.out.println("Writing output to file for seqId: " + seqId);
-                    Row row = (Row) sheet.getRow(targetRowNum);
-//                    if (row == null) row = sheet.createRow(targetRowNum);
-                    for (int i = 0; i < excelParams.length; i++) {
-                        Cell cell = row.getCell(processorStartColumn + i);
-                        if (cell == null) cell = row.createCell(processorStartColumn + i);
-                        System.out.println(excelParams[i].toString());
-                        cell.setCellValue(excelParams[i].toString());
-                    }
-                }
+            if (responseCode > 399) {
+                failedRequestMap.put(seqId, requestBody);
             }
             System.out.println("===========================================================================================================");
         });

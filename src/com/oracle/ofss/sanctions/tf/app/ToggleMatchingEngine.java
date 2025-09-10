@@ -98,7 +98,7 @@ public class ToggleMatchingEngine {
             String currentEsOs = findCurrentMatchingEngine();
 
             // Update the active row to 'N'
-            String updateSql = "UPDATE fcc_mr_c_matchingtarget SET F_LRI_FLAG = 'N', V_ACTION_BY = 'appuser', D_ACTION = ? WHERE N_ID = ?";
+            String updateSql = "UPDATE fcc_mr_c_matchingtarget SET F_LRI_FLAG = 'N', V_ACTION_BY = 'utility', D_ACTION = ? WHERE N_ID = ?";
             try (PreparedStatement pstmtUpdate = conn.prepareStatement(updateSql)) {
                 pstmtUpdate.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
                 pstmtUpdate.setInt(2, this.currentNId);
