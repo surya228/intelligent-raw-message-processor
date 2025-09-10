@@ -276,9 +276,9 @@ public class MessageProcessingUtility {
             String feedbackStatus = "NA";
             long filteredCount = 0;
 
-            boolean isErrorToHandle = (responseCode <= 399 || responseCode == 400 || responseCode == 500 || responseCode == 503);
+            boolean isErrorToHandle = (responseCode == 400 || responseCode == 500 || responseCode == 503);
 
-            if (isErrorToHandle) {
+            if (responseCode <= 399 || isErrorToHandle) {
                 // Try to parse JSON for transaction token
                 try {
                     JSONObject responseJson = new JSONObject(apiResponse.toString());
@@ -334,7 +334,7 @@ public class MessageProcessingUtility {
                     }
                 } catch (Exception e) {
                     // If not valid JSON, use defaults and store raw response
-                    status = (isErrorToHandle ? "ERROR " + responseCode : "");
+                    status = (isErrorToHandle ? "ERROR: " + responseCode : "ERROR");
                     Object[] excelParams = new Object[]{tokenString, matchCount, status, feedbackStatus, filteredCount, responseString};
 
                     if (isErrorToHandle) {
