@@ -42,14 +42,17 @@ public class Main {
         }
 
         // Renaming output files
-        SimpleDateFormat sdf = new SimpleDateFormat("ddMMyy");
-        String date = sdf.format(new Date());
+        SimpleDateFormat dateFormat = new SimpleDateFormat("ddMMyy");
+        SimpleDateFormat timeFormat = new SimpleDateFormat("HHmmss");
+        Date now = new Date();
+        String date = dateFormat.format(now);
+        String time = timeFormat.format(now);
         String webservice = props.getProperty(Constants.WEBSERVICE);
-        String baseName = (webservice != null ? webservice : "")+"_"+date;
+        String baseName = (webservice != null ? webservice : "")+"_"+date+"_"+time;
 
         File[] filesToRename = {
                 Constants.OUTPUT_XLSX_FILE_PATH,
-                new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_NAME + ".json")
+                Constants.OUTPUT_JSON_FILE_PATH
         };
         String[] extensions = {".xlsx", ".json"};
 
@@ -57,13 +60,8 @@ public class Main {
             File original = filesToRename[i];
             if (!original.exists()) continue;
 
-            int counter = 1;
-            File newFile = new File(Constants.OUTPUT_FOLDER, baseName + "_" + counter + extensions[i]);
-            while (newFile.exists()) {
-                counter++;
-                newFile = new File(Constants.OUTPUT_FOLDER, baseName + "_" + counter + extensions[i]);
-            }
-
+            String fileName = baseName + extensions[i];
+            File newFile = new File(Constants.OUTPUT_FOLDER, fileName);
             if (original.renameTo(newFile)) {
                 System.out.println("Renamed " + original.getName() + " to " + newFile.getName());
             } else {
