@@ -121,11 +121,10 @@ public class RawMessageGenerator {
 
                     String token = props.getProperty(srcKey);
                     String targetColumn = props.getProperty(targetColumnKey);
-
+                    String tokenValue = rs.getString(targetColumn);
+                    if(tokenValue==null) break;
                     String identifierToken =  props.getProperty(Constants.REPLACE_SRC+"[0]");
                     String identifierTargetColumn = props.getProperty(Constants.REPLACE_TARGET_COLUMN+"[0]");
-
-                    String tokenValue = rs.getString(targetColumn);
                     String identifierToBeReplaced = rs.getString(identifierTargetColumn);
                     String uid = rs.getString(Constants.NUID);
 
