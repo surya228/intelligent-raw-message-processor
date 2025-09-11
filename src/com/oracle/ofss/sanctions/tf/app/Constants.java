@@ -115,6 +115,7 @@ public class Constants {
     public static String CONFIG_FILE_PATH = PARENT_DIRECTORY+File.separator+Constants.BIN_FOLDER_NAME+File.separator+Constants.CONFIG_FILE_NAME+".properties";
     public static File OUTPUT_FOLDER = new File(Constants.PARENT_DIRECTORY, Constants.OUTPUT_FOLDER_NAME);
     public static File OUTPUT_XLSX_FILE_PATH = new File(OUTPUT_FOLDER,Constants.OUTPUT_FILE_NAME+".xlsx");
+    public static File OUTPUT_JSON_FILE_PATH = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_NAME + ".json");
 
     public static String PASS = "PASS";
     public static String FAIL = "FAIL";
