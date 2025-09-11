@@ -23,7 +23,7 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 public class MessageResponseAnalyzer {
-    public static void analyseResponseAndPrepareResults() throws Exception {
+    public static void analyseResponseAndPrepareResults(String matchingEngine) throws Exception {
         try {
             long startTime = System.currentTimeMillis();
 
@@ -47,7 +47,7 @@ public class MessageResponseAnalyzer {
             else if(transactionService.equalsIgnoreCase("FEDWIRE")) msgCategory="FEDWIRE";
             else if(transactionService.equalsIgnoreCase("ISO20022")) msgCategory="SEPA";
             System.out.println("tagName: " + tagName);
-            processAllResponses(tagName, msgCategory, watchListType, webServiceId);
+            processAllResponses(tagName, msgCategory, watchListType, webServiceId,matchingEngine);
             System.out.println("\n=============================================================");
             System.out.println("                   RESPONSE ANALYZER ENDED                   ");
             System.out.println("=============================================================");
@@ -61,13 +61,45 @@ public class MessageResponseAnalyzer {
         }
     }
 
-    public static void processAllResponses(String tagName, String msgCategory, String watchListType, String webServiceId) throws Exception {
+    public static void processAllResponses(String tagName, String msgCategory, String watchListType, String webServiceId, String matchingEngine) throws Exception {
         try (FileInputStream fis = new FileInputStream(Constants.OUTPUT_XLSX_FILE_PATH);
              Workbook workbook = new XSSFWorkbook(fis)) {
 
             Sheet sheet = workbook.getSheetAt(0);
 
-            // Collect all transactionTokens and row data in memory
+            // Dynamically add analyzer columns
+            Row headerRow = sheet.getRow(0);
+            if (headerRow == null) headerRow = sheet.createRow(0);
+            int lastColumn = headerRow.getLastCellNum();
+            if (lastColumn < 0) lastColumn = 0;
+
+            String[] analyzerHeaders = {
+                    matchingEngine+" "+Constants.TEST_STATUS,
+                    matchingEngine+" "+Constants.COMMENTS
+            };
+            int analyzerStartColumn = lastColumn;
+            for (int i = 0; i < analyzerHeaders.length; i++) {
+                Cell headerCell = headerRow.getCell(analyzerStartColumn + i);
+                if (headerCell == null) headerCell = headerRow.createCell(analyzerStartColumn + i);
+                headerCell.setCellValue(analyzerHeaders[i]);
+            }
+
+            // Find the latest processor start column by locating the rightmost TRXN_TOKEN header
+            int latestProcessorColumn = -1;
+            for (int col = headerRow.getLastCellNum() - 1; col >= 0; col--) {
+                Cell cell = headerRow.getCell(col);
+                if (cell != null && cell.getStringCellValue().contains(Constants.TRXN_TOKEN)) {
+                    latestProcessorColumn = col;
+                    break;
+                }
+            }
+            if (latestProcessorColumn == -1) {
+                // No processor columns found, skip or handle error
+                System.out.println("No Transaction Token column found. Skipping analysis.");
+                return;
+            }
+
+            // Collect all transactionTokens and row data in memory using the latest processor column
             List<Long> transactionTokens = new ArrayList<>();
             Map<Long, Integer> tokenToRowNum = new HashMap<>();
             Map<Long, String> tokenToTargetColumn = new HashMap<>();
@@ -77,7 +109,7 @@ public class MessageResponseAnalyzer {
             for (Row row : sheet) {
                 if (row.getRowNum() == 0) continue; // Skip header
 
-                Cell tokenCell = row.getCell(Constants.PROCESSOR_COLUMN_NUMBER);
+                Cell tokenCell = row.getCell(latestProcessorColumn);
                 if (tokenCell == null) continue;
 
                 long transactionToken = 0;
@@ -173,13 +205,13 @@ public class MessageResponseAnalyzer {
                         // Update sheet in synchronized block for thread safety
                         synchronized (sheet) {
                             Row row = sheet.getRow(tokenToRowNum.get(transactionToken));
-                            Cell testStatusCell = row.getCell(Constants.ANALYZER_COLUMN_NUMBER);
-                            if (testStatusCell == null) testStatusCell = row.createCell(Constants.ANALYZER_COLUMN_NUMBER);
+                            Cell testStatusCell = row.getCell(analyzerStartColumn);
+                            if (testStatusCell == null) testStatusCell = row.createCell(analyzerStartColumn);
                             testStatusCell.setCellValue(testStatus);
                             testStatusCell.setCellStyle(testStatus.equalsIgnoreCase(Constants.PASS) ? highlightGreen : highlightRed);
 
-                            Cell commentsCell = row.getCell(Constants.ANALYZER_COLUMN_NUMBER+1);
-                            if (commentsCell == null) commentsCell = row.createCell(Constants.ANALYZER_COLUMN_NUMBER+1);
+                            Cell commentsCell = row.getCell(analyzerStartColumn + 1);
+                            if (commentsCell == null) commentsCell = row.createCell(analyzerStartColumn + 1);
 
                             if(failedDueToColumnMismatch){
                                 commentsCell.setCellValue(Constants.COLUMN_MISMATCH_COMMENT);
@@ -203,7 +235,11 @@ public class MessageResponseAnalyzer {
             // Wait for all tasks to complete
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
             executor.shutdown();
-            sheet.autoSizeColumn(Constants.ANALYZER_COLUMN_NUMBER + 1);
+
+            // Auto-size new columns
+            for (int i = analyzerStartColumn; i < analyzerStartColumn + analyzerHeaders.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
 
             // Write the updated workbook once
             try (FileOutputStream fos = new FileOutputStream(Constants.OUTPUT_XLSX_FILE_PATH)) {

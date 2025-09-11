@@ -3,6 +3,8 @@ package com.oracle.ofss.sanctions.tf.app;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Properties;
 
 public class Main {
@@ -19,12 +21,53 @@ public class Main {
         if(props.getProperty(Constants.MODULE_RAW_MSG_GENERATOR).equalsIgnoreCase("Y"))
             RawMessageGenerator.generateRawMessage();
 
-        if(props.getProperty(Constants.MODULE_RAW_MSG_PROCESSOR).equalsIgnoreCase("Y"))
-            MessageProcessingUtility.screenRawMsg();
+        ToggleMatchingEngine toggleMatchingEngine = new ToggleMatchingEngine();
 
-        if(props.getProperty(Constants.MODULE_RAW_MSG_ANALYZER).equalsIgnoreCase("Y"))
-            MessageResponseAnalyzer.analyseResponseAndPrepareResults();
+        if(props.getProperty(Constants.MODULE_RAW_MSG_PROCESSOR).equalsIgnoreCase("Y")) {
+            String currentMatchingEngine = toggleMatchingEngine.findCurrentMatchingEngine();
+            System.out.println("Current Matching Engine::: "+ currentMatchingEngine);
+            MessageProcessingUtility.screenRawMsg(currentMatchingEngine);
+            MessageResponseAnalyzer.analyseResponseAndPrepareResults(currentMatchingEngine);
+        }
 
+
+        if(props.getProperty(Constants.TOGGLE_MATCHING_ENGINE).equalsIgnoreCase("Y")){
+            String newEsOs = toggleMatchingEngine.toggleMatchingEngine();
+            System.out.println("Matching engine set to ::: "+ newEsOs);
+
+            if(props.getProperty(Constants.MODULE_RAW_MSG_PROCESSOR).equalsIgnoreCase("Y")){
+                MessageProcessingUtility.screenRawMsg(newEsOs);
+                MessageResponseAnalyzer.analyseResponseAndPrepareResults(newEsOs);
+            }
+        }
+
+        // Renaming output files
+        SimpleDateFormat dateFormat = new SimpleDateFormat("ddMMyy");
+        SimpleDateFormat timeFormat = new SimpleDateFormat("HHmmss");
+        Date now = new Date();
+        String date = dateFormat.format(now);
+        String time = timeFormat.format(now);
+        String webservice = props.getProperty(Constants.WEBSERVICE);
+        String baseName = (webservice != null ? webservice : "")+"_"+date+"_"+time;
+
+        File[] filesToRename = {
+                Constants.OUTPUT_XLSX_FILE_PATH,
+                Constants.OUTPUT_JSON_FILE_PATH
+        };
+        String[] extensions = {".xlsx", ".json"};
+
+        for (int i = 0; i < filesToRename.length; i++) {
+            File original = filesToRename[i];
+            if (!original.exists()) continue;
+
+            String fileName = baseName + extensions[i];
+            File newFile = new File(Constants.OUTPUT_FOLDER, fileName);
+            if (original.renameTo(newFile)) {
+                System.out.println("Renamed " + original.getName() + " to " + newFile.getName());
+            } else {
+                System.err.println("Failed to rename " + original.getName());
+            }
+        }
 
         long endTime = System.currentTimeMillis();
         System.out.println("\n==========================================================");
