@@ -46,8 +46,8 @@ public class RawMessageGenerator {
             String webService = props.getProperty(Constants.WEBSERVICE);
             String tansactionService = props.getProperty(Constants.TRANSACTION_SERVICE);
             String webserviceId = props.getProperty(Constants.WEBSERVICE_ID);
-            boolean isStopwordEnabled = "Y".equalsIgnoreCase(props.getProperty("stopword"));
-            boolean isSynonymEnabled = "Y".equalsIgnoreCase(props.getProperty("synonym"));
+            boolean isStopwordEnabled = Constants.YES.equalsIgnoreCase(props.getProperty("stopword"));
+            boolean isSynonymEnabled = Constants.YES.equalsIgnoreCase(props.getProperty("synonym"));
 
             try {
                 validateConfigProperties(watchlistType, webserviceId, isStopwordEnabled, isSynonymEnabled);
@@ -222,7 +222,7 @@ public class RawMessageGenerator {
                                 // 0 ced -> exact
                                 updatedCount = createRawMsg(temp, toBeReplaced, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 0, uid, tagName, webserviceId, "NA", "NA");
 
-                                if (props.getProperty(Constants.CED1).equalsIgnoreCase("Y")) { // 1 ced
+                                if (props.getProperty(Constants.CED1).equalsIgnoreCase(Constants.YES)) { // 1 ced
                                     List<String> oneCedList = generate1CedVariants(toBeReplaced);
                                     for (String value : oneCedList) {
                                         temp = srcFile;
@@ -230,7 +230,7 @@ public class RawMessageGenerator {
                                     }
                                 }
 
-                                if (props.getProperty(Constants.CED2).equalsIgnoreCase("Y")) { // 2 ced
+                                if (props.getProperty(Constants.CED2).equalsIgnoreCase(Constants.YES)) { // 2 ced
                                     List<String> twoCedList = generate2CedVariants(toBeReplaced);
                                     for (String value : twoCedList) {
                                         temp = srcFile;
@@ -238,7 +238,7 @@ public class RawMessageGenerator {
                                     }
                                 }
 
-                                if (props.getProperty(Constants.CED3).equalsIgnoreCase("Y")) { // 3 ced
+                                if (props.getProperty(Constants.CED3).equalsIgnoreCase(Constants.YES)) { // 3 ced
                                     List<String> threeCedList = generate3CedVariants(toBeReplaced);
                                     for (String value : threeCedList) {
                                         temp = srcFile;

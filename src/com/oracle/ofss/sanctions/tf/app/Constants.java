@@ -38,13 +38,15 @@ public class Constants {
         WEBSERVICE_MAP = Collections.unmodifiableMap(map); // Make it read-only
     }
 
+    // Encoding
     public static String ENCODER = "UTF-8";
 
+    // Module flags
     public static String MODULE_RAW_MSG_GENERATOR =  "module.rawMsgGenerator";
     public static String MODULE_RAW_MSG_PROCESSOR =  "module.rawMsgProcessor";
-//    public static String MODULE_RAW_MSG_ANALYZER =  "module.rawMsgAnalyzer";
+    public static final String TOGGLE_MATCHING_ENGINE = "toggleMatchingEngine";
 
-
+    // Property keys
     public static String TAGNAME =  "tagName";
     public static String WEBSERVICE =  "webService";
     public static String EXACT =  "Exact";
@@ -68,19 +70,20 @@ public class Constants {
     public static String WEBSERVICE_ID =  "webServiceId";
     public static final String COMMENTS = "Comments";
 
-
+    // CED properties
     public static String CED1 =  "ced1";
     public static String CED2 =  "ced2";
     public static String CED3 =  "ced3";
+
+    // Database properties
     public static String JDBC_URL =  "jdbcurl";
     public static String JDBC_DRIVER =  "jdbcdriver";
     public static String WALLET_NAME =  "walletName";
     public static String WHERE_CLAUSE =  "whereClause";
     public static String REPLACE_SRC =  "replace.src";
     public static String REPLACE_TARGET_COLUMN =  "replace.targetColumn";
-    public static final String TOGGLE_MATCHING_ENGINE = "toggleMatchingEngine";
 
-
+    // JSON keys
     public static String ADDITIONAL_DATA =  "additionalData";
     public static String TABLE =  "table";
     public static String UID =  "uid";
@@ -92,39 +95,43 @@ public class Constants {
     public static String IDEN_TOKEN =  "identifierToken";
     public static String IDEN_VALUE =  "identifierValue";
     public static String IDEN_PREFIX =  "ID";
-
     public static String IS_STOPWORD_PRESENT = "isStopwordPresent";
-
     public static String LOOKUP_ID = "lookupId";
     public static String LOOKUP_VALUE_ID = "lookupValueId";
 
+    // Date formats
     public static String DATE_FORMAT =  "yyyy-MM-dd HH:mm:ss.SSS";
+    public static String DATE_SUFFIX_FORMAT = "ddMMyy";
+    public static String TIME_SUFFIX_FORMAT = "HHmmss";
 
+    // Messages
     public static String WAIT_MSG =  "Wait for a while...It's gonna finish";
     public static String HOLD_ON_MSG_1 =  "Hold on...It's almost completed";
     public static String HOLD_ON_MSG_2 =  "Looking for Tortoise...Will find it soon";
     public static String SUCCESS_MSG =  "Heyy...Here it is";
     public static String LOAD_MSG =  "zzzz...on the way";
 
-
+    // File names and paths
     public static String SOURCE_FILE_NAME = "source";
     public static String CONFIG_FILE_NAME = "config";
     public static String OUTPUT_FILE_NAME = "output";
-
     public static String OUTPUT_FOLDER_NAME = "out";
     public static String BIN_FOLDER_NAME = "bin";
-
     public static String CURRENT_DIRECTORY = System.getProperty("user.dir");
     public static File PARENT_DIRECTORY = new File(CURRENT_DIRECTORY).getParentFile();
-    public static String SOURCE_FILE_PATH = PARENT_DIRECTORY+File.separator+Constants.BIN_FOLDER_NAME+File.separator+Constants.SOURCE_FILE_NAME+".json";
-    public static String CONFIG_FILE_PATH = PARENT_DIRECTORY+File.separator+Constants.BIN_FOLDER_NAME+File.separator+Constants.CONFIG_FILE_NAME+".properties";
-    public static File OUTPUT_FOLDER = new File(Constants.PARENT_DIRECTORY, Constants.OUTPUT_FOLDER_NAME);
-    public static File OUTPUT_XLSX_FILE_PATH = new File(OUTPUT_FOLDER,Constants.OUTPUT_FILE_NAME+".xlsx");
-    public static File OUTPUT_JSON_FILE_PATH = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_NAME + ".json");
+    public static String SOURCE_FILE_PATH = PARENT_DIRECTORY+File.separator+BIN_FOLDER_NAME+File.separator+SOURCE_FILE_NAME+".json";
+    public static String CONFIG_FILE_PATH = PARENT_DIRECTORY+File.separator+BIN_FOLDER_NAME+File.separator+CONFIG_FILE_NAME+".properties";
+    public static File OUTPUT_FOLDER = new File(PARENT_DIRECTORY, OUTPUT_FOLDER_NAME);
+    public static File OUTPUT_XLSX_FILE_PATH = new File(OUTPUT_FOLDER, OUTPUT_FILE_NAME + ".xlsx");
+    public static File OUTPUT_JSON_FILE_PATH = new File(OUTPUT_FOLDER, OUTPUT_FILE_NAME + ".json");
 
+    // Status strings
     public static String PASS = "PASS";
     public static String FAIL = "FAIL";
+    public static String YES = "Y";
+    public static String NO = "N";
 
+    // Excel headers
     public static String SEQ_NO = "SeqNo";
     public static String RULE = "Rule Name";
     public static String MESSAGE = "Message ";
@@ -140,8 +147,28 @@ public class Constants {
     public static String FEEDBACK_STATUS = "Feedback Status";
     public static String TEST_STATUS = "Test Status";
 
+    // Comments
     public static final String COLUMN_MISMATCH_COMMENT = "Column name didn't match";
     public static final String NO_MATCH_COMMENT = "No Match";
 
-
+    // Additional constants for cleanup
+    public static final String DEFAULT_CONFIG_BASE = "config";
+    public static final String XLSX_EXT = ".xlsx";
+    public static final String JSON_EXT = ".json";
+    public static final int MIN_ARGS = 6;
+    public static final int DEFAULT_RETRY_MAX = 5;
+    public static final long DEFAULT_REFRESH_INTERVAL_MIN = 30;
+    public static final long THREAD_SLEEP_MS = 5000;
+    public static final String CONTENT_TYPE_JSON = "application/json";
+    public static final String AUTH_BEARER_PREFIX = "Bearer ";
+    public static final int SUCCESS_CODE = 200;
+    public static final int BAD_GATEWAY = 502;
+    public static final int GATEWAY_TIMEOUT = 504;
+    public static final int SERVICE_UNAVAILABLE = 503;
+    public static final int NO_CONTENT = 204;
+    public static final String GRANT_TYPE = "client_credentials";
+    public static final String SCOPE = "urn:opc:idm:__myscopes__";
+    public static final String MATCHES = "matches";
+    public static final String MATCHED_WATCHLIST_ID = "matchedWatchlistId";
+    public static final String RESPONSE_ID = "responseID";
 }

@@ -166,9 +166,9 @@ public class MessageResponseAnalyzer {
                 CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                     try {
                         JSONObject eachResponse = feedbackMap.get(transactionToken);
-                        if (eachResponse == null || !eachResponse.has("matches")) return;
+                        if (eachResponse == null || !eachResponse.has(Constants.MATCHES)) return;
 
-                        JSONArray matches = eachResponse.getJSONArray("matches");
+                        JSONArray matches = eachResponse.getJSONArray(Constants.MATCHES);
                         int truePositives = 0;
                         String targetColumnName = tokenToTargetColumn.get(transactionToken);
                         String uid = tokenToUid.get(transactionToken);
@@ -180,8 +180,8 @@ public class MessageResponseAnalyzer {
                             String tagNameCsv = match.optString("tagName", "");
                             Set<String> tagNames = Arrays.stream(tagNameCsv.split(",")).map(String::trim).collect(Collectors.toSet());
 
-                            String targetUid = match.getString("matchedWatchlistId");
-                            Long responseId = match.getLong("responseID");
+                            String targetUid = match.getString(Constants.MATCHED_WATCHLIST_ID);
+                            Long responseId = match.getLong(Constants.RESPONSE_ID);
                             String columnNamesCsvWLS = csvColumnNamesMap.get(responseId);
                             Set<String> columnNames = columnNamesCsvWLS != null ? Arrays.stream(columnNamesCsvWLS.split(",")).collect(Collectors.toSet()) : Collections.emptySet();
 

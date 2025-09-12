@@ -20,12 +20,12 @@ public class Main {
         }
 
         long startTime = System.currentTimeMillis();
-        if(props.getProperty(Constants.MODULE_RAW_MSG_GENERATOR).equalsIgnoreCase("Y"))
+        if(props.getProperty(Constants.MODULE_RAW_MSG_GENERATOR).equalsIgnoreCase(Constants.YES))
             RawMessageGenerator.generateRawMessage();
 
         ToggleMatchingEngine toggleMatchingEngine = new ToggleMatchingEngine();
 
-        if(props.getProperty(Constants.MODULE_RAW_MSG_PROCESSOR).equalsIgnoreCase("Y")) {
+        if(props.getProperty(Constants.MODULE_RAW_MSG_PROCESSOR).equalsIgnoreCase(Constants.YES)) {
             String currentMatchingEngine = toggleMatchingEngine.findCurrentMatchingEngine();
             System.out.println("Current Matching Engine::: "+ currentMatchingEngine);
             MessageProcessingUtility.screenRawMsg(currentMatchingEngine);
@@ -33,19 +33,19 @@ public class Main {
         }
 
 
-        if(props.getProperty(Constants.TOGGLE_MATCHING_ENGINE).equalsIgnoreCase("Y")){
+        if(props.getProperty(Constants.TOGGLE_MATCHING_ENGINE).equalsIgnoreCase(Constants.YES)){
             String newEsOs = toggleMatchingEngine.toggleMatchingEngine();
             System.out.println("Matching engine set to ::: "+ newEsOs);
 
-            if(props.getProperty(Constants.MODULE_RAW_MSG_PROCESSOR).equalsIgnoreCase("Y")){
+            if(props.getProperty(Constants.MODULE_RAW_MSG_PROCESSOR).equalsIgnoreCase(Constants.YES)){
                 MessageProcessingUtility.screenRawMsg(newEsOs);
                 MessageResponseAnalyzer.analyseResponseAndPrepareResults(newEsOs);
             }
         }
 
         // Renaming output files
-        SimpleDateFormat dateFormat = new SimpleDateFormat("ddMMyy");
-        SimpleDateFormat timeFormat = new SimpleDateFormat("HHmmss");
+        SimpleDateFormat dateFormat = new SimpleDateFormat(Constants.DATE_SUFFIX_FORMAT);
+        SimpleDateFormat timeFormat = new SimpleDateFormat(Constants.TIME_SUFFIX_FORMAT);
         Date now = new Date();
         String date = dateFormat.format(now);
         String time = timeFormat.format(now);
@@ -56,7 +56,7 @@ public class Main {
                 Constants.OUTPUT_XLSX_FILE_PATH,
                 Constants.OUTPUT_JSON_FILE_PATH
         };
-        String[] extensions = {".xlsx", ".json"};
+        String[] extensions = {Constants.XLSX_EXT, Constants.JSON_EXT};
 
         for (int i = 0; i < filesToRename.length; i++) {
             File original = filesToRename[i];
@@ -85,7 +85,7 @@ public class Main {
 
     private static void saveConfigProperties(Properties props) {
         String webservice = props.getProperty(Constants.WEBSERVICE);
-        String fileName = (webservice != null ? webservice : "config") + ".properties";
+        String fileName = (webservice != null ? webservice : Constants.DEFAULT_CONFIG_BASE) + ".properties";
         File configFile = new File(Constants.OUTPUT_FOLDER, fileName);
         File originalConfig = new File(Constants.CONFIG_FILE_PATH);
         try {

@@ -30,10 +30,10 @@ public class MessageProcessingUtility {
     private static long labelledTime;
     private static String instanceBearerToken;
     private static final Object tokenLock = new Object();
-    private static long bearerTokenRefreshInterval = 30L;
-    private static String restartFlag = "N";
-    private static int retryMaxCount = 5;
-    private static String retryRequiredFlag = "Y";
+    private static long bearerTokenRefreshInterval = Constants.DEFAULT_REFRESH_INTERVAL_MIN;
+    private static String restartFlag = Constants.NO;
+    private static int retryMaxCount = Constants.DEFAULT_RETRY_MAX;
+    private static String retryRequiredFlag = Constants.YES;
     private static SimpleDateFormat sdf = new SimpleDateFormat(Constants.DATE_FORMAT);
     private static final AtomicInteger retryRequestNumber = new AtomicInteger(0);
     
@@ -53,7 +53,7 @@ public class MessageProcessingUtility {
         }
         long maxIndex = getMaxIndex(props,"msgPosting.");
         System.out.println("Inside MessageProcessingUtility main method");
-        if (maxIndex < 6) {
+        if (maxIndex < Constants.MIN_ARGS) {
             System.out.println("Invalid arguments");
             System.out.println("Please send Url, filepath, tokenurl, Username and Password as arguments");
         } else {
@@ -212,10 +212,10 @@ public class MessageProcessingUtility {
                     URL resturl = new URL(url + "?reqId=" + currentRetry);
                     HttpsURLConnection conn = (HttpsURLConnection) resturl.openConnection();
                     conn.setRequestMethod("POST");
-                    conn.setRequestProperty("Content-Type", "application/json");
+                    conn.setRequestProperty("Content-Type", Constants.CONTENT_TYPE_JSON);
                     conn.setRequestProperty("ofs_remote_user", "OFS_SRV_ACCT");
                     conn.setRequestProperty("accept-language", "en-US,en-U");
-                    conn.setRequestProperty("authorization", "Bearer " + bearerToken);
+                    conn.setRequestProperty("authorization", Constants.AUTH_BEARER_PREFIX + bearerToken);
                     conn.setRequestProperty("idcs_remote_user", "appuser");
                     conn.setRequestProperty("locale", "en-US");
                     conn.setHostnameVerifier((hostname, sslSession) -> true);
@@ -255,7 +255,7 @@ public class MessageProcessingUtility {
                     }
                 }
                 retryCount++;
-            } while ("Y".equalsIgnoreCase(retryRequiredFlag) && responseCode > 399 && retryCount <= retryMaxCount);
+            } while (Constants.YES.equalsIgnoreCase(retryRequiredFlag) && responseCode > 399 && retryCount <= retryMaxCount);
 
             System.out.println("["+sdf.format(new Date())+"] ResponseCode: " + responseCode);
 
@@ -276,7 +276,7 @@ public class MessageProcessingUtility {
             String feedbackStatus = "NA";
             long filteredCount = 0;
 
-            boolean isErrorToHandle = (responseCode == 400 || responseCode == 500 || responseCode == 503);
+            boolean isErrorToHandle = (responseCode == 400 || responseCode == 500 || responseCode == Constants.SERVICE_UNAVAILABLE);
 
             if (responseCode <= 399 || isErrorToHandle) {
                 // Try to parse JSON for transaction token
@@ -297,8 +297,8 @@ public class MessageProcessingUtility {
 
                         if (responseJson.has(Constants.FEEDBACK_DATA)) {
                             JSONObject feedbackData = responseJson.getJSONObject(Constants.FEEDBACK_DATA);
-                            if (feedbackData.has("matches")) {
-                                JSONArray matches = feedbackData.getJSONArray("matches");
+                            if (feedbackData.has(Constants.MATCHES)) {
+                                JSONArray matches = feedbackData.getJSONArray(Constants.MATCHES);
                                 for (int i = 0; i < matches.length(); i++) {
                                     JSONObject match = matches.getJSONObject(i);
                                     String matchWebServiceId = String.valueOf(match.optInt("webServiceID"));
@@ -510,16 +510,16 @@ public class MessageProcessingUtility {
     	String msg = "will do the needful";
     	
         switch(code) {
-        case 502:
+        case Constants.BAD_GATEWAY:
         	msg = Constants.WAIT_MSG;
         	break;
-        case 504:
+        case Constants.GATEWAY_TIMEOUT:
         	msg = Constants.HOLD_ON_MSG_1;
         	break;
-        case 503:
+        case Constants.SERVICE_UNAVAILABLE:
         	msg = Constants.HOLD_ON_MSG_2;
         	break;
-        case 200:
+        case Constants.SUCCESS_CODE:
         	msg = Constants.SUCCESS_MSG;
         	break;
         default:
