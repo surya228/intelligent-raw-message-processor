@@ -44,13 +44,30 @@ public class Main {
         }
 
         // Renaming output files
+        renameOutputFiles(props);
+
+        saveConfigProperties(props);
+
+        System.out.println("Saved config file");
+
+        long endTime = System.currentTimeMillis();
+        System.out.println("\n==========================================================");
+        System.out.println("Total time taken by utility: "+ (endTime - startTime) / 1000L + " seconds");
+        System.out.println("=========================================================");
+    }
+
+    /**
+     * Renames output files by appending a timestamp and webservice name.
+     * @param props Properties containing configuration details like webservice name.
+     */
+    private static void renameOutputFiles(Properties props) {
         SimpleDateFormat dateFormat = new SimpleDateFormat(Constants.DATE_SUFFIX_FORMAT);
         SimpleDateFormat timeFormat = new SimpleDateFormat(Constants.TIME_SUFFIX_FORMAT);
         Date now = new Date();
         String date = dateFormat.format(now);
         String time = timeFormat.format(now);
         String webservice = props.getProperty(Constants.WEBSERVICE);
-        String baseName = (webservice != null ? webservice : "")+"_"+date+"_"+time;
+        String baseName = (webservice != null ? webservice : "") + "_" + date + "_" + time;
 
         File[] filesToRename = {
                 Constants.OUTPUT_XLSX_FILE_PATH,
@@ -72,17 +89,12 @@ public class Main {
         }
 
         System.out.println("Output files renamed");
-
-        saveConfigProperties(props);
-
-        System.out.println("Saved config file");
-
-        long endTime = System.currentTimeMillis();
-        System.out.println("\n==========================================================");
-        System.out.println("Total time taken by utility: "+ (endTime - startTime) / 1000L + " seconds");
-        System.out.println("=========================================================");
     }
 
+    /**
+     * Saves the configuration properties to a file with a name based on the webservice.
+     * @param props Properties to save.
+     */
     private static void saveConfigProperties(Properties props) {
         String webservice = props.getProperty(Constants.WEBSERVICE);
         String fileName = (webservice != null ? webservice : Constants.DEFAULT_CONFIG_BASE) + ".properties";

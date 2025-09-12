@@ -43,15 +43,8 @@ public class MessageProcessingUtility {
         System.out.println("=============================================================");
         System.out.println("                   MESSAGE POSTING STARTED                   ");
         System.out.println("=============================================================");
-        Properties props = new Properties();
-
-        try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
-            props.load(reader);
-        } catch (IOException e) {
-            System.err.println("Error reading properties file: " + e.getMessage());
-            throw e;
-        }
-        long maxIndex = getMaxIndex(props,"msgPosting.");
+        Properties props = loadProperties();
+        long maxIndex = getMaxIndex(props, "msgPosting.");
         System.out.println("Inside MessageProcessingUtility main method");
         if (maxIndex < Constants.MIN_ARGS) {
             System.out.println("Invalid arguments");
@@ -63,34 +56,19 @@ public class MessageProcessingUtility {
             String devcorp7 = props.getProperty(Constants.DEVCORP7);
             String namespace = props.getProperty(Constants.NAMESPACE);
             String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE).toLowerCase();
-            String url = devcorp7+"/"+namespace+"/"+transactionService+Constants.POSTING_ENDPOINT;
-
-
+            String url = devcorp7 + "/" + namespace + "/" + transactionService + Constants.POSTING_ENDPOINT;
 
 //            System.out.println("tokenUrl: "+tokenUrl);
 //            System.out.println("usernm: "+usernm);
 //            System.out.println("pwd: "+pwd);
-            System.out.println("url: "+url);
+            System.out.println("url: " + url);
 
             String webServiceId = props.getProperty(Constants.WEBSERVICE_ID);
             String watchlistType = props.getProperty(Constants.WATCHLIST_TYPE);
 
-
-            if(maxIndex >= 10 ) {
-            	retryRequiredFlag = props.getProperty(Constants.RETRY_REQUIRED_FLAG);
-	            String retryMaxArg = props.getProperty(Constants.RETRY_MAX_COUNT);
-	            String bearerTokenRefreshArg = props.getProperty(Constants.RETRY_REFRESH_INTERVAL);
-	            String restartFlagArg = props.getProperty(Constants.RESTART_FLAG);
-	            if(!retryMaxArg.isEmpty()) {
-	            	retryMaxCount = Integer.parseInt(retryMaxArg);
-	            }
-	            if(!restartFlagArg.isEmpty()) {
-	            	restartFlag = restartFlagArg;
-	            }
-	            if(!bearerTokenRefreshArg.isEmpty()) {
-	            	bearerTokenRefreshInterval = Long.parseLong(bearerTokenRefreshArg);
-	            }
-	            System.out.println("UserDefinedParams:::retryRequiredFlag="+retryRequiredFlag+"; retryMaxCount="+retryMaxCount+"; bearerTokenRefreshInterval="+bearerTokenRefreshInterval+"min(s); restartFlag="+restartFlag);
+            if (maxIndex >= 10) {
+                configureRetryParameters(props);
+                System.out.println("UserDefinedParams:::retryRequiredFlag=" + retryRequiredFlag + "; retryMaxCount=" + retryMaxCount + "; bearerTokenRefreshInterval=" + bearerTokenRefreshInterval + "min(s); restartFlag=" + restartFlag);
             }
 
 
@@ -176,6 +154,42 @@ public class MessageProcessingUtility {
 
         System.out.println("Time taken by Message Processor: " + (endTime - startTime) / 1000L + " seconds");
 
+    }
+
+    /**
+     * Loads properties from the configuration file.
+     * @return Properties loaded from the configuration file.
+     * @throws IOException If there's an error reading the properties file.
+     */
+    private static Properties loadProperties() throws IOException {
+        Properties props = new Properties();
+        try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
+            props.load(reader);
+        } catch (IOException e) {
+            System.err.println("Error reading properties file: " + e.getMessage());
+            throw e;
+        }
+        return props;
+    }
+
+    /**
+     * Configures retry parameters based on properties.
+     * @param props Properties containing retry configuration.
+     */
+    private static void configureRetryParameters(Properties props) {
+        retryRequiredFlag = props.getProperty(Constants.RETRY_REQUIRED_FLAG);
+        String retryMaxArg = props.getProperty(Constants.RETRY_MAX_COUNT);
+        String bearerTokenRefreshArg = props.getProperty(Constants.RETRY_REFRESH_INTERVAL);
+        String restartFlagArg = props.getProperty(Constants.RESTART_FLAG);
+        if (!retryMaxArg.isEmpty()) {
+            retryMaxCount = Integer.parseInt(retryMaxArg);
+        }
+        if (!restartFlagArg.isEmpty()) {
+            restartFlag = restartFlagArg;
+        }
+        if (!bearerTokenRefreshArg.isEmpty()) {
+            bearerTokenRefreshInterval = Long.parseLong(bearerTokenRefreshArg);
+        }
     }
 
     private static Map<String, String> processRequests(Map<String, String> seqIdToRequestMap, String tokenUrl, String usernm, String pwd, String url, Sheet sheet, Map<String, Integer> seqIdToRowNum, DataFormatter formatter, int processorStartColumn, String webServiceId, String watchlistType) {

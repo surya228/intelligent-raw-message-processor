@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Constants {
+    // Database Table Mappings for Watchlists
     public static final Map<String, String> TABLE_WL_MAP;
     static {
         Map<String, String> map = new HashMap<>();
@@ -27,6 +28,7 @@ public class Constants {
         TABLE_WL_MAP = Collections.unmodifiableMap(map); // Make it read-only
     }
 
+    // Web Service Mappings
     public static final Map<String, String> WEBSERVICE_MAP;
     static {
         Map<String, String> map = new HashMap<>();
@@ -38,36 +40,36 @@ public class Constants {
         WEBSERVICE_MAP = Collections.unmodifiableMap(map); // Make it read-only
     }
 
-    // Encoding
+    // Encoding Configuration
     public static String ENCODER = "UTF-8";
 
-    // Module flags
-    public static String MODULE_RAW_MSG_GENERATOR =  "module.rawMsgGenerator";
-    public static String MODULE_RAW_MSG_PROCESSOR =  "module.rawMsgProcessor";
+    // Module Configuration Flags
+    public static String MODULE_RAW_MSG_GENERATOR = "module.rawMsgGenerator";
+    public static String MODULE_RAW_MSG_PROCESSOR = "module.rawMsgProcessor";
     public static final String TOGGLE_MATCHING_ENGINE = "toggleMatchingEngine";
 
-    // Property keys
-    public static String TAGNAME =  "tagName";
-    public static String WEBSERVICE =  "webService";
-    public static String EXACT =  "Exact";
-    public static String FUZZY =  "Fuzzy - ";
-    public static String WATCHLIST_TYPE =  "watchListType";
-    public static String TRANSACTION_SERVICE =  "msgPosting.transactionService";
-    public static String TOKEN_URL =  "msgPosting.tokenUrl";
-    public static String CLIENT_ID =  "msgPosting.client.id";
-    public static String CLIENT_SECRET =  "msgPosting.client.secret";
-    public static String DEVCORP7 =  "msgPosting.devcorp7";
-    public static String NAMESPACE =  "msgPosting.namespace";
-    public static String RETRY_REQUIRED_FLAG =  "msgPosting.retryRequiredFlag";
-    public static String RETRY_MAX_COUNT =  "msgPosting.retryMaxCount";
-    public static String RETRY_REFRESH_INTERVAL =  "msgPosting.bearerTokenRefreshInterval";
-    public static String RESTART_FLAG =  "msgPosting.restartFlag";
-    public static String POSTING_ENDPOINT =  "-transaction-service/sync/process";
-    public static String TRANSACTION_TOKEN =  "transactionToken";
-    public static String FEEDBACK_DATA =  "feedbackData";
-    public static String MATCHING_STATUS =  "status";
-    public static String MATCHING_COUNT =  "matchCount";
-    public static String WEBSERVICE_ID =  "webServiceId";
+    // Property Keys for Configuration
+    public static String TAGNAME = "tagName";
+    public static String WEBSERVICE = "webService";
+    public static String EXACT = "Exact";
+    public static String FUZZY = "Fuzzy - ";
+    public static String WATCHLIST_TYPE = "watchListType";
+    public static String TRANSACTION_SERVICE = "msgPosting.transactionService";
+    public static String TOKEN_URL = "msgPosting.tokenUrl";
+    public static String CLIENT_ID = "msgPosting.client.id";
+    public static String CLIENT_SECRET = "msgPosting.client.secret";
+    public static String DEVCORP7 = "msgPosting.devcorp7";
+    public static String NAMESPACE = "msgPosting.namespace";
+    public static String RETRY_REQUIRED_FLAG = "msgPosting.retryRequiredFlag";
+    public static String RETRY_MAX_COUNT = "msgPosting.retryMaxCount";
+    public static String RETRY_REFRESH_INTERVAL = "msgPosting.bearerTokenRefreshInterval";
+    public static String RESTART_FLAG = "msgPosting.restartFlag";
+    public static String POSTING_ENDPOINT = "-transaction-service/sync/process";
+    public static String TRANSACTION_TOKEN = "transactionToken";
+    public static String FEEDBACK_DATA = "feedbackData";
+    public static String MATCHING_STATUS = "status";
+    public static String MATCHING_COUNT = "matchCount";
+    public static String WEBSERVICE_ID = "webServiceId";
     public static final String COMMENTS = "Comments";
 
     // CED properties
