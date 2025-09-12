@@ -93,6 +93,11 @@ public class Constants {
     public static String IDEN_VALUE =  "identifierValue";
     public static String IDEN_PREFIX =  "ID";
 
+    public static String IS_STOPWORD_PRESENT = "isStopwordPresent";
+
+    public static String LOOKUP_ID = "lookupId";
+    public static String LOOKUP_VALUE_ID = "lookupValueId";
+
     public static String DATE_FORMAT =  "yyyy-MM-dd HH:mm:ss.SSS";
 
     public static String WAIT_MSG =  "Wait for a while...It's gonna finish";

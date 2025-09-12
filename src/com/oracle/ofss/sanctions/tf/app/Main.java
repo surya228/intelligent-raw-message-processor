@@ -3,6 +3,8 @@ package com.oracle.ofss.sanctions.tf.app;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Properties;
@@ -69,10 +71,28 @@ public class Main {
             }
         }
 
+        System.out.println("Output files renamed");
+
+        saveConfigProperties(props);
+
+        System.out.println("Saved config file");
+
         long endTime = System.currentTimeMillis();
         System.out.println("\n==========================================================");
         System.out.println("Total time taken by utility: "+ (endTime - startTime) / 1000L + " seconds");
         System.out.println("=========================================================");
+    }
 
+    private static void saveConfigProperties(Properties props) {
+        String webservice = props.getProperty(Constants.WEBSERVICE);
+        String fileName = (webservice != null ? webservice : "config") + ".properties";
+        File configFile = new File(Constants.OUTPUT_FOLDER, fileName);
+        File originalConfig = new File(Constants.CONFIG_FILE_PATH);
+        try {
+            Files.copy(originalConfig.toPath(), configFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            System.out.println("Config properties saved to " + configFile.getName());
+        } catch (IOException e) {
+            System.err.println("Error saving config properties: " + e.getMessage());
+        }
     }
 }
