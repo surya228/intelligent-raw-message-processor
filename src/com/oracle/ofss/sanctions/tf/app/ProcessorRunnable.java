@@ -20,7 +20,6 @@ public class ProcessorRunnable implements Runnable {
             while (true) {
                 File file = inputQueue.take();
                 if (Constants.POISON_PILL.equals(file.getName())) {
-                    outputQueue.put(file); // Propagate poison pill
                     break;
                 }
                 MessageProcessingUtility.screenRawMsg(matchingEngine, file);

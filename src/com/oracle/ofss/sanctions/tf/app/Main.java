@@ -130,12 +130,20 @@ public class Main {
             for (File file : excelFiles) {
                 processorQueue.put(file);
             }
-            processorQueue.put(new File(Constants.POISON_PILL));
+
+            // Put one poison pill per processor thread
+            for (int i = 0; i < processorThreads; i++) {
+                processorQueue.put(new File(Constants.POISON_PILL));
+            }
 
             processorPool.shutdown();
             processorPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
 
-            analyzerQueue.put(new File(Constants.POISON_PILL));
+            // Put one poison pill per analyzer thread
+            for (int i = 0; i < analyzerThreads; i++) {
+                analyzerQueue.put(new File(Constants.POISON_PILL));
+            }
+
             analyzerPool.shutdown();
             analyzerPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
         } else {
