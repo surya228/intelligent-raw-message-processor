@@ -180,4 +180,11 @@ public class Constants {
     public static final String MATCHES = "matches";
     public static final String MATCHED_WATCHLIST_ID = "matchedWatchlistId";
     public static final String RESPONSE_ID = "responseID";
+
+    // Concurrency constants
+    public static final String ENABLE_CONCURRENT = "enable_concurrent_processing";
+    public static final String PROCESSOR_THREADS = "processor_thread_count";
+    public static final String ANALYZER_THREADS = "analyzer_thread_count";
+    public static final String POISON_PILL = "POISON_PILL";
+    public static final int DEFAULT_THREAD_COUNT = 2;
 }

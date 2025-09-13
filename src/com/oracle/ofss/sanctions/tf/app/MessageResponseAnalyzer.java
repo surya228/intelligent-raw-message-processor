@@ -23,92 +23,44 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 public class MessageResponseAnalyzer {
-    public static void analyseResponseAndPrepareResults(String matchingEngine) throws Exception {
-        try {
-            long startTime = System.currentTimeMillis();
-
-            System.out.println("\n=============================================================");
-            System.out.println("                  RESPONSE ANALYZER STARTED                  ");
-            System.out.println("=============================================================");
-
-            Properties props = new Properties();
-            try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
-                props.load(reader);
-            } catch (IOException e) {
-                System.err.println("Error reading properties file: " + e.getMessage());
-                throw e;
-            }
-            String tagName = props.getProperty(Constants.TAGNAME);
-            String msgCategory = "";
-            String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE);
-            String watchListType = props.getProperty(Constants.WATCHLIST_TYPE);
-            String webServiceId = props.getProperty(Constants.WEBSERVICE_ID);
-            if(transactionService.equalsIgnoreCase("SWIFT")) msgCategory="SWIFT";
-            else if(transactionService.equalsIgnoreCase("FEDWIRE")) msgCategory="FEDWIRE";
-            else if(transactionService.equalsIgnoreCase("ISO20022")) msgCategory="SEPA";
-            System.out.println("tagName: " + tagName);
-            processAllResponses(tagName, msgCategory, watchListType, webServiceId,matchingEngine);
-            System.out.println("\n=============================================================");
-            System.out.println("                   RESPONSE ANALYZER ENDED                   ");
-            System.out.println("=============================================================");
-            long endTime = System.currentTimeMillis();
-
-            System.out.println("Time taken by Message Response Analyzer: " + (endTime - startTime) / 1000L + " seconds");
-
-        } catch (Exception e){
-            e.printStackTrace();
-            throw new Exception("Something went wrong while analyzing responses",e);
-        }
+    public static void analyseResponseAndPrepareResults(String matchingEngine, File excelFile) throws Exception {
+        analyseResponseAndPrepareResults(matchingEngine, Collections.singletonList(excelFile));
     }
 
-    public static void processAllResponses(String tagName, String msgCategory, String watchListType, String webServiceId, String matchingEngine) throws Exception {
+    public static void analyseResponseAndPrepareResults(String matchingEngine, List<File> excelFiles) throws Exception {
+        long startTime = System.currentTimeMillis();
+
+        System.out.println("\n=============================================================");
+        System.out.println("                  RESPONSE ANALYZER STARTED                  ");
+        System.out.println("=============================================================");
+
         Properties props = new Properties();
         try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
             props.load(reader);
         } catch (IOException e) {
-            System.err.println("Error reading properties file for Excel splitting: " + e.getMessage());
+            System.err.println("Error reading properties file: " + e.getMessage());
             throw e;
         }
+        String tagName = props.getProperty(Constants.TAGNAME);
+        String msgCategory = "";
+        String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE);
+        String watchListType = props.getProperty(Constants.WATCHLIST_TYPE);
+        String webServiceId = props.getProperty(Constants.WEBSERVICE_ID);
+        if (transactionService.equalsIgnoreCase("SWIFT")) msgCategory = "SWIFT";
+        else if (transactionService.equalsIgnoreCase("FEDWIRE")) msgCategory = "FEDWIRE";
+        else if (transactionService.equalsIgnoreCase("ISO20022")) msgCategory = "SEPA";
+        System.out.println("tagName: " + tagName);
+        processAllResponses(tagName, msgCategory, watchListType, webServiceId, matchingEngine, excelFiles);
 
-        // Load configuration for Excel splitting
-        boolean splitEnabled = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.EXCEL_SPLIT_ENABLED, Constants.NO));
-        List<File> excelFiles = new ArrayList<>();
-        if (splitEnabled) {
-            File[] files = Constants.OUTPUT_FOLDER.listFiles((dir, name) -> name.startsWith(Constants.OUTPUT_FILE_NAME) && name.endsWith(Constants.XLSX_EXT));
-            if (files != null) {
-                Arrays.sort(files, (f1, f2) -> {
-                    try {
-                        int index1 = Integer.parseInt(f1.getName().replaceFirst(Constants.OUTPUT_FILE_NAME + "_", "").replace(Constants.XLSX_EXT, ""));
-                        int index2 = Integer.parseInt(f2.getName().replaceFirst(Constants.OUTPUT_FILE_NAME + "_", "").replace(Constants.XLSX_EXT, ""));
-                        return Integer.compare(index1, index2);
-                    } catch (NumberFormatException e) {
-                        return f1.getName().compareTo(f2.getName());
-                    }
-                });
-                int fileLimit = 0;
-                File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
-                if (countFile.exists()) {
-                    try {
-                        String countStr = new String(java.nio.file.Files.readAllBytes(countFile.toPath())).trim();
-                        fileLimit = Integer.parseInt(countStr);
-                        System.out.println("Using file count from " + countFile.getAbsolutePath() + ": " + fileLimit);
-                    } catch (Exception e) {
-                        System.err.println("Error reading file count from " + countFile.getAbsolutePath() + ": " + e.getMessage());
-                        System.err.println("No files will be processed due to missing or invalid count file.");
-                    }
-                } else {
-                    System.err.println("Count file not found at " + countFile.getAbsolutePath());
-                    System.err.println("No files will be processed. Please run Raw Message Generator to create the count file.");
-                }
-                if (fileLimit > 0) {
-                    for (int i = 0; i < Math.min(files.length, fileLimit); i++) {
-                        excelFiles.add(files[i]);
-                    }
-                }
-            }
-        } else {
-            excelFiles.add(Constants.OUTPUT_XLSX_FILE_PATH);
-        }
+        System.out.println("\n=============================================================");
+        System.out.println("                   RESPONSE ANALYZER ENDED                   ");
+        System.out.println("=============================================================");
+        long endTime = System.currentTimeMillis();
+
+        System.out.println("Time taken by Message Response Analyzer: " + (endTime - startTime) / 1000L + " seconds");
+    }
+
+    private static void processAllResponses(String tagName, String msgCategory, String watchListType, String webServiceId, String matchingEngine, List<File> excelFiles) throws Exception {
         if (excelFiles.isEmpty()) {
             System.out.println("No Excel files found to analyze.");
             return;
@@ -128,8 +80,8 @@ public class MessageResponseAnalyzer {
                 if (lastColumn < 0) lastColumn = 0;
 
                 String[] analyzerHeaders = {
-                        matchingEngine+" "+Constants.TEST_STATUS,
-                        matchingEngine+" "+Constants.COMMENTS
+                        matchingEngine + " " + Constants.TEST_STATUS,
+                        matchingEngine + " " + Constants.COMMENTS
                 };
                 int analyzerStartColumn = lastColumn;
                 for (int i = 0; i < analyzerHeaders.length; i++) {
@@ -148,7 +100,6 @@ public class MessageResponseAnalyzer {
                     }
                 }
                 if (latestProcessorColumn == -1) {
-                    // No processor columns found, skip or handle error
                     System.out.println("No Transaction Token column found in " + excelFile.getName() + ". Skipping analysis.");
                     continue;
                 }
@@ -207,11 +158,6 @@ public class MessageResponseAnalyzer {
                 highlightRed.setFillPattern(FillPatternType.SOLID_FOREGROUND);
                 highlightRed.setFont(boldFont);
 
-//            CellStyle highlightYellow = workbook.createCellStyle();
-//            highlightYellow.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
-//            highlightYellow.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-
-
                 // Parallel processing of rows
                 ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
                 List<CompletableFuture<Void>> futures = new ArrayList<>();
@@ -246,7 +192,8 @@ public class MessageResponseAnalyzer {
 
                                 if (flag) {
                                     if (columnNames.stream().anyMatch(col -> col.equalsIgnoreCase(targetColumnName))) { // Case-insensitive match
-                                        truePositives++;failedDueToColumnMismatch = false;
+                                        truePositives++;
+                                        failedDueToColumnMismatch = false;
                                         break; // Early exit if we only need count >=1
                                     } else {
                                         failedDueToColumnMismatch = true;
@@ -267,18 +214,13 @@ public class MessageResponseAnalyzer {
                                 Cell commentsCell = row.getCell(analyzerStartColumn + 1);
                                 if (commentsCell == null) commentsCell = row.createCell(analyzerStartColumn + 1);
 
-                                if(failedDueToColumnMismatch){
+                                if (failedDueToColumnMismatch) {
                                     commentsCell.setCellValue(Constants.COLUMN_MISMATCH_COMMENT);
                                 } else if (testStatus.equalsIgnoreCase(Constants.FAIL)) {
                                     commentsCell.setCellValue(Constants.NO_MATCH_COMMENT);
                                 }
-
                             }
 
-//                        System.out.println("------------------------------------------------------------");
-//                        System.out.println("transactionToken::: "+ transactionToken);
-//                        System.out.println("testStatus::: "+ testStatus);
-//                        System.out.println("------------------------------------------------------------");
                         } catch (Exception e) {
                             e.printStackTrace();
                         }

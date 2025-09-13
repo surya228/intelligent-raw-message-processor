@@ -17,9 +17,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
 
 public class RawMessageGenerator {
-    public static void generateRawMessage() throws Exception {
+public static void generateRawMessage(BlockingQueue<File> queue) throws Exception {
         long startTime = System.currentTimeMillis();
         System.out.println("\n=============================================================");
         System.out.println("                RAW MESSAGE GENERATOR STARTED                ");
@@ -69,7 +70,7 @@ public class RawMessageGenerator {
             rawMessageJsonArray = generateRawMessageJsonArray(rs,props,srcFile,tableName,tagName,webserviceId,watchlistType,isStopwordEnabled,isSynonymEnabled);
 
             if(rawMessageJsonArray.length()>0){
-                writeJsonAsExcelFile(rawMessageJsonArray,tansactionService,tagName,webService,watchlistType);
+                writeJsonAsExcelFile(rawMessageJsonArray,tansactionService,tagName,webService,watchlistType, queue);
                 writeRawMessagesToJsonFile(rawMessageJsonArray);
             }
 
@@ -167,7 +168,7 @@ public class RawMessageGenerator {
         return rs;
     }
 
-    public static JSONArray generateRawMessageJsonArray(ResultSet rs, Properties props, String srcFile, String tableName, String tagName, String webserviceId, String watchlistType, boolean isStopwordEnabled, boolean isSynonymEnabled) throws Exception {
+public static JSONArray generateRawMessageJsonArray(ResultSet rs, Properties props, String srcFile, String tableName, String tagName, String webserviceId, String watchlistType, boolean isStopwordEnabled, boolean isSynonymEnabled) throws Exception {
         JSONArray jsonArray = new JSONArray();
         int maxIndex = getMaxIndex(props, Constants.REPLACE_SRC);
         String temp;
@@ -624,7 +625,7 @@ private static List<String> getLookupIdsForWatchlistType(String watchlistType) {
             return null;
         }
     }
-    public static void writeJsonAsExcelFile(JSONArray jsonArray, String transactionService, String tagName, String webService, String watchlistType) throws IOException {
+public static void writeJsonAsExcelFile(JSONArray jsonArray, String transactionService, String tagName, String webService, String watchlistType, BlockingQueue<File> queue) throws IOException, InterruptedException {
         // Create a subfolder "out" inside it
         if (!Constants.OUTPUT_FOLDER.exists()) {
             Constants.OUTPUT_FOLDER.mkdirs();  // Create the folder if it doesn't exist
@@ -651,7 +652,11 @@ private static List<String> getLookupIdsForWatchlistType(String watchlistType) {
 
         if (!splitEnabled || jsonArray.length() <= rowLimit) {
             // Write to a single file if splitting is not enabled or data is within limit
-            writeSingleExcelFile(jsonArray, transactionService, tagName, webService, watchlistType, Constants.OUTPUT_XLSX_FILE_PATH);
+            File outputFile = Constants.OUTPUT_XLSX_FILE_PATH;
+            writeSingleExcelFile(jsonArray, transactionService, tagName, webService, watchlistType, outputFile);
+            if (queue != null) {
+                queue.put(outputFile);
+            }
         } else {
             // Split data into multiple files
             int fileIndex = 1;
@@ -665,6 +670,9 @@ private static List<String> getLookupIdsForWatchlistType(String watchlistType) {
                 String fileName = String.format(Constants.OUTPUT_FILE_NAME_PATTERN, fileIndex) + Constants.XLSX_EXT;
                 File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
                 writeSingleExcelFile(chunk, transactionService, tagName, webService, watchlistType, outputFile);
+                if (queue != null) {
+                    queue.put(outputFile);
+                }
                 fileIndex++;
                 startIndex = endIndex;
             }
@@ -678,10 +686,13 @@ private static List<String> getLookupIdsForWatchlistType(String watchlistType) {
             }
             System.out.println("Successfully wrote to multiple Excel files with prefix (" + Constants.OUTPUT_FILE_NAME + "_N.xlsx).");
             System.out.println("Output file count (" + totalFiles + ") saved to: " + countFile.getAbsolutePath());
+            if (queue != null) {
+                queue.put(new File(Constants.POISON_PILL));
+            }
         }
     }
 
-    private static void writeSingleExcelFile(JSONArray jsonArray, String transactionService, String tagName, String webService, String watchlistType, File outputFile) throws IOException {
+private static void writeSingleExcelFile(JSONArray jsonArray, String transactionService, String tagName, String webService, String watchlistType, File outputFile) throws IOException {
         // Create the Excel workbook and sheet
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Output");
@@ -755,7 +766,7 @@ private static List<String> getLookupIdsForWatchlistType(String watchlistType) {
         System.out.println("Successfully wrote to Excel (" + outputFile.getName() + ") file.");
     }
 
-    public static void writeRawMessagesToJsonFile(JSONArray jsonArray) throws IOException {
+public static void writeRawMessagesToJsonFile(JSONArray jsonArray) throws IOException {
         if (!Constants.OUTPUT_FOLDER.exists()) {
             Constants.OUTPUT_FOLDER.mkdirs();
         }

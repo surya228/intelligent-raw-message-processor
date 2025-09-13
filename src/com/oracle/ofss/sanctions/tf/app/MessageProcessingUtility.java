@@ -24,9 +24,6 @@ import org.json.JSONObject;
 import org.json.JSONArray;
 
 public class MessageProcessingUtility {
-    public MessageProcessingUtility() {
-    }
-    
     private static long labelledTime;
     private static String instanceBearerToken;
     private static final Object tokenLock = new Object();
@@ -36,164 +33,122 @@ public class MessageProcessingUtility {
     private static String retryRequiredFlag = Constants.YES;
     private static SimpleDateFormat sdf = new SimpleDateFormat(Constants.DATE_FORMAT);
     private static final AtomicInteger retryRequestNumber = new AtomicInteger(0);
-    
-    public static void screenRawMsg(String matchingEngine) throws Exception {
+
+    public static void screenRawMsg(String matchingEngine, File excelFile) throws Exception {
+        screenRawMsg(matchingEngine, Collections.singletonList(excelFile));
+    }
+
+    public static void screenRawMsg(String matchingEngine, List<File> excelFiles) throws Exception {
         long startTime = System.currentTimeMillis();
 
         System.out.println("=============================================================");
-        System.out.println("                   MESSAGE POSTING STARTED                   ");
+        System.out.println("                   MESSAGE POSTING STARTED");
         System.out.println("=============================================================");
+
         Properties props = loadProperties();
         long maxIndex = getMaxIndex(props, "msgPosting.");
-        System.out.println("Inside MessageProcessingUtility main method");
         if (maxIndex < Constants.MIN_ARGS) {
             System.out.println("Invalid arguments");
             System.out.println("Please send Url, filepath, tokenurl, Username and Password as arguments");
-        } else {
-            String tokenUrl = props.getProperty(Constants.TOKEN_URL);
-            String usernm = props.getProperty(Constants.CLIENT_ID);
-            String pwd = props.getProperty(Constants.CLIENT_SECRET);
-            String devcorp7 = props.getProperty(Constants.DEVCORP7);
-            String namespace = props.getProperty(Constants.NAMESPACE);
-            String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE).toLowerCase();
-            String url = devcorp7 + "/" + namespace + "/" + transactionService + Constants.POSTING_ENDPOINT;
+            return;
+        }
 
-//            System.out.println("tokenUrl: "+tokenUrl);
-//            System.out.println("usernm: "+usernm);
-//            System.out.println("pwd: "+pwd);
-            System.out.println("url: " + url);
+        String tokenUrl = props.getProperty(Constants.TOKEN_URL);
+        String usernm = props.getProperty(Constants.CLIENT_ID);
+        String pwd = props.getProperty(Constants.CLIENT_SECRET);
+        String devcorp7 = props.getProperty(Constants.DEVCORP7);
+        String namespace = props.getProperty(Constants.NAMESPACE);
+        String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE).toLowerCase();
+        String url = devcorp7 + "/" + namespace + "/" + transactionService + Constants.POSTING_ENDPOINT;
 
-            String webServiceId = props.getProperty(Constants.WEBSERVICE_ID);
-            String watchlistType = props.getProperty(Constants.WATCHLIST_TYPE);
+        System.out.println("url: " + url);
 
-            if (maxIndex >= 10) {
-                configureRetryParameters(props);
-                System.out.println("UserDefinedParams:::retryRequiredFlag=" + retryRequiredFlag + "; retryMaxCount=" + retryMaxCount + "; bearerTokenRefreshInterval=" + bearerTokenRefreshInterval + "min(s); restartFlag=" + restartFlag);
-            }
+        String webServiceId = props.getProperty(Constants.WEBSERVICE_ID);
+        String watchlistType = props.getProperty(Constants.WATCHLIST_TYPE);
 
+        if (maxIndex >= 10) {
+            configureRetryParameters(props);
+            System.out.println("UserDefinedParams:::retryRequiredFlag=" + retryRequiredFlag + "; retryMaxCount=" + retryMaxCount + "; bearerTokenRefreshInterval=" + bearerTokenRefreshInterval + "min(s); restartFlag=" + restartFlag);
+        }
 
+        if (excelFiles.isEmpty()) {
+            System.out.println("["+sdf.format(new Date())+"] No Excel files found to process.");
+            return;
+        }
 
+        for (File excelFile : excelFiles) {
+            System.out.println("["+sdf.format(new Date())+"] Processing file: " + excelFile.getName());
+            try (FileInputStream fis = new FileInputStream(excelFile);
+                 Workbook workbook = new XSSFWorkbook(fis)) {
+                Sheet sheet = workbook.getSheetAt(0);
 
-            // Load configuration for Excel splitting
-            boolean splitEnabled = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.EXCEL_SPLIT_ENABLED, Constants.NO));
-            List<File> excelFiles = new ArrayList<>();
-            if (splitEnabled) {
-                File[] files = Constants.OUTPUT_FOLDER.listFiles((dir, name) -> name.startsWith(Constants.OUTPUT_FILE_NAME) && name.endsWith(Constants.XLSX_EXT));
-                if (files != null) {
-                    Arrays.sort(files, (f1, f2) -> {
-                        try {
-                            int index1 = Integer.parseInt(f1.getName().replaceFirst(Constants.OUTPUT_FILE_NAME + "_", "").replace(Constants.XLSX_EXT, ""));
-                            int index2 = Integer.parseInt(f2.getName().replaceFirst(Constants.OUTPUT_FILE_NAME + "_", "").replace(Constants.XLSX_EXT, ""));
-                            return Integer.compare(index1, index2);
-                        } catch (NumberFormatException e) {
-                            return f1.getName().compareTo(f2.getName());
-                        }
-                    });
-                    int fileLimit = 0;
-                    File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
-                    if (countFile.exists()) {
-                        try {
-                            String countStr = new String(java.nio.file.Files.readAllBytes(countFile.toPath())).trim();
-                            fileLimit = Integer.parseInt(countStr);
-                            System.out.println("["+sdf.format(new Date())+"] Using file count from " + countFile.getAbsolutePath() + ": " + fileLimit);
-                        } catch (Exception e) {
-                            System.err.println("["+sdf.format(new Date())+"] Error reading file count from " + countFile.getAbsolutePath() + ": " + e.getMessage());
-                            System.err.println("["+sdf.format(new Date())+"] No files will be processed due to missing or invalid count file.");
-                        }
-                    } else {
-                        System.err.println("["+sdf.format(new Date())+"] Count file not found at " + countFile.getAbsolutePath());
-                        System.err.println("["+sdf.format(new Date())+"] No files will be processed. Please run Raw Message Generator to create the count file.");
+                // Dynamically add processor columns
+                Row headerRow = sheet.getRow(0);
+                if (headerRow == null) headerRow = sheet.createRow(0);
+                int lastColumn = headerRow.getLastCellNum();
+                if (lastColumn < 0) lastColumn = 0;
+
+                String[] processorHeaders = {
+                        matchingEngine+" "+Constants.TRXN_TOKEN,
+                        matchingEngine+" "+Constants.MATCH_COUNT,
+                        matchingEngine+" "+Constants.STATUS,
+                        matchingEngine+" "+Constants.FEEDBACK_STATUS,
+                        matchingEngine+" # "+getMatchHeaderSuffix(webServiceId, watchlistType)+" matches",
+                        matchingEngine+" Feedback"
+                };
+                int processorStartColumn = lastColumn;
+                for (int i = 0; i < processorHeaders.length; i++) {
+                    Cell headerCell = headerRow.getCell(processorStartColumn + i);
+                    if (headerCell == null) headerCell = headerRow.createCell(processorStartColumn + i);
+                    headerCell.setCellValue(processorHeaders[i]);
+                }
+
+                Iterator<Row> rowIterator = sheet.iterator();
+                Map<String, String> seqIdToRequestMap = new LinkedHashMap<>();
+                Map<String, Integer> seqIdToRowNum = new HashMap<>();
+                DataFormatter formatter = new DataFormatter();
+                int rowNumber = 0;
+
+                while(rowIterator.hasNext()) {
+                    Row row = (Row)rowIterator.next();
+                    if (rowNumber == 0) {
+                        ++rowNumber;
+                        continue;
                     }
-                    if (fileLimit > 0) {
-                        for (int i = 0; i < Math.min(files.length, fileLimit); i++) {
-                            excelFiles.add(files[i]);
-                        }
+                    Cell seqCell = row.getCell(0);
+                    Cell requestCell = row.getCell(2);
+                    if (seqCell != null && requestCell != null) {
+                        String seqId = formatter.formatCellValue(seqCell);
+                        seqIdToRequestMap.put(seqId, formatter.formatCellValue(requestCell));
+                        seqIdToRowNum.put(seqId, row.getRowNum());
                     }
                 }
-            } else {
-                excelFiles.add(Constants.OUTPUT_XLSX_FILE_PATH);
-            }
 
-            if (excelFiles.isEmpty()) {
-                System.out.println("["+sdf.format(new Date())+"] No Excel files found to process.");
-                System.exit(1);
-            }
+                System.out.println("["+sdf.format(new Date())+"] size of seqIdToRequestMap in " + excelFile.getName() + " is " + seqIdToRequestMap.size());
 
-            for (File excelFile : excelFiles) {
-                System.out.println("["+sdf.format(new Date())+"] Processing file: " + excelFile.getName());
-                try (FileInputStream fis = new FileInputStream(excelFile);
-                     Workbook workbook = new XSSFWorkbook(fis)) {
-                    Sheet sheet = workbook.getSheetAt(0);
+                Map<String, String> failedRequestMap = processRequests(seqIdToRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId, watchlistType);
 
-                    // Dynamically add processor columns
-                    Row headerRow = sheet.getRow(0);
-                    if (headerRow == null) headerRow = sheet.createRow(0);
-                    int lastColumn = headerRow.getLastCellNum();
-                    if (lastColumn < 0) lastColumn = 0;
-
-                    String[] processorHeaders = {
-                            matchingEngine+" "+Constants.TRXN_TOKEN,
-                            matchingEngine+" "+Constants.MATCH_COUNT,
-                            matchingEngine+" "+Constants.STATUS,
-                            matchingEngine+" "+Constants.FEEDBACK_STATUS,
-                            matchingEngine+" # "+getMatchHeaderSuffix(webServiceId, watchlistType)+" matches",
-                            matchingEngine+" Feedback"
-                    };
-                    int processorStartColumn = lastColumn;
-                    for (int i = 0; i < processorHeaders.length; i++) {
-                        Cell headerCell = headerRow.getCell(processorStartColumn + i);
-                        if (headerCell == null) headerCell = headerRow.createCell(processorStartColumn + i);
-                        headerCell.setCellValue(processorHeaders[i]);
-                    }
-
-                    Iterator<Row> rowIterator = sheet.iterator();
-                    Map<String, String> seqIdToRequestMap = new LinkedHashMap<>();
-                    Map<String, Integer> seqIdToRowNum = new HashMap<>();
-                    DataFormatter formatter = new DataFormatter();
-                    int rowNumber = 0;
-
-                    while(rowIterator.hasNext()) {
-                        Row row = (Row)rowIterator.next();
-                        if (rowNumber == 0) {
-                            ++rowNumber;
-                            continue;
-                        }
-                        Cell seqCell = row.getCell(0);
-                        Cell requestCell = row.getCell(2);
-                        if (seqCell != null && requestCell != null) {
-                            String seqId = formatter.formatCellValue(seqCell);
-                            seqIdToRequestMap.put(seqId, formatter.formatCellValue(requestCell));
-                            seqIdToRowNum.put(seqId, row.getRowNum());
-                        }
-                    }
-
-                    System.out.println("["+sdf.format(new Date())+"] size of seqIdToRequestMap in " + excelFile.getName() + " is " + seqIdToRequestMap.size());
-
-                    Map<String, String> failedRequestMap = processRequests(seqIdToRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId, watchlistType);
-
-                    if (!failedRequestMap.isEmpty()) {
-                        System.out.println("Job is not done yet for " + excelFile.getName() + "...");
-                        failedRequestMap = processRequests(failedRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId, watchlistType);
-                    }
-
-                    // Auto-size new columns except the last (feedback) one
-                    for (int i = processorStartColumn; i < processorStartColumn + processorHeaders.length - 1; i++) {
-                        sheet.autoSizeColumn(i);
-                    }
-
-                    try (FileOutputStream outFile = new FileOutputStream(excelFile)) {
-                        workbook.write(outFile);
-                    }
-
-                    System.out.println("["+sdf.format(new Date())+"] Message Processing Completed for " + excelFile.getName());
-
-                } catch (Exception var36) {
-                    var36.printStackTrace();
-                    System.out.println("["+sdf.format(new Date())+"] Error occurred processing " + excelFile.getName() + ": " + var36.getMessage());
-                    System.exit(1);
+                if (!failedRequestMap.isEmpty()) {
+                    System.out.println("Job is not done yet for " + excelFile.getName() + "...");
+                    failedRequestMap = processRequests(failedRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId, watchlistType);
                 }
-            }
 
+                // Auto-size new columns except the last (feedback) one
+                for (int i = processorStartColumn; i < processorStartColumn + processorHeaders.length - 1; i++) {
+                    sheet.autoSizeColumn(i);
+                }
+
+                try (FileOutputStream outFile = new FileOutputStream(excelFile)) {
+                    workbook.write(outFile);
+                }
+
+                System.out.println("["+sdf.format(new Date())+"] Message Processing Completed for " + excelFile.getName());
+
+            } catch (Exception var36) {
+                var36.printStackTrace();
+                System.out.println("["+sdf.format(new Date())+"] Error occurred processing " + excelFile.getName() + ": " + var36.getMessage());
+                // Do not exit, continue with other files
+            }
         }
         System.out.println("=============================================================");
         System.out.println("                   MESSAGE POSTING ENDED                     ");
@@ -204,11 +159,6 @@ public class MessageProcessingUtility {
 
     }
 
-    /**
-     * Loads properties from the configuration file.
-     * @return Properties loaded from the configuration file.
-     * @throws IOException If there's an error reading the properties file.
-     */
     private static Properties loadProperties() throws IOException {
         Properties props = new Properties();
         try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
@@ -220,10 +170,6 @@ public class MessageProcessingUtility {
         return props;
     }
 
-    /**
-     * Configures retry parameters based on properties.
-     * @param props Properties containing retry configuration.
-     */
     private static void configureRetryParameters(Properties props) {
         retryRequiredFlag = props.getProperty(Constants.RETRY_REQUIRED_FLAG);
         String retryMaxArg = props.getProperty(Constants.RETRY_MAX_COUNT);

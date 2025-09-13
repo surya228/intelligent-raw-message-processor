@@ -6,8 +6,16 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -20,26 +28,27 @@ public class Main {
         }
 
         long startTime = System.currentTimeMillis();
-        if(props.getProperty(Constants.MODULE_RAW_MSG_GENERATOR).equalsIgnoreCase(Constants.YES))
-            RawMessageGenerator.generateRawMessage();
+
+        boolean generate = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.MODULE_RAW_MSG_GENERATOR));
+        boolean process = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.MODULE_RAW_MSG_PROCESSOR));
 
         ToggleMatchingEngine toggleMatchingEngine = new ToggleMatchingEngine();
+        String matchingEngine = toggleMatchingEngine.findCurrentMatchingEngine();
+        System.out.println("Current Matching Engine::: " + matchingEngine);
 
-        if(props.getProperty(Constants.MODULE_RAW_MSG_PROCESSOR).equalsIgnoreCase(Constants.YES)) {
-            String currentMatchingEngine = toggleMatchingEngine.findCurrentMatchingEngine();
-            System.out.println("Current Matching Engine::: "+ currentMatchingEngine);
-            MessageProcessingUtility.screenRawMsg(currentMatchingEngine);
-            MessageResponseAnalyzer.analyseResponseAndPrepareResults(currentMatchingEngine);
+        if (generate) {
+            RawMessageGenerator.generateRawMessage(null); // Generation is always sequential
         }
 
+        if (process) {
+            List<File> excelFiles = getExcelFiles(props);
 
-        if(props.getProperty(Constants.TOGGLE_MATCHING_ENGINE).equalsIgnoreCase(Constants.YES)){
-            String newEsOs = toggleMatchingEngine.toggleMatchingEngine();
-            System.out.println("Matching engine set to ::: "+ newEsOs);
+            runProcessing(matchingEngine, excelFiles, props);
 
-            if(props.getProperty(Constants.MODULE_RAW_MSG_PROCESSOR).equalsIgnoreCase(Constants.YES)){
-                MessageProcessingUtility.screenRawMsg(newEsOs);
-                MessageResponseAnalyzer.analyseResponseAndPrepareResults(newEsOs);
+            if (Constants.YES.equalsIgnoreCase(props.getProperty(Constants.TOGGLE_MATCHING_ENGINE))) {
+                matchingEngine = toggleMatchingEngine.toggleMatchingEngine();
+                System.out.println("Matching engine toggled to ::: " + matchingEngine);
+                runProcessing(matchingEngine, excelFiles, props);
             }
         }
 
@@ -60,6 +69,81 @@ public class Main {
      * Renames output files by appending a timestamp and webservice name.
      * @param props Properties containing configuration details like webservice name.
      */
+    private static List<File> getExcelFiles(Properties props) throws IOException {
+        List<File> excelFiles = new ArrayList<>();
+        boolean splitEnabled = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.EXCEL_SPLIT_ENABLED, Constants.NO));
+        if (splitEnabled) {
+            File[] files = Constants.OUTPUT_FOLDER.listFiles((dir, name) -> name.startsWith(Constants.OUTPUT_FILE_NAME) && name.endsWith(Constants.XLSX_EXT));
+            if (files != null) {
+                Arrays.sort(files, (f1, f2) -> {
+                    try {
+                        int index1 = Integer.parseInt(f1.getName().replaceFirst(Constants.OUTPUT_FILE_NAME + "_", "").replace(Constants.XLSX_EXT, ""));
+                        int index2 = Integer.parseInt(f2.getName().replaceFirst(Constants.OUTPUT_FILE_NAME + "_", "").replace(Constants.XLSX_EXT, ""));
+                        return Integer.compare(index1, index2);
+                    } catch (NumberFormatException e) {
+                        return f1.getName().compareTo(f2.getName());
+                    }
+                });
+                int fileLimit = 0;
+                File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
+                if (countFile.exists()) {
+                    try {
+                        String countStr = new String(Files.readAllBytes(countFile.toPath())).trim();
+                        fileLimit = Integer.parseInt(countStr);
+                    } catch (Exception e) {
+                        System.err.println("Error reading file count: " + e.getMessage());
+                    }
+                }
+                if (fileLimit > 0) {
+                    for (int i = 0; i < Math.min(files.length, fileLimit); i++) {
+                        excelFiles.add(files[i]);
+                    }
+                }
+            }
+        } else {
+            excelFiles.add(Constants.OUTPUT_XLSX_FILE_PATH);
+        }
+        return excelFiles;
+    }
+
+    private static void runProcessing(String matchingEngine, List<File> excelFiles, Properties props) throws Exception {
+        boolean concurrent = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.ENABLE_CONCURRENT, Constants.NO));
+
+        if (concurrent) {
+            int processorThreads = Integer.parseInt(props.getProperty(Constants.PROCESSOR_THREADS, String.valueOf(Constants.DEFAULT_THREAD_COUNT)));
+            int analyzerThreads = Integer.parseInt(props.getProperty(Constants.ANALYZER_THREADS, String.valueOf(Constants.DEFAULT_THREAD_COUNT)));
+
+            BlockingQueue<File> processorQueue = new LinkedBlockingQueue<>();
+            BlockingQueue<File> analyzerQueue = new LinkedBlockingQueue<>();
+
+            ExecutorService processorPool = Executors.newFixedThreadPool(processorThreads);
+            ExecutorService analyzerPool = Executors.newFixedThreadPool(analyzerThreads);
+
+            for (int i = 0; i < processorThreads; i++) {
+                processorPool.submit(new ProcessorRunnable(processorQueue, analyzerQueue, matchingEngine));
+            }
+            for (int i = 0; i < analyzerThreads; i++) {
+                analyzerPool.submit(new AnalyzerRunnable(analyzerQueue, matchingEngine));
+            }
+
+            // Add existing files to queue for processing
+            for (File file : excelFiles) {
+                processorQueue.put(file);
+            }
+            processorQueue.put(new File(Constants.POISON_PILL));
+
+            processorPool.shutdown();
+            processorPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+
+            analyzerQueue.put(new File(Constants.POISON_PILL));
+            analyzerPool.shutdown();
+            analyzerPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } else {
+            MessageProcessingUtility.screenRawMsg(matchingEngine, excelFiles);
+            MessageResponseAnalyzer.analyseResponseAndPrepareResults(matchingEngine, excelFiles);
+        }
+    }
+
     private static void renameOutputFiles(Properties props) {
         SimpleDateFormat dateFormat = new SimpleDateFormat(Constants.DATE_SUFFIX_FORMAT);
         SimpleDateFormat timeFormat = new SimpleDateFormat(Constants.TIME_SUFFIX_FORMAT);
