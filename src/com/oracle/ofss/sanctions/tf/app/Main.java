@@ -26,11 +26,21 @@ public class Main {
             System.err.println("Error reading properties file: " + e.getMessage());
             throw e;
         }
+        saveConfigProperties(props);
+        System.out.println("Saved config file");
+
+        Date startDateObj = new Date();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("ddMMyy");
+        SimpleDateFormat timeFormat = new SimpleDateFormat("HHmmss");
+        String startDate = dateFormat.format(startDateObj);
+        String startTimeStr = timeFormat.format(startDateObj);
+        String renamePrefix = "output_" + props.getProperty(Constants.WEBSERVICE) + "_";
 
         long startTime = System.currentTimeMillis();
 
         boolean generate = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.MODULE_RAW_MSG_GENERATOR));
         boolean process = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.MODULE_RAW_MSG_PROCESSOR));
+        boolean isToggle = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.TOGGLE_MATCHING_ENGINE));
 
         ToggleMatchingEngine toggleMatchingEngine = new ToggleMatchingEngine();
         String matchingEngine = toggleMatchingEngine.findCurrentMatchingEngine();
@@ -43,21 +53,14 @@ public class Main {
         if (process) {
             List<File> excelFiles = getExcelFiles(props);
 
-            runProcessing(matchingEngine, excelFiles, props);
+            runProcessing(matchingEngine, excelFiles, props, isToggle, false, renamePrefix, startDate, startTimeStr);
 
-            if (Constants.YES.equalsIgnoreCase(props.getProperty(Constants.TOGGLE_MATCHING_ENGINE))) {
+            if (isToggle) {
                 matchingEngine = toggleMatchingEngine.toggleMatchingEngine();
                 System.out.println("Matching engine toggled to ::: " + matchingEngine);
-                runProcessing(matchingEngine, excelFiles, props);
+                runProcessing(matchingEngine, excelFiles, props, isToggle, true, renamePrefix, startDate, startTimeStr);
             }
         }
-
-        // Renaming output files
-        renameOutputFiles(props);
-
-        saveConfigProperties(props);
-
-        System.out.println("Saved config file");
 
         long endTime = System.currentTimeMillis();
         System.out.println("\n==========================================================");
@@ -69,6 +72,71 @@ public class Main {
      * Renames output files by appending a timestamp and webservice name.
      * @param props Properties containing configuration details like webservice name.
      */
+    private static void runProcessing(String matchingEngine, List<File> excelFiles, Properties props, boolean isToggle, boolean isFinalRun, String renamePrefix, String startDate, String startTimeStr) throws Exception {
+        boolean concurrent = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.ENABLE_CONCURRENT, Constants.NO));
+
+        if (concurrent) {
+            int processorThreads = Integer.parseInt(props.getProperty(Constants.PROCESSOR_THREADS, String.valueOf(Constants.DEFAULT_THREAD_COUNT)));
+            int analyzerThreads = Integer.parseInt(props.getProperty(Constants.ANALYZER_THREADS, String.valueOf(Constants.DEFAULT_THREAD_COUNT)));
+
+            BlockingQueue<File> processorQueue = new LinkedBlockingQueue<>();
+            BlockingQueue<File> analyzerQueue = new LinkedBlockingQueue<>();
+
+            ExecutorService processorPool = Executors.newFixedThreadPool(processorThreads);
+            ExecutorService analyzerPool = Executors.newFixedThreadPool(analyzerThreads);
+
+            for (int i = 0; i < processorThreads; i++) {
+                processorPool.submit(new ProcessorRunnable(processorQueue, analyzerQueue, matchingEngine));
+            }
+            for (int i = 0; i < analyzerThreads; i++) {
+                analyzerPool.submit(new AnalyzerRunnable(analyzerQueue, matchingEngine, isToggle, isFinalRun, renamePrefix, startDate, startTimeStr));
+            }
+
+            // Add existing files to queue for processing
+            for (File file : excelFiles) {
+                processorQueue.put(file);
+            }
+
+            // Put one poison pill per processor thread
+            for (int i = 0; i < processorThreads; i++) {
+                processorQueue.put(new File(Constants.POISON_PILL));
+            }
+
+            processorPool.shutdown();
+            processorPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+
+            // Put one poison pill per analyzer thread
+            for (int i = 0; i < analyzerThreads; i++) {
+                analyzerQueue.put(new File(Constants.POISON_PILL));
+            }
+
+            analyzerPool.shutdown();
+            analyzerPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } else {
+            MessageProcessingUtility.screenRawMsg(matchingEngine, excelFiles);
+            MessageResponseAnalyzer.analyseResponseAndPrepareResults(matchingEngine, excelFiles);
+
+            // Rename in sequential mode
+            if (!isToggle || (isToggle && isFinalRun)) {
+                for (File file : excelFiles) {
+                    renameFile(file, matchingEngine, isToggle, renamePrefix, startDate, startTimeStr);
+                }
+            }
+        }
+    }
+
+    private static void renameFile(File file, String matchingEngine, boolean isToggle, String renamePrefix, String startDate, String startTimeStr) {
+        String sequence = file.getName().replace("output_", "").replace(".xlsx", "");
+        String enginePart = isToggle ? "OS_OT" : matchingEngine;
+        String newName = renamePrefix + enginePart + "_" + startDate + "_" + startTimeStr + "_" + sequence + ".xlsx";
+        File newFile = new File(Constants.OUTPUT_FOLDER, newName);
+        if (file.renameTo(newFile)) {
+            System.out.println("Renamed " + file.getName() + " to " + newName);
+        } else {
+            System.err.println("Failed to rename " + file.getName());
+        }
+    }
+
     private static List<File> getExcelFiles(Properties props) throws IOException {
         List<File> excelFiles = new ArrayList<>();
         boolean splitEnabled = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.EXCEL_SPLIT_ENABLED, Constants.NO));
@@ -104,83 +172,6 @@ public class Main {
             excelFiles.add(Constants.OUTPUT_XLSX_FILE_PATH);
         }
         return excelFiles;
-    }
-
-    private static void runProcessing(String matchingEngine, List<File> excelFiles, Properties props) throws Exception {
-        boolean concurrent = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.ENABLE_CONCURRENT, Constants.NO));
-
-        if (concurrent) {
-            int processorThreads = Integer.parseInt(props.getProperty(Constants.PROCESSOR_THREADS, String.valueOf(Constants.DEFAULT_THREAD_COUNT)));
-            int analyzerThreads = Integer.parseInt(props.getProperty(Constants.ANALYZER_THREADS, String.valueOf(Constants.DEFAULT_THREAD_COUNT)));
-
-            BlockingQueue<File> processorQueue = new LinkedBlockingQueue<>();
-            BlockingQueue<File> analyzerQueue = new LinkedBlockingQueue<>();
-
-            ExecutorService processorPool = Executors.newFixedThreadPool(processorThreads);
-            ExecutorService analyzerPool = Executors.newFixedThreadPool(analyzerThreads);
-
-            for (int i = 0; i < processorThreads; i++) {
-                processorPool.submit(new ProcessorRunnable(processorQueue, analyzerQueue, matchingEngine));
-            }
-            for (int i = 0; i < analyzerThreads; i++) {
-                analyzerPool.submit(new AnalyzerRunnable(analyzerQueue, matchingEngine));
-            }
-
-            // Add existing files to queue for processing
-            for (File file : excelFiles) {
-                processorQueue.put(file);
-            }
-
-            // Put one poison pill per processor thread
-            for (int i = 0; i < processorThreads; i++) {
-                processorQueue.put(new File(Constants.POISON_PILL));
-            }
-
-            processorPool.shutdown();
-            processorPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-
-            // Put one poison pill per analyzer thread
-            for (int i = 0; i < analyzerThreads; i++) {
-                analyzerQueue.put(new File(Constants.POISON_PILL));
-            }
-
-            analyzerPool.shutdown();
-            analyzerPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-        } else {
-            MessageProcessingUtility.screenRawMsg(matchingEngine, excelFiles);
-            MessageResponseAnalyzer.analyseResponseAndPrepareResults(matchingEngine, excelFiles);
-        }
-    }
-
-    private static void renameOutputFiles(Properties props) {
-        SimpleDateFormat dateFormat = new SimpleDateFormat(Constants.DATE_SUFFIX_FORMAT);
-        SimpleDateFormat timeFormat = new SimpleDateFormat(Constants.TIME_SUFFIX_FORMAT);
-        Date now = new Date();
-        String date = dateFormat.format(now);
-        String time = timeFormat.format(now);
-        String webservice = props.getProperty(Constants.WEBSERVICE);
-        String baseName = (webservice != null ? webservice : "") + "_" + date + "_" + time;
-
-        File[] filesToRename = {
-                Constants.OUTPUT_XLSX_FILE_PATH,
-                Constants.OUTPUT_JSON_FILE_PATH
-        };
-        String[] extensions = {Constants.XLSX_EXT, Constants.JSON_EXT};
-
-        for (int i = 0; i < filesToRename.length; i++) {
-            File original = filesToRename[i];
-            if (!original.exists()) continue;
-
-            String fileName = baseName + extensions[i];
-            File newFile = new File(Constants.OUTPUT_FOLDER, fileName);
-            if (original.renameTo(newFile)) {
-                System.out.println("Renamed " + original.getName() + " to " + newFile.getName());
-            } else {
-                System.err.println("Failed to rename " + original.getName());
-            }
-        }
-
-        System.out.println("Output files renamed");
     }
 
     /**
