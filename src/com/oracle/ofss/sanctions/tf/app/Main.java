@@ -46,8 +46,31 @@ public class Main {
         String matchingEngine = toggleMatchingEngine.findCurrentMatchingEngine();
         System.out.println("Current Matching Engine::: " + matchingEngine);
 
+        // Delete previous output files and count file
+        File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
+        if (countFile.exists()) {
+            if (countFile.delete()) {
+                System.out.println("Deleted previous count file: " + countFile.getName());
+            } else {
+                System.err.println("Failed to delete previous count file: " + countFile.getName());
+            }
+        }
+        File[] prevFiles = Constants.OUTPUT_FOLDER.listFiles((dir, name) -> name.matches("output_\\d+\\.xlsx"));
+        if (prevFiles != null) {
+            for (File file : prevFiles) {
+                if (file.delete()) {
+                    System.out.println("Deleted previous output file: " + file.getName());
+                } else {
+                    System.err.println("Failed to delete previous output file: " + file.getName());
+                }
+            }
+        }
         if (generate) {
-            RawMessageGenerator.generateRawMessage(null); // Generation is always sequential
+            int generatedCount = RawMessageGenerator.generateRawMessage(null); // Generation is always sequential
+            if (generatedCount == 0) {
+                System.out.println("No raw messages generated. Exiting utility.");
+                System.exit(0);
+            }
         }
 
         if (process) {
@@ -139,37 +162,32 @@ public class Main {
 
     private static List<File> getExcelFiles(Properties props) throws IOException {
         List<File> excelFiles = new ArrayList<>();
-        boolean splitEnabled = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.EXCEL_SPLIT_ENABLED, Constants.NO));
-        if (splitEnabled) {
-            File[] files = Constants.OUTPUT_FOLDER.listFiles((dir, name) -> name.startsWith(Constants.OUTPUT_FILE_NAME) && name.endsWith(Constants.XLSX_EXT));
-            if (files != null) {
-                Arrays.sort(files, (f1, f2) -> {
-                    try {
-                        int index1 = Integer.parseInt(f1.getName().replaceFirst(Constants.OUTPUT_FILE_NAME + "_", "").replace(Constants.XLSX_EXT, ""));
-                        int index2 = Integer.parseInt(f2.getName().replaceFirst(Constants.OUTPUT_FILE_NAME + "_", "").replace(Constants.XLSX_EXT, ""));
-                        return Integer.compare(index1, index2);
-                    } catch (NumberFormatException e) {
-                        return f1.getName().compareTo(f2.getName());
-                    }
-                });
-                int fileLimit = 0;
-                File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
-                if (countFile.exists()) {
-                    try {
-                        String countStr = new String(Files.readAllBytes(countFile.toPath())).trim();
-                        fileLimit = Integer.parseInt(countStr);
-                    } catch (Exception e) {
-                        System.err.println("Error reading file count: " + e.getMessage());
-                    }
+        File[] files = Constants.OUTPUT_FOLDER.listFiles((dir, name) -> name.matches("output_\\d+\\.xlsx"));
+        if (files != null) {
+            Arrays.sort(files, (f1, f2) -> {
+                try {
+                    int index1 = Integer.parseInt(f1.getName().replaceFirst(Constants.OUTPUT_FILE_NAME + "_", "").replace(Constants.XLSX_EXT, ""));
+                    int index2 = Integer.parseInt(f2.getName().replaceFirst(Constants.OUTPUT_FILE_NAME + "_", "").replace(Constants.XLSX_EXT, ""));
+                    return Integer.compare(index1, index2);
+                } catch (NumberFormatException e) {
+                    return f1.getName().compareTo(f2.getName());
                 }
-                if (fileLimit > 0) {
-                    for (int i = 0; i < Math.min(files.length, fileLimit); i++) {
-                        excelFiles.add(files[i]);
-                    }
+            });
+            int fileLimit = 0;
+            File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
+            if (countFile.exists()) {
+                try {
+                    String countStr = new String(Files.readAllBytes(countFile.toPath())).trim();
+                    fileLimit = Integer.parseInt(countStr);
+                } catch (Exception e) {
+                    System.err.println("Error reading file count: " + e.getMessage());
                 }
             }
-        } else {
-            excelFiles.add(Constants.OUTPUT_XLSX_FILE_PATH);
+            if (fileLimit > 0) {
+                for (int i = 0; i < Math.min(files.length, fileLimit); i++) {
+                    excelFiles.add(files[i]);
+                }
+            }
         }
         return excelFiles;
     }

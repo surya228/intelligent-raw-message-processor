@@ -20,7 +20,7 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 
 public class RawMessageGenerator {
-public static void generateRawMessage(BlockingQueue<File> queue) throws Exception {
+public static int generateRawMessage(BlockingQueue<File> queue) throws Exception {
         long startTime = System.currentTimeMillis();
         System.out.println("\n=============================================================");
         System.out.println("                RAW MESSAGE GENERATOR STARTED                ");
@@ -83,20 +83,21 @@ public static void generateRawMessage(BlockingQueue<File> queue) throws Exceptio
 
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            if (rs != null) {
-                rs.close();
-            }
-            if (connection != null) {
-                try {
-                    connection.close();
-                    System.out.println("Connection closed.");
-                } catch (SQLException e) {
-                    System.err.println("Failed to close the connection:");
-                    e.printStackTrace();
-                }
-            }
+} finally {
+    if (rs != null) {
+        rs.close();
+    }
+    if (connection != null) {
+        try {
+            connection.close();
+            System.out.println("Connection closed.");
+        } catch (SQLException e) {
+            System.err.println("Failed to close the connection:");
+            e.printStackTrace();
         }
+    }
+}
+return rawMessageJsonArray != null ? rawMessageJsonArray.length() : 0;
     }
 
     private static boolean validateConfigProperties(String watchlistType, String webserviceId, boolean isStopwordEnabled, boolean isSynonymEnabled) throws Exception {
@@ -640,7 +641,6 @@ public static void writeJsonAsExcelFile(JSONArray jsonArray, String transactionS
             throw e;
         }
 
-        boolean splitEnabled = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.EXCEL_SPLIT_ENABLED, Constants.NO));
         int rowLimit;
         try {
             String rowLimitStr = props.getProperty(Constants.EXCEL_SPLIT_ROW_LIMIT, String.valueOf(Constants.DEFAULT_ROW_LIMIT));
@@ -650,13 +650,25 @@ public static void writeJsonAsExcelFile(JSONArray jsonArray, String transactionS
             rowLimit = Constants.DEFAULT_ROW_LIMIT;
         }
 
-        if (!splitEnabled || jsonArray.length() <= rowLimit) {
+if (jsonArray.length() <= rowLimit) {
             // Write to a single file if splitting is not enabled or data is within limit
-            File outputFile = Constants.OUTPUT_XLSX_FILE_PATH;
+String fileName = String.format(Constants.OUTPUT_FILE_NAME_PATTERN, 1) + Constants.XLSX_EXT;
+File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
             writeSingleExcelFile(jsonArray, transactionService, tagName, webService, watchlistType, outputFile);
-            if (queue != null) {
-                queue.put(outputFile);
-            }
+if (queue != null) {
+    queue.put(outputFile);
+}
+if (queue != null) {
+    queue.put(new File(Constants.POISON_PILL));
+}
+File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
+try (FileWriter fw = new FileWriter(countFile)) {
+    fw.write("1");
+} catch (IOException e) {
+    System.err.println("Error writing output file count to " + countFile.getAbsolutePath() + ": " + e.getMessage());
+}
+System.out.println("Successfully wrote to Excel (" + outputFile.getName() + ") file.");
+System.out.println("Output file count (1) saved to: " + countFile.getAbsolutePath());
         } else {
             // Split data into multiple files
             int fileIndex = 1;
@@ -780,7 +792,6 @@ public static void writeRawMessagesToJsonFile(JSONArray jsonArray) throws IOExce
             throw e;
         }
 
-        boolean splitEnabled = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.EXCEL_SPLIT_ENABLED, Constants.NO));
         int rowLimit = Constants.DEFAULT_ROW_LIMIT;
         try {
             String rowLimitStr = props.getProperty(Constants.EXCEL_SPLIT_ROW_LIMIT, String.valueOf(Constants.DEFAULT_ROW_LIMIT));
@@ -790,13 +801,21 @@ public static void writeRawMessagesToJsonFile(JSONArray jsonArray) throws IOExce
             rowLimit = Constants.DEFAULT_ROW_LIMIT;
         }
 
-        if (!splitEnabled || jsonArray.length() <= rowLimit) {
+if (jsonArray.length() <= rowLimit) {
             // Write to a single file if splitting is not enabled or data is within limit
-            File outputFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_NAME + ".json");
-            try (FileOutputStream fos = new FileOutputStream(outputFile)) {
-                fos.write(jsonArray.toString(4).getBytes(Constants.ENCODER));
-            }
-            System.out.println("Successfully wrote raw messages to JSON (" + Constants.OUTPUT_FILE_NAME + ".json) file.");
+String fileName = String.format(Constants.OUTPUT_FILE_NAME_PATTERN, 1) + Constants.JSON_EXT;
+File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
+try (FileOutputStream fos = new FileOutputStream(outputFile)) {
+    fos.write(jsonArray.toString(4).getBytes(Constants.ENCODER));
+}
+File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
+try (FileWriter fw = new FileWriter(countFile)) {
+    fw.write("1");
+} catch (IOException e) {
+    System.err.println("Error writing output file count to " + countFile.getAbsolutePath() + ": " + e.getMessage());
+}
+System.out.println("Successfully wrote raw messages to JSON (" + outputFile.getName() + ") file.");
+System.out.println("Output file count (1) saved to: " + countFile.getAbsolutePath());
         } else {
             // Split data into multiple files
             int fileIndex = 1;
