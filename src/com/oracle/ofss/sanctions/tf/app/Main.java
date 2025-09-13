@@ -34,7 +34,7 @@ public class Main {
         SimpleDateFormat timeFormat = new SimpleDateFormat("HHmmss");
         String startDate = dateFormat.format(startDateObj);
         String startTimeStr = timeFormat.format(startDateObj);
-        String renamePrefix = "output_" + props.getProperty(Constants.WEBSERVICE) + "_";
+        String renamePrefix = props.getProperty(Constants.WEBSERVICE) + "_";
 
         long startTime = System.currentTimeMillis();
 
