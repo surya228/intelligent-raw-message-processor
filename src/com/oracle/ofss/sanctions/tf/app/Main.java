@@ -96,56 +96,42 @@ public class Main {
      * @param props Properties containing configuration details like webservice name.
      */
     private static void runProcessing(String matchingEngine, List<File> excelFiles, Properties props, boolean isToggle, boolean isFinalRun, String renamePrefix, String startDate, String startTimeStr) throws Exception {
-        boolean concurrent = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.ENABLE_CONCURRENT, Constants.NO));
+        int processorThreads = Integer.parseInt(props.getProperty(Constants.PROCESSOR_THREADS, String.valueOf(Constants.DEFAULT_THREAD_COUNT)));
+        int analyzerThreads = Integer.parseInt(props.getProperty(Constants.ANALYZER_THREADS, String.valueOf(Constants.DEFAULT_THREAD_COUNT)));
 
-        if (concurrent) {
-            int processorThreads = Integer.parseInt(props.getProperty(Constants.PROCESSOR_THREADS, String.valueOf(Constants.DEFAULT_THREAD_COUNT)));
-            int analyzerThreads = Integer.parseInt(props.getProperty(Constants.ANALYZER_THREADS, String.valueOf(Constants.DEFAULT_THREAD_COUNT)));
+        BlockingQueue<File> processorQueue = new LinkedBlockingQueue<>();
+        BlockingQueue<File> analyzerQueue = new LinkedBlockingQueue<>();
 
-            BlockingQueue<File> processorQueue = new LinkedBlockingQueue<>();
-            BlockingQueue<File> analyzerQueue = new LinkedBlockingQueue<>();
+        ExecutorService processorPool = Executors.newFixedThreadPool(processorThreads);
+        ExecutorService analyzerPool = Executors.newFixedThreadPool(analyzerThreads);
 
-            ExecutorService processorPool = Executors.newFixedThreadPool(processorThreads);
-            ExecutorService analyzerPool = Executors.newFixedThreadPool(analyzerThreads);
-
-            for (int i = 0; i < processorThreads; i++) {
-                processorPool.submit(new ProcessorRunnable(processorQueue, analyzerQueue, matchingEngine));
-            }
-            for (int i = 0; i < analyzerThreads; i++) {
-                analyzerPool.submit(new AnalyzerRunnable(analyzerQueue, matchingEngine, isToggle, isFinalRun, renamePrefix, startDate, startTimeStr));
-            }
-
-            // Add existing files to queue for processing
-            for (File file : excelFiles) {
-                processorQueue.put(file);
-            }
-
-            // Put one poison pill per processor thread
-            for (int i = 0; i < processorThreads; i++) {
-                processorQueue.put(new File(Constants.POISON_PILL));
-            }
-
-            processorPool.shutdown();
-            processorPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-
-            // Put one poison pill per analyzer thread
-            for (int i = 0; i < analyzerThreads; i++) {
-                analyzerQueue.put(new File(Constants.POISON_PILL));
-            }
-
-            analyzerPool.shutdown();
-            analyzerPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-        } else {
-            MessageProcessingUtility.screenRawMsg(matchingEngine, excelFiles);
-            MessageResponseAnalyzer.analyseResponseAndPrepareResults(matchingEngine, excelFiles);
-
-            // Rename in sequential mode
-            if (!isToggle || (isToggle && isFinalRun)) {
-                for (File file : excelFiles) {
-                    renameFile(file, matchingEngine, isToggle, renamePrefix, startDate, startTimeStr);
-                }
-            }
+        for (int i = 0; i < processorThreads; i++) {
+            processorPool.submit(new ProcessorRunnable(processorQueue, analyzerQueue, matchingEngine));
         }
+        for (int i = 0; i < analyzerThreads; i++) {
+            analyzerPool.submit(new AnalyzerRunnable(analyzerQueue, matchingEngine, isToggle, isFinalRun, renamePrefix, startDate, startTimeStr));
+        }
+
+        // Add existing files to queue for processing
+        for (File file : excelFiles) {
+            processorQueue.put(file);
+        }
+
+        // Put one poison pill per processor thread
+        for (int i = 0; i < processorThreads; i++) {
+            processorQueue.put(new File(Constants.POISON_PILL));
+        }
+
+        processorPool.shutdown();
+        processorPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+
+        // Put one poison pill per analyzer thread
+        for (int i = 0; i < analyzerThreads; i++) {
+            analyzerQueue.put(new File(Constants.POISON_PILL));
+        }
+
+        analyzerPool.shutdown();
+        analyzerPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
     }
 
     private static void renameFile(File file, String matchingEngine, boolean isToggle, String renamePrefix, String startDate, String startTimeStr) {
