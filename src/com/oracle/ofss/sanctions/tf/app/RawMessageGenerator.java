@@ -20,7 +20,7 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 
 public class RawMessageGenerator {
-public static int generateRawMessage(BlockingQueue<File> queue) throws Exception {
+    public static int generateRawMessage(BlockingQueue<File> queue) throws Exception {
         long startTime = System.currentTimeMillis();
         System.out.println("\n=============================================================");
         System.out.println("                RAW MESSAGE GENERATOR STARTED                ");
@@ -82,21 +82,21 @@ public static int generateRawMessage(BlockingQueue<File> queue) throws Exception
 
         } catch (Exception e) {
             e.printStackTrace();
-} finally {
-    if (rs != null) {
-        rs.close();
-    }
-    if (connection != null) {
-        try {
-            connection.close();
-            System.out.println("Connection closed.");
-        } catch (SQLException e) {
-            System.err.println("Failed to close the connection:");
-            e.printStackTrace();
+        } finally {
+            if (rs != null) {
+                rs.close();
+            }
+            if (connection != null) {
+                try {
+                    connection.close();
+                    System.out.println("Connection closed.");
+                } catch (SQLException e) {
+                    System.err.println("Failed to close the connection:");
+                    e.printStackTrace();
+                }
+            }
         }
-    }
-}
-return rawMessageJsonArray != null ? rawMessageJsonArray.length() : 0;
+        return rawMessageJsonArray != null ? rawMessageJsonArray.length() : 0;
     }
 
     private static boolean validateConfigProperties(String watchlistType, String webserviceId, boolean isStopwordEnabled, boolean isSynonymEnabled) throws Exception {
@@ -168,7 +168,7 @@ return rawMessageJsonArray != null ? rawMessageJsonArray.length() : 0;
         return rs;
     }
 
-public static JSONArray generateRawMessageJsonArray(ResultSet rs, Properties props, String srcFile, String tableName, String tagName, String webserviceId, String watchlistType, boolean isStopwordEnabled, boolean isSynonymEnabled) throws Exception {
+    public static JSONArray generateRawMessageJsonArray(ResultSet rs, Properties props, String srcFile, String tableName, String tagName, String webserviceId, String watchlistType, boolean isStopwordEnabled, boolean isSynonymEnabled) throws Exception {
         JSONArray jsonArray = new JSONArray();
         int maxIndex = getMaxIndex(props, Constants.REPLACE_SRC);
         String temp;
@@ -274,8 +274,8 @@ public static JSONArray generateRawMessageJsonArray(ResultSet rs, Properties pro
     }
 
     public static int createRawMsg(String temp, String value, String identifierToBeReplaced,
-                      String token, String targetColumn, String identifierToken,
-                      String tableName, JSONArray jsonArray, int updatedCount, String originalValue, int ced, String uid,
+                                   String token, String targetColumn, String identifierToken,
+                                   String tableName, JSONArray jsonArray, int updatedCount, String originalValue, int ced, String uid,
                                    String tagName, String webserviceId, String lookupIds, String lookupValueIds){
         if (value != null) {
             System.out.println("toBeReplaced: " + value + " originalValue: " + originalValue + "  token: " + token + "  column: "+ targetColumn + "  identifier: "+ identifierToBeReplaced + " ced: "+ ced);
@@ -327,13 +327,13 @@ public static JSONArray generateRawMessageJsonArray(ResultSet rs, Properties pro
         List<Object[]> stopwords = new ArrayList<>();
 
         String query = "SELECT * FROM ( " +
-                       "  SELECT v.V_LOOKUP_VALUES, v.N_LOOKUP_ID, v.N_LOOKUP_VALUE_ID, " +
-                       "         ROW_NUMBER() OVER (PARTITION BY l.N_LOOKUP_ID ORDER BY DBMS_RANDOM.VALUE) AS rn " +
-                       "  FROM fcc_idx_m_lookup l " +
-                       "  JOIN FCC_IDX_M_LOOKUP_VALUES v ON l.N_LOOKUP_ID = v.N_LOOKUP_ID " +
-                       "  WHERE l.F_IS_SYNONYM = 'N' " +
-                       "  AND l.N_LOOKUP_ID in ("+props.getProperty("stopword.lookupIdIn")+")"+
-                       " ) WHERE rn <= ?";
+                "  SELECT v.V_LOOKUP_VALUES, v.N_LOOKUP_ID, v.N_LOOKUP_VALUE_ID, " +
+                "         ROW_NUMBER() OVER (PARTITION BY l.N_LOOKUP_ID ORDER BY DBMS_RANDOM.VALUE) AS rn " +
+                "  FROM fcc_idx_m_lookup l " +
+                "  JOIN FCC_IDX_M_LOOKUP_VALUES v ON l.N_LOOKUP_ID = v.N_LOOKUP_ID " +
+                "  WHERE l.F_IS_SYNONYM = 'N' " +
+                "  AND l.N_LOOKUP_ID in ("+props.getProperty("stopword.lookupIdIn")+")"+
+                " ) WHERE rn <= ?";
 
         PreparedStatement stmt = connection.prepareStatement(query);
         stmt.setString(1, props.getProperty("stopword.pickValuesFromEachLookup"));
@@ -351,66 +351,66 @@ public static JSONArray generateRawMessageJsonArray(ResultSet rs, Properties pro
         return stopwords;
     }
 
-private static Map<String, Map<String, String>> loadSynonyms(Connection connection, String watchlistType) throws SQLException {
-    Map<String, Map<String, String>> synonymMap = new HashMap<>();
-    List<String> lookupIds = getLookupIdsForWatchlistType(watchlistType);
+    private static Map<String, Map<String, String>> loadSynonyms(Connection connection, String watchlistType) throws SQLException {
+        Map<String, Map<String, String>> synonymMap = new HashMap<>();
+        List<String> lookupIds = getLookupIdsForWatchlistType(watchlistType);
 
-    if (lookupIds.isEmpty()) {
-        return synonymMap; // Return empty map if no lookup IDs are specified for the watchlist type
-    }
+        if (lookupIds.isEmpty()) {
+            return synonymMap; // Return empty map if no lookup IDs are specified for the watchlist type
+        }
 
-    String query = "SELECT N_LOOKUP_ID FROM fcc_idx_m_lookup WHERE F_IS_SYNONYM = 'Y' AND N_LOOKUP_ID IN (" + String.join(",", lookupIds) + ")";
+        String query = "SELECT N_LOOKUP_ID FROM fcc_idx_m_lookup WHERE F_IS_SYNONYM = 'Y' AND N_LOOKUP_ID IN (" + String.join(",", lookupIds) + ")";
 
-    try (PreparedStatement stmt = connection.prepareStatement(query);
-         ResultSet rs = stmt.executeQuery()) {
-        while (rs.next()) {
-            String lookupId = rs.getString("N_LOOKUP_ID");
-            Map<String, String> innerMap = new HashMap<>();
-            String valuesQuery = "SELECT N_LOOKUP_VALUE_ID, V_LOOKUP_VALUES FROM FCC_IDX_M_LOOKUP_VALUES WHERE N_LOOKUP_ID = ?";
-            try (PreparedStatement vStmt = connection.prepareStatement(valuesQuery)) {
-                vStmt.setString(1, lookupId);
-                try (ResultSet vRs = vStmt.executeQuery()) {
-                    while (vRs.next()) {
-                        String valueId = vRs.getString("N_LOOKUP_VALUE_ID");
-                        String values = vRs.getString("V_LOOKUP_VALUES");
-                        // Ignore (remove) newline characters in values
-                        if (values != null) {
-                            values = values.replaceAll("\\n", "");
+        try (PreparedStatement stmt = connection.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                String lookupId = rs.getString("N_LOOKUP_ID");
+                Map<String, String> innerMap = new HashMap<>();
+                String valuesQuery = "SELECT N_LOOKUP_VALUE_ID, V_LOOKUP_VALUES FROM FCC_IDX_M_LOOKUP_VALUES WHERE N_LOOKUP_ID = ?";
+                try (PreparedStatement vStmt = connection.prepareStatement(valuesQuery)) {
+                    vStmt.setString(1, lookupId);
+                    try (ResultSet vRs = vStmt.executeQuery()) {
+                        while (vRs.next()) {
+                            String valueId = vRs.getString("N_LOOKUP_VALUE_ID");
+                            String values = vRs.getString("V_LOOKUP_VALUES");
+                            // Ignore (remove) newline characters in values
+                            if (values != null) {
+                                values = values.replaceAll("\\n", "");
+                            }
+                            innerMap.put(valueId, values);
                         }
-                        innerMap.put(valueId, values);
                     }
                 }
+                synonymMap.put(lookupId, innerMap);
             }
-            synonymMap.put(lookupId, innerMap);
         }
+        return synonymMap;
     }
-    return synonymMap;
-}
 
-private static List<String> getLookupIdsForWatchlistType(String watchlistType) {
-    List<String> lookupIds = new ArrayList<>();
-    switch (watchlistType) {
-        case "COUNTRY":
-            lookupIds.add("2");
-            break;
-        case "WCPREM":
-        case "OFAC":
-        case "DJW":
-        case "PRV_WL1":
-        case "WCSTANDARD":
-        case "EU":
-        case "HMT":
-        case "UN":
-            lookupIds.add("1");
-            lookupIds.add("3");
-            lookupIds.add("6");
-            break;
-        // Add more cases as needed for other watchlist types
-        default:
-            break;
+    private static List<String> getLookupIdsForWatchlistType(String watchlistType) {
+        List<String> lookupIds = new ArrayList<>();
+        switch (watchlistType) {
+            case "COUNTRY":
+                lookupIds.add("2");
+                break;
+            case "WCPREM":
+            case "OFAC":
+            case "DJW":
+            case "PRV_WL1":
+            case "WCSTANDARD":
+            case "EU":
+            case "HMT":
+            case "UN":
+                lookupIds.add("1");
+                lookupIds.add("3");
+                lookupIds.add("6");
+                break;
+            // Add more cases as needed for other watchlist types
+            default:
+                break;
+        }
+        return lookupIds;
     }
-    return lookupIds;
-}
 
     private static List<Map<String, Object>> generateSynonymVariantsWithInfo(String toBeReplaced, Map<String, Map<String, String>> synonymMap, Properties props) {
         List<Map<String, Object>> result = new ArrayList<>();
@@ -625,7 +625,7 @@ private static List<String> getLookupIdsForWatchlistType(String watchlistType) {
             return null;
         }
     }
-public static void writeJsonAsExcelFile(JSONArray jsonArray, String transactionService, String tagName, String webService, String watchlistType, BlockingQueue<File> queue) throws IOException, InterruptedException {
+    public static void writeJsonAsExcelFile(JSONArray jsonArray, String transactionService, String tagName, String webService, String watchlistType, BlockingQueue<File> queue) throws IOException, InterruptedException {
         // Create a subfolder "out" inside it
         if (!Constants.OUTPUT_FOLDER.exists()) {
             Constants.OUTPUT_FOLDER.mkdirs();  // Create the folder if it doesn't exist
@@ -649,25 +649,25 @@ public static void writeJsonAsExcelFile(JSONArray jsonArray, String transactionS
             rowLimit = Constants.DEFAULT_ROW_LIMIT;
         }
 
-if (jsonArray.length() <= rowLimit) {
+        if (jsonArray.length() <= rowLimit) {
             // Write to a single file if splitting is not enabled or data is within limit
-String fileName = String.format(Constants.OUTPUT_FILE_NAME_PATTERN, 1) + Constants.XLSX_EXT;
-File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
+            String fileName = String.format(Constants.OUTPUT_FILE_NAME_PATTERN, 1) + Constants.XLSX_EXT;
+            File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
             writeSingleExcelFile(jsonArray, transactionService, tagName, webService, watchlistType, outputFile);
-if (queue != null) {
-    queue.put(outputFile);
-}
-if (queue != null) {
-    queue.put(new File(Constants.POISON_PILL));
-}
-File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
-try (FileWriter fw = new FileWriter(countFile)) {
-    fw.write("1");
-} catch (IOException e) {
-    System.err.println("Error writing output file count to " + countFile.getAbsolutePath() + ": " + e.getMessage());
-}
-System.out.println("Successfully wrote to Excel (" + outputFile.getName() + ") file.");
-System.out.println("Output file count (1) saved to: " + countFile.getAbsolutePath());
+            if (queue != null) {
+                queue.put(outputFile);
+            }
+            if (queue != null) {
+                queue.put(new File(Constants.POISON_PILL));
+            }
+            File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
+            try (FileWriter fw = new FileWriter(countFile)) {
+                fw.write("1");
+            } catch (IOException e) {
+                System.err.println("Error writing output file count to " + countFile.getAbsolutePath() + ": " + e.getMessage());
+            }
+            System.out.println("Successfully wrote to Excel (" + outputFile.getName() + ") file.");
+            System.out.println("Output file count (1) saved to: " + countFile.getAbsolutePath());
         } else {
             // Split data into multiple files
             int fileIndex = 1;
@@ -703,7 +703,7 @@ System.out.println("Output file count (1) saved to: " + countFile.getAbsolutePat
         }
     }
 
-private static void writeSingleExcelFile(JSONArray jsonArray, String transactionService, String tagName, String webService, String watchlistType, File outputFile) throws IOException {
+    private static void writeSingleExcelFile(JSONArray jsonArray, String transactionService, String tagName, String webService, String watchlistType, File outputFile) throws IOException {
         // Create the Excel workbook and sheet
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Output");
@@ -777,7 +777,7 @@ private static void writeSingleExcelFile(JSONArray jsonArray, String transaction
         System.out.println("Successfully wrote to Excel (" + outputFile.getName() + ") file.");
     }
 
-public static void writeRawMessagesToJsonFile(JSONArray jsonArray) throws IOException {
+    public static void writeRawMessagesToJsonFile(JSONArray jsonArray) throws IOException {
         if (!Constants.OUTPUT_FOLDER.exists()) {
             Constants.OUTPUT_FOLDER.mkdirs();
         }
@@ -800,21 +800,21 @@ public static void writeRawMessagesToJsonFile(JSONArray jsonArray) throws IOExce
             rowLimit = Constants.DEFAULT_ROW_LIMIT;
         }
 
-if (jsonArray.length() <= rowLimit) {
+        if (jsonArray.length() <= rowLimit) {
             // Write to a single file if splitting is not enabled or data is within limit
-String fileName = String.format(Constants.OUTPUT_FILE_NAME_PATTERN, 1) + Constants.JSON_EXT;
-File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
-try (FileOutputStream fos = new FileOutputStream(outputFile)) {
-    fos.write(jsonArray.toString(4).getBytes(Constants.ENCODER));
-}
-File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
-try (FileWriter fw = new FileWriter(countFile)) {
-    fw.write("1");
-} catch (IOException e) {
-    System.err.println("Error writing output file count to " + countFile.getAbsolutePath() + ": " + e.getMessage());
-}
-System.out.println("Successfully wrote raw messages to JSON (" + outputFile.getName() + ") file.");
-System.out.println("Output file count (1) saved to: " + countFile.getAbsolutePath());
+            String fileName = String.format(Constants.OUTPUT_FILE_NAME_PATTERN, 1) + Constants.JSON_EXT;
+            File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
+            try (FileOutputStream fos = new FileOutputStream(outputFile)) {
+                fos.write(jsonArray.toString(4).getBytes(Constants.ENCODER));
+            }
+            File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
+            try (FileWriter fw = new FileWriter(countFile)) {
+                fw.write("1");
+            } catch (IOException e) {
+                System.err.println("Error writing output file count to " + countFile.getAbsolutePath() + ": " + e.getMessage());
+            }
+            System.out.println("Successfully wrote raw messages to JSON (" + outputFile.getName() + ") file.");
+            System.out.println("Output file count (1) saved to: " + countFile.getAbsolutePath());
         } else {
             // Split data into multiple files
             int fileIndex = 1;

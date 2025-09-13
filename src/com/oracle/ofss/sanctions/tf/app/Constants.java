@@ -124,7 +124,7 @@ public class Constants {
     public static String SOURCE_FILE_PATH = PARENT_DIRECTORY+File.separator+BIN_FOLDER_NAME+File.separator+SOURCE_FILE_NAME+".json";
     public static String CONFIG_FILE_PATH = PARENT_DIRECTORY+File.separator+BIN_FOLDER_NAME+File.separator+CONFIG_FILE_NAME+".properties";
     public static File OUTPUT_FOLDER = new File(PARENT_DIRECTORY, OUTPUT_FOLDER_NAME);
-    
+
     // Excel splitting configuration
     public static String EXCEL_SPLIT_ROW_LIMIT = "excel.split.rowLimit";
     public static int DEFAULT_ROW_LIMIT = 1000;

@@ -377,54 +377,54 @@ public class MessageProcessingUtility {
                 .count();
         return count;
     }
-    
-    
+
+
     @SuppressWarnings("unused")
-	private static void writeResponseMapIntoFile(File myFile, Map<String, String> seqIdToResponseMap, DataFormatter formatter) {
-    	try {
-          FileInputStream fs = new FileInputStream(myFile);
-          XSSFWorkbook workBook = new XSSFWorkbook(fs);
-          XSSFSheet newSheet = workBook.getSheetAt(0);
-          Iterator<Row> rowItr = newSheet.iterator();
-          int rowNum = 0;
+    private static void writeResponseMapIntoFile(File myFile, Map<String, String> seqIdToResponseMap, DataFormatter formatter) {
+        try {
+            FileInputStream fs = new FileInputStream(myFile);
+            XSSFWorkbook workBook = new XSSFWorkbook(fs);
+            XSSFSheet newSheet = workBook.getSheetAt(0);
+            Iterator<Row> rowItr = newSheet.iterator();
+            int rowNum = 0;
 
-          while(rowItr.hasNext()) {
-              Row row = (Row)rowItr.next();
-              if (rowNum == 0) {
-                  ++rowNum;
-              } else {
-                  String seqId = formatter.formatCellValue(row.getCell(0));
-                  System.out.println("Writing output to file:" + seqId);
-                  if (seqIdToResponseMap.get(seqId) != null) {
-                      Cell cell;
-                      if (row.getCell(3) == null) {
-                          cell = row.createCell(3);
-                      } else {
-                          cell = row.getCell(3);
-                      }
+            while(rowItr.hasNext()) {
+                Row row = (Row)rowItr.next();
+                if (rowNum == 0) {
+                    ++rowNum;
+                } else {
+                    String seqId = formatter.formatCellValue(row.getCell(0));
+                    System.out.println("Writing output to file:" + seqId);
+                    if (seqIdToResponseMap.get(seqId) != null) {
+                        Cell cell;
+                        if (row.getCell(3) == null) {
+                            cell = row.createCell(3);
+                        } else {
+                            cell = row.getCell(3);
+                        }
 
-                      if (((String)seqIdToResponseMap.get(seqId)).length() < 32000) {
-                          cell.setCellValue((String)seqIdToResponseMap.get(seqId));
-                      } else {
-                          cell.setCellValue(((String)seqIdToResponseMap.get(seqId)).substring(0, 32000));
-                      }
-                  }
-              }
-          }
+                        if (((String)seqIdToResponseMap.get(seqId)).length() < 32000) {
+                            cell.setCellValue((String)seqIdToResponseMap.get(seqId));
+                        } else {
+                            cell.setCellValue(((String)seqIdToResponseMap.get(seqId)).substring(0, 32000));
+                        }
+                    }
+                }
+            }
 
-          fs.close();
-          FileOutputStream outFile = new FileOutputStream(myFile);
-          workBook.write(outFile);
-          outFile.close();
-          workBook.close();
-      } catch (FileNotFoundException var34) {
-          var34.printStackTrace();
-      } catch (IOException var35) {
-          var35.printStackTrace();
-      }
+            fs.close();
+            FileOutputStream outFile = new FileOutputStream(myFile);
+            workBook.write(outFile);
+            outFile.close();
+            workBook.close();
+        } catch (FileNotFoundException var34) {
+            var34.printStackTrace();
+        } catch (IOException var35) {
+            var35.printStackTrace();
+        }
     }
 
-    
+
     private static byte[] getParamsByte(Map<String, String> params) {
         byte[] result = null;
         StringBuilder postData = new StringBuilder();
@@ -508,31 +508,31 @@ public class MessageProcessingUtility {
         } catch (Exception var19) {
             var19.printStackTrace();
         }
-        
+
         instanceBearerToken = bearerToken;
         labelledTime = System.currentTimeMillis();
         return bearerToken;
     }
-    
+
     private static String getResponseMsg(int code) {
-    	String msg = "will do the needful";
-    	
+        String msg = "will do the needful";
+
         switch(code) {
-        case Constants.BAD_GATEWAY:
-        	msg = Constants.WAIT_MSG;
-        	break;
-        case Constants.GATEWAY_TIMEOUT:
-        	msg = Constants.HOLD_ON_MSG_1;
-        	break;
-        case Constants.SERVICE_UNAVAILABLE:
-        	msg = Constants.HOLD_ON_MSG_2;
-        	break;
-        case Constants.SUCCESS_CODE:
-        	msg = Constants.SUCCESS_MSG;
-        	break;
-        default:
-        	msg = Constants.LOAD_MSG;
-        	break;
+            case Constants.BAD_GATEWAY:
+                msg = Constants.WAIT_MSG;
+                break;
+            case Constants.GATEWAY_TIMEOUT:
+                msg = Constants.HOLD_ON_MSG_1;
+                break;
+            case Constants.SERVICE_UNAVAILABLE:
+                msg = Constants.HOLD_ON_MSG_2;
+                break;
+            case Constants.SUCCESS_CODE:
+                msg = Constants.SUCCESS_MSG;
+                break;
+            default:
+                msg = Constants.LOAD_MSG;
+                break;
         }
         return msg;
     }
