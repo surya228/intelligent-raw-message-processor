@@ -625,12 +625,63 @@ private static List<String> getLookupIdsForWatchlistType(String watchlistType) {
         }
     }
     public static void writeJsonAsExcelFile(JSONArray jsonArray, String transactionService, String tagName, String webService, String watchlistType) throws IOException {
-
         // Create a subfolder "out" inside it
         if (!Constants.OUTPUT_FOLDER.exists()) {
             Constants.OUTPUT_FOLDER.mkdirs();  // Create the folder if it doesn't exist
         }
 
+        // Load configuration for Excel splitting
+        Properties props = new Properties();
+        try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
+            props.load(reader);
+        } catch (IOException e) {
+            System.err.println("Error reading properties file for Excel splitting: " + e.getMessage());
+            throw e;
+        }
+
+        boolean splitEnabled = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.EXCEL_SPLIT_ENABLED, Constants.NO));
+        int rowLimit;
+        try {
+            String rowLimitStr = props.getProperty(Constants.EXCEL_SPLIT_ROW_LIMIT, String.valueOf(Constants.DEFAULT_ROW_LIMIT));
+            rowLimit = Integer.parseInt(rowLimitStr);
+        } catch (NumberFormatException e) {
+            System.err.println("Invalid row limit value, using default: " + Constants.DEFAULT_ROW_LIMIT);
+            rowLimit = Constants.DEFAULT_ROW_LIMIT;
+        }
+
+        if (!splitEnabled || jsonArray.length() <= rowLimit) {
+            // Write to a single file if splitting is not enabled or data is within limit
+            writeSingleExcelFile(jsonArray, transactionService, tagName, webService, watchlistType, Constants.OUTPUT_XLSX_FILE_PATH);
+        } else {
+            // Split data into multiple files
+            int fileIndex = 1;
+            int startIndex = 0;
+            while (startIndex < jsonArray.length()) {
+                int endIndex = Math.min(startIndex + rowLimit, jsonArray.length());
+                JSONArray chunk = new JSONArray();
+                for (int i = startIndex; i < endIndex; i++) {
+                    chunk.put(jsonArray.getJSONObject(i));
+                }
+                String fileName = String.format(Constants.OUTPUT_FILE_NAME_PATTERN, fileIndex) + Constants.XLSX_EXT;
+                File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
+                writeSingleExcelFile(chunk, transactionService, tagName, webService, watchlistType, outputFile);
+                fileIndex++;
+                startIndex = endIndex;
+            }
+            // Store the count of output files created, adjusting for the last increment since fileIndex is incremented after the last file
+            File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
+            int totalFiles = fileIndex - 1; // Adjust for the last increment
+            try (FileWriter fw = new FileWriter(countFile)) {
+                fw.write(String.valueOf(totalFiles));
+            } catch (IOException e) {
+                System.err.println("Error writing output file count to " + countFile.getAbsolutePath() + ": " + e.getMessage());
+            }
+            System.out.println("Successfully wrote to multiple Excel files with prefix (" + Constants.OUTPUT_FILE_NAME + "_N.xlsx).");
+            System.out.println("Output file count (" + totalFiles + ") saved to: " + countFile.getAbsolutePath());
+        }
+    }
+
+    private static void writeSingleExcelFile(JSONArray jsonArray, String transactionService, String tagName, String webService, String watchlistType, File outputFile) throws IOException {
         // Create the Excel workbook and sheet
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Output");
@@ -689,7 +740,6 @@ private static List<String> getLookupIdsForWatchlistType(String watchlistType) {
             row.createCell(6).setCellValue(targetColumn);         // Target Column
             row.createCell(7).setCellValue(watchlistType);         // Watchlist
             row.createCell(8).setCellValue(uid);         // N_UID
-
         }
 
         // Auto-size columns
@@ -698,12 +748,11 @@ private static List<String> getLookupIdsForWatchlistType(String watchlistType) {
         }
 
         // Write to file
-        FileOutputStream fileOut = new FileOutputStream(Constants.OUTPUT_XLSX_FILE_PATH);
-        workbook.write(fileOut);
-        fileOut.close();
+        try (FileOutputStream fileOut = new FileOutputStream(outputFile)) {
+            workbook.write(fileOut);
+        }
         workbook.close();
-
-        System.out.println("Successfully wrote to Excel ("+Constants.OUTPUT_FILE_NAME+".xlsx) file.");
+        System.out.println("Successfully wrote to Excel (" + outputFile.getName() + ") file.");
     }
 
     public static void writeRawMessagesToJsonFile(JSONArray jsonArray) throws IOException {
@@ -711,12 +760,61 @@ private static List<String> getLookupIdsForWatchlistType(String watchlistType) {
             Constants.OUTPUT_FOLDER.mkdirs();
         }
 
-        File outputFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_NAME+".json");
-
-        try (FileOutputStream fos = new FileOutputStream(outputFile)) {
-            fos.write(jsonArray.toString(4).getBytes(Constants.ENCODER));
+        // Load configuration for Excel splitting to match JSON splitting
+        Properties props = new Properties();
+        try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
+            props.load(reader);
+        } catch (IOException e) {
+            System.err.println("Error reading properties file for JSON splitting: " + e.getMessage());
+            throw e;
         }
 
-        System.out.println("Successfully wrote raw messages to JSON ("+Constants.OUTPUT_FILE_NAME+".json) file.");
+        boolean splitEnabled = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.EXCEL_SPLIT_ENABLED, Constants.NO));
+        int rowLimit = Constants.DEFAULT_ROW_LIMIT;
+        try {
+            String rowLimitStr = props.getProperty(Constants.EXCEL_SPLIT_ROW_LIMIT, String.valueOf(Constants.DEFAULT_ROW_LIMIT));
+            rowLimit = Integer.parseInt(rowLimitStr);
+        } catch (NumberFormatException e) {
+            System.err.println("Invalid row limit value for JSON splitting, using default: " + Constants.DEFAULT_ROW_LIMIT);
+            rowLimit = Constants.DEFAULT_ROW_LIMIT;
+        }
+
+        if (!splitEnabled || jsonArray.length() <= rowLimit) {
+            // Write to a single file if splitting is not enabled or data is within limit
+            File outputFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_NAME + ".json");
+            try (FileOutputStream fos = new FileOutputStream(outputFile)) {
+                fos.write(jsonArray.toString(4).getBytes(Constants.ENCODER));
+            }
+            System.out.println("Successfully wrote raw messages to JSON (" + Constants.OUTPUT_FILE_NAME + ".json) file.");
+        } else {
+            // Split data into multiple files
+            int fileIndex = 1;
+            int startIndex = 0;
+            while (startIndex < jsonArray.length()) {
+                int endIndex = Math.min(startIndex + rowLimit, jsonArray.length());
+                JSONArray chunk = new JSONArray();
+                for (int i = startIndex; i < endIndex; i++) {
+                    chunk.put(jsonArray.getJSONObject(i));
+                }
+                String fileName = String.format(Constants.OUTPUT_FILE_NAME_PATTERN, fileIndex) + Constants.JSON_EXT;
+                File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
+                try (FileOutputStream fos = new FileOutputStream(outputFile)) {
+                    fos.write(chunk.toString(4).getBytes(Constants.ENCODER));
+                }
+                System.out.println("Successfully wrote raw messages to JSON (" + fileName + ") file.");
+                fileIndex++;
+                startIndex = endIndex;
+            }
+            // Store the count of output files created, adjusting for the last increment since fileIndex is incremented after the last file
+            File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
+            int totalFiles = fileIndex - 1; // Adjust for the last increment
+            try (FileWriter fw = new FileWriter(countFile)) {
+                fw.write(String.valueOf(totalFiles));
+            } catch (IOException e) {
+                System.err.println("Error writing output file count to " + countFile.getAbsolutePath() + ": " + e.getMessage());
+            }
+            System.out.println("Successfully wrote to multiple Excel files with prefix (" + Constants.OUTPUT_FILE_NAME + "_N.xlsx).");
+            System.out.println("Output file count (" + totalFiles + ") saved to: " + countFile.getAbsolutePath());
+        }
     }
 }

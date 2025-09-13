@@ -126,6 +126,13 @@ public class Constants {
     public static File OUTPUT_FOLDER = new File(PARENT_DIRECTORY, OUTPUT_FOLDER_NAME);
     public static File OUTPUT_XLSX_FILE_PATH = new File(OUTPUT_FOLDER, OUTPUT_FILE_NAME + ".xlsx");
     public static File OUTPUT_JSON_FILE_PATH = new File(OUTPUT_FOLDER, OUTPUT_FILE_NAME + ".json");
+    
+    // Excel splitting configuration
+    public static String EXCEL_SPLIT_ENABLED = "excel.split.enabled";
+    public static String EXCEL_SPLIT_ROW_LIMIT = "excel.split.rowLimit";
+    public static int DEFAULT_ROW_LIMIT = 1000;
+    public static String OUTPUT_FILE_NAME_PATTERN = "output_%d";
+    public static String OUTPUT_FILE_COUNT_PATH = "output_file_count.txt";
 
     // Status strings
     public static String PASS = "PASS";
