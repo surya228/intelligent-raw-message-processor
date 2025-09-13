@@ -34,7 +34,7 @@ public class AnalyzerRunnable implements Runnable {
 
                 // Rename if this is the final run or no toggle
                 if (!isToggle || (isToggle && isFinalRun)) {
-                    String sequence = file.getName().replace("output_", "").replace(".xlsx", "");
+                    String sequence = file.getName().replace(Constants.OUTPUT_FILE_NAME+"_", "").replace(".xlsx", "");
                     String enginePart = isToggle ? "OS_OT" : matchingEngine;
                     String newName = renamePrefix + enginePart + "_" + startDate + "_" + startTimeStr + "_" + sequence + ".xlsx";
                     File newFile = new File(Constants.OUTPUT_FOLDER, newName);

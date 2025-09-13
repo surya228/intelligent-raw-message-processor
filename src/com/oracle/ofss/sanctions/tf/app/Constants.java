@@ -116,7 +116,7 @@ public class Constants {
     // File names and paths
     public static String SOURCE_FILE_NAME = "source";
     public static String CONFIG_FILE_NAME = "config";
-    public static String OUTPUT_FILE_NAME = "output";
+    public static String OUTPUT_FILE_NAME = "executing";
     public static String OUTPUT_FOLDER_NAME = "out";
     public static String BIN_FOLDER_NAME = "bin";
     public static String CURRENT_DIRECTORY = System.getProperty("user.dir");
@@ -124,14 +124,12 @@ public class Constants {
     public static String SOURCE_FILE_PATH = PARENT_DIRECTORY+File.separator+BIN_FOLDER_NAME+File.separator+SOURCE_FILE_NAME+".json";
     public static String CONFIG_FILE_PATH = PARENT_DIRECTORY+File.separator+BIN_FOLDER_NAME+File.separator+CONFIG_FILE_NAME+".properties";
     public static File OUTPUT_FOLDER = new File(PARENT_DIRECTORY, OUTPUT_FOLDER_NAME);
-    public static File OUTPUT_XLSX_FILE_PATH = new File(OUTPUT_FOLDER, OUTPUT_FILE_NAME + ".xlsx");
-    public static File OUTPUT_JSON_FILE_PATH = new File(OUTPUT_FOLDER, OUTPUT_FILE_NAME + ".json");
     
     // Excel splitting configuration
     public static String EXCEL_SPLIT_ROW_LIMIT = "excel.split.rowLimit";
     public static int DEFAULT_ROW_LIMIT = 1000;
-    public static String OUTPUT_FILE_NAME_PATTERN = "output_%d";
-    public static String OUTPUT_FILE_COUNT_PATH = "output_file_count.txt";
+    public static String OUTPUT_FILE_NAME_PATTERN = OUTPUT_FILE_NAME+"_%d";
+    public static String OUTPUT_FILE_COUNT_PATH = "generated_file_count.txt";
 
     // Status strings
     public static String PASS = "PASS";

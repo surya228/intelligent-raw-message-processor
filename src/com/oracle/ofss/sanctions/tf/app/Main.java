@@ -55,7 +55,7 @@ public class Main {
                 System.err.println("Failed to delete previous count file: " + countFile.getName());
             }
         }
-        File[] prevFiles = Constants.OUTPUT_FOLDER.listFiles((dir, name) -> name.matches("output_\\d+\\.xlsx"));
+        File[] prevFiles = Constants.OUTPUT_FOLDER.listFiles((dir, name) -> name.matches(Constants.OUTPUT_FILE_NAME+"_\\d+\\.xlsx"));
         if (prevFiles != null) {
             for (File file : prevFiles) {
                 if (file.delete()) {
@@ -149,7 +149,7 @@ public class Main {
     }
 
     private static void renameFile(File file, String matchingEngine, boolean isToggle, String renamePrefix, String startDate, String startTimeStr) {
-        String sequence = file.getName().replace("output_", "").replace(".xlsx", "");
+        String sequence = file.getName().replace(Constants.OUTPUT_FILE_NAME+"_", "").replace(".xlsx", "");
         String enginePart = isToggle ? "OS_OT" : matchingEngine;
         String newName = renamePrefix + enginePart + "_" + startDate + "_" + startTimeStr + "_" + sequence + ".xlsx";
         File newFile = new File(Constants.OUTPUT_FOLDER, newName);
@@ -162,7 +162,7 @@ public class Main {
 
     private static List<File> getExcelFiles(Properties props) throws IOException {
         List<File> excelFiles = new ArrayList<>();
-        File[] files = Constants.OUTPUT_FOLDER.listFiles((dir, name) -> name.matches("output_\\d+\\.xlsx"));
+        File[] files = Constants.OUTPUT_FOLDER.listFiles((dir, name) -> name.matches(Constants.OUTPUT_FILE_NAME+"_\\d+\\.xlsx"));
         if (files != null) {
             Arrays.sort(files, (f1, f2) -> {
                 try {

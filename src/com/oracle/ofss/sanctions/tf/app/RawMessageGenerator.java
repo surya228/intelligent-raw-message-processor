@@ -71,7 +71,6 @@ public static int generateRawMessage(BlockingQueue<File> queue) throws Exception
 
             if(rawMessageJsonArray.length()>0){
                 writeJsonAsExcelFile(rawMessageJsonArray,tansactionService,tagName,webService,watchlistType, queue);
-                writeRawMessagesToJsonFile(rawMessageJsonArray);
             }
 
             System.out.println("\n=============================================================");
