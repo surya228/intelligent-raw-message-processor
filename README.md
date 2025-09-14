@@ -82,19 +82,19 @@ flowchart TD
   end
 
   %% Processing and Analysis
-  V3 --> P1[ProcessorRunnable Run #1]
-  P1 --> API[(Screening API)]
+  V3 --> P1[ProcessorRunnable Run 1]
+  P1 --> API[Screening API]
   API --> P1
-  P1 --> R1[Excel Responses/Tokens (Run #1)]
+  P1 --> R1[Excel Responses/Tokens Run 1]
 
   %% Decide to toggle and rerun
   R1 --> DT{toggleMatchingEngine == Y?}
-  DT -->|Yes| T1[Switch Engine OS <-> OT]
+  DT -->|Yes| T1[Switch Engine OS-OT]
   T1 --> T2[Refresh Cache via API]
-  T2 --> P2[ProcessorRunnable Run #2]
+  T2 --> P2[ProcessorRunnable Run 2]
   P2 --> API
   API --> P2
-  P2 --> R2[Excel Responses/Tokens (Run #2)]
+  P2 --> R2[Excel Responses/Tokens Run 2]
   R2 --> A1[AnalyzerRunnable Threads]
 
   DT -->|No| A1
