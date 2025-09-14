@@ -19,6 +19,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.Scanner;
 
 public class Main {
     static {
@@ -89,6 +90,16 @@ public class Main {
             System.exit(0);
         }
         logger.info("Raw Message Generator Completed");
+
+        if (generatedCount > 0) {
+            logger.info("Generated {} raw messages. Do you want to proceed with running the processor? (Y/N): ", generatedCount);
+            Scanner scanner = new Scanner(System.in);
+            String response = scanner.nextLine().trim().toLowerCase();
+            if (!response.equalsIgnoreCase(Constants.YES)) {
+                logger.info("User chose not to proceed with processor. Exiting.");
+                System.exit(0);
+            }
+        }
 
         ToggleMatchingEngine toggleMatchingEngine = new ToggleMatchingEngine();
         String matchingEngine = toggleMatchingEngine.findCurrentMatchingEngine();
