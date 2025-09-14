@@ -96,7 +96,7 @@ public class Main {
 
         ToggleMatchingEngine toggleMatchingEngine = new ToggleMatchingEngine();
         String matchingEngine = toggleMatchingEngine.findCurrentMatchingEngine();
-        logger.info("Proceeding for Processor and Analyzer");
+        logger.info("Proceeding for Message Processor and Analyzer");
         logger.info("Current Matching Engine::: {}", matchingEngine);
 
         if (process) {

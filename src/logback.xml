@@ -64,48 +64,48 @@
 
     <!-- Root Logger -->
     <root level="info">
-        <appender-ref ref="CONSOLE" />
+        <!-- <appender-ref ref="CONSOLE" /> -->
     </root>
 
     <!-- Logger for Main -->
     <logger name="com.oracle.ofss.sanctions.tf.app.Main" level="debug" additivity="false">
         <appender-ref ref="MAIN_FILE" />
-        <appender-ref ref="CONSOLE" />
+         <appender-ref ref="CONSOLE" />
     </logger>
 
     <!-- Logger for RawMessageGenerator -->
     <logger name="com.oracle.ofss.sanctions.tf.app.RawMessageGenerator" level="debug" additivity="false">
         <appender-ref ref="RAWMSG_FILE" />
-        <appender-ref ref="CONSOLE" />
+        <!-- <appender-ref ref="CONSOLE" /> -->
     </logger>
 
     <!-- Logger for MessageProcessingUtility -->
     <logger name="com.oracle.ofss.sanctions.tf.app.MessageProcessingUtility" level="debug" additivity="false">
         <appender-ref ref="PROCESSOR_FILE" />
-        <appender-ref ref="CONSOLE" />
+        <!-- <appender-ref ref="CONSOLE" /> -->
     </logger>
 
     <!-- Logger for MessageResponseAnalyzer -->
     <logger name="com.oracle.ofss.sanctions.tf.app.MessageResponseAnalyzer" level="debug" additivity="false">
         <appender-ref ref="ANALYZER_FILE" />
-        <appender-ref ref="CONSOLE" />
+        <!-- <appender-ref ref="CONSOLE" /> -->
     </logger>
 
     <!-- Logger for ProcessorRunnable -->
     <logger name="com.oracle.ofss.sanctions.tf.app.ProcessorRunnable" level="debug" additivity="false">
         <appender-ref ref="PROCESSOR_FILE" />
-        <appender-ref ref="CONSOLE" />
+        <!-- <appender-ref ref="CONSOLE" /> -->
     </logger>
 
     <!-- Logger for AnalyzerRunnable -->
     <logger name="com.oracle.ofss.sanctions.tf.app.AnalyzerRunnable" level="debug" additivity="false">
         <appender-ref ref="ANALYZER_FILE" />
-        <appender-ref ref="CONSOLE" />
+        <!-- <appender-ref ref="CONSOLE" /> -->
     </logger>
 
     <!-- Package-wide logger (for other classes) -->
     <logger name="com.oracle.ofss.sanctions.tf.app" level="debug" additivity="false">
         <appender-ref ref="MAIN_FILE" />
-        <appender-ref ref="CONSOLE" />
+<!--         <appender-ref ref="CONSOLE" /> -->
     </logger>
 </configuration>
