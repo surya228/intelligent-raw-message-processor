@@ -130,7 +130,7 @@ public class ToggleMatchingEngine {
             String insertSql = "INSERT INTO fcc_mr_c_matchingtarget (N_ID, V_ACTION_BY, D_ACTION, F_LRI_FLAG, F_ES_OS, V_MATCHING_ENGINE) VALUES (?, ?, ?, ?, ?, ?)";
             try (PreparedStatement pstmtInsert = conn.prepareStatement(insertSql)) {
                 pstmtInsert.setInt(1, newNId);
-                pstmtInsert.setString(2, "appuser");
+                pstmtInsert.setString(2, "utility");
                 pstmtInsert.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
                 pstmtInsert.setString(4, "Y");
                 pstmtInsert.setString(5, newEsOs);
