@@ -59,14 +59,14 @@ flowchart TD
   D -->|Yes| D1[Enable Stopword Variants]
   D -->|No| D0[No Stopword Variants]
 
-  C1 --> E[Variant Pipeline]
-  D1 --> E
-  C0 --> E
-  D0 --> E
+  C1 --> M{Valid configuration?}
+  D1 --> M
+  C0 --> M
+  D0 --> M
+  M -->|Yes| E[Variant Pipeline]
+  M -->|No| VF[Validation Failed: Both synonym and stopword enabled]
 
-  %% Warning if both are set
-  C1 -.->|and D1 also Yes| W[Config Warning: Only one of synonym/stopword should be Y]
-  W -.-> E
+  %% Validation handled by "Valid configuration?" decision above
 
   %% Toggling branch
   B -->|Yes| T1[Switch Engine OS <-> OT]
