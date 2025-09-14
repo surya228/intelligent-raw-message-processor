@@ -54,7 +54,7 @@ flowchart TD
     V1 --> V2["Apply Synonym or Stopword rules"]
     V2 --> V3[Write Split Excel/JSON]
   end
-  E --> DB[(Database (Watchlists))]
+  E --> DB[Database-Watchlists]
 
   %% Processing and Analysis
   V3 --> P1[ProcessorRunnable Run 1]
