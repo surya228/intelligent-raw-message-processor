@@ -21,16 +21,29 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class Main {
+    static {
+        try {
+            File logDir = new File(Constants.OUTPUT_FOLDER, "log");
+            if (!logDir.exists()) {
+                if (!logDir.mkdirs()) {
+                    System.err.println("Could not create log directory at " + logDir.getAbsolutePath());
+                }
+            }
+            System.setProperty("log.dir", logDir.getAbsolutePath());
+        } catch (Throwable t) {
+            System.err.println("Failed to initialize log directory: " + t.getMessage());
+        }
+    }
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
-    public static void main(String[] args) throws Exception {
-        Properties props = new Properties();
-        try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
-            props.load(reader);
-        } catch (IOException e) {
-            logger.error("Error reading properties file: " + e.getMessage());
-            throw e;
-        }
+public static void main(String[] args) throws Exception {
+    Properties props = new Properties();
+    try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
+        props.load(reader);
+    } catch (IOException e) {
+        logger.error("Error reading properties file: " + e.getMessage());
+        throw e;
+    }
         saveConfigProperties(props);
         logger.info("Saved config file");
 
