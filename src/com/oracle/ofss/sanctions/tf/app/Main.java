@@ -102,9 +102,10 @@ public class Main {
             } catch (Exception e) {
                 logger.error("Error reading file count: {}", e.getMessage());
             }
-            logger.info("Generated {} raw messages across {} Excel files. Do you want to proceed with running the processor? (Y/N): ", generatedCount, fileCount);
+            logger.info("Generated {} raw messages across {} Excel files.", generatedCount, fileCount);
+            System.out.print("Do you want to proceed with running the processor? (Y/N): ");
             Scanner scanner = new Scanner(System.in);
-            String response = scanner.next();
+            String response = scanner.nextLine().trim().toLowerCase();
             if (!response.equalsIgnoreCase(Constants.YES)) {
                 logger.info("User chose not to proceed with processor. Exiting.");
                 System.exit(0);
