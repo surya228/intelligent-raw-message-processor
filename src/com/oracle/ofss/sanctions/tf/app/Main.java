@@ -60,14 +60,14 @@ public class Main {
     }
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
-public static void main(String[] args) throws Exception {
-    Properties props = new Properties();
-    try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
-        props.load(reader);
-    } catch (IOException e) {
-        logger.error("Error reading properties file: " + e.getMessage());
-        throw e;
-    }
+    public static void main(String[] args) throws Exception {
+        Properties props = new Properties();
+        try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
+            props.load(reader);
+        } catch (IOException e) {
+            logger.error("Error reading properties file: " + e.getMessage());
+            throw e;
+        }
         saveConfigProperties(props);
         logger.info("Saved config file");
 

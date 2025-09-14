@@ -75,12 +75,12 @@ public class MessageProcessingUtility {
         }
 
         if (excelFiles.isEmpty()) {
-            logger.info("["+sdf.format(new Date())+"] No Excel files found to process.");
+            logger.info("No Excel files found to process.");
             return;
         }
 
         for (File excelFile : excelFiles) {
-            logger.info("["+sdf.format(new Date())+"] Processing file: " + excelFile.getName());
+            logger.info("Processing file: " + excelFile.getName());
             try (FileInputStream fis = new FileInputStream(excelFile);
                  Workbook workbook = new XSSFWorkbook(fis)) {
                 Sheet sheet = workbook.getSheetAt(0);
@@ -127,7 +127,7 @@ public class MessageProcessingUtility {
                     }
                 }
 
-                logger.info("["+sdf.format(new Date())+"] size of seqIdToRequestMap in " + excelFile.getName() + " is " + seqIdToRequestMap.size());
+                logger.info("size of seqIdToRequestMap in " + excelFile.getName() + " is " + seqIdToRequestMap.size());
 
                 Map<String, String> failedRequestMap = processRequests(seqIdToRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId, watchlistType);
 
@@ -145,11 +145,11 @@ public class MessageProcessingUtility {
                     workbook.write(outFile);
                 }
 
-                logger.info("["+sdf.format(new Date())+"] Message Processing Completed for " + excelFile.getName());
+                logger.info("Message Processing Completed for " + excelFile.getName());
 
             } catch (Exception var36) {
                 var36.printStackTrace();
-                logger.info("["+sdf.format(new Date())+"] Error occurred processing " + excelFile.getName() + ": " + var36.getMessage());
+                logger.info("Error occurred processing " + excelFile.getName() + ": " + var36.getMessage());
                 // Do not exit, continue with other files
             }
         }
@@ -201,7 +201,7 @@ public class MessageProcessingUtility {
             StringBuilder apiResponse = new StringBuilder();
             BufferedReader br = null;
 
-            logger.info("["+sdf.format(new Date())+"] Executing REST call with SeqId: " + seqId);
+            logger.info("Executing REST call with SeqId: " + seqId);
             do {
                 if (retryCount > 0) {
                     try {
@@ -209,7 +209,7 @@ public class MessageProcessingUtility {
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
                     }
-                    logger.info("["+sdf.format(new Date())+"] Waiting for REST call to complete...");
+                    logger.info("Waiting for REST call to complete...");
                 }
                 int currentRetry = retryRequestNumber.incrementAndGet();
 
@@ -251,7 +251,7 @@ public class MessageProcessingUtility {
                     br.close();
                     conn.disconnect();
 
-                    logger.info("["+sdf.format(new Date())+"] Waiting for Response: " + getResponseMsg(responseCode));
+                    logger.info("Waiting for Response: " + getResponseMsg(responseCode));
                     logger.info("api response::: "+ apiResponse);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -268,7 +268,7 @@ public class MessageProcessingUtility {
                 retryCount++;
             } while (Constants.YES.equalsIgnoreCase(retryRequiredFlag) && responseCode > 399 && retryCount <= retryMaxCount);
 
-            logger.info("["+sdf.format(new Date())+"] ResponseCode: " + responseCode);
+            logger.info("ResponseCode: " + responseCode);
 
             long endTime = System.currentTimeMillis();
             logger.info("=============================================================----------");

@@ -91,6 +91,18 @@
         <appender-ref ref="CONSOLE" />
     </logger>
 
+    <!-- Logger for ProcessorRunnable -->
+    <logger name="com.oracle.ofss.sanctions.tf.app.ProcessorRunnable" level="debug" additivity="false">
+        <appender-ref ref="PROCESSOR_FILE" />
+        <appender-ref ref="CONSOLE" />
+    </logger>
+
+    <!-- Logger for AnalyzerRunnable -->
+    <logger name="com.oracle.ofss.sanctions.tf.app.AnalyzerRunnable" level="debug" additivity="false">
+        <appender-ref ref="ANALYZER_FILE" />
+        <appender-ref ref="CONSOLE" />
+    </logger>
+
     <!-- Package-wide logger (for other classes) -->
     <logger name="com.oracle.ofss.sanctions.tf.app" level="debug" additivity="false">
         <appender-ref ref="MAIN_FILE" />
