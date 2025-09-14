@@ -1,127 +1,158 @@
-# Intelligent Raw Message Processor Utility
+# Intelligent Raw Message Processor Utility v4.0
 
 ## Project Overview
 
-This Java-based utility is designed for generating, processing, and analyzing raw financial messages in the context of sanctions screening and compliance. It integrates with watchlists (e.g., OFAC, EU, UN, HMT) to create message variants, post them to a REST service for matching, and analyze responses for true positives/negatives. Key features include:
+This Java-based utility generates, processes, and analyzes raw financial messages for sanctions screening and compliance testing. It integrates with various watchlists to create message variants, posts them to a REST service for matching, and analyzes responses to identify true positives/negatives. Key features include:
 
-- **Message Generation**: Creates raw messages with variations (e.g., Character Edit Distance - CED, stopwords, synonyms) from database watchlists.
-- **Message Processing**: Posts messages to a sanctions screening API and records responses.
-- **Response Analysis**: Evaluates matches against expected criteria, marking tests as PASS/FAIL.
-- **Matching Engine Toggling**: Switches between Open Search (OS) and Oracle Text (OT) engines with cache refresh.
-- **Concurrency Support**: Uses multi-threading for efficient processing and analysis.
-- **Output**: Generates Excel files with detailed results for easy review.
+- **Message Generation**: Queries watchlists from a database and generates variants using techniques like Character Edit Distance (CED), stopwords, and synonyms.
+- **Message Processing**: Posts generated messages to a sanctions screening API, handles retries, and records responses.
+- **Response Analysis**: Evaluates API responses against expected criteria, marking results as PASS/FAIL.
+- **Matching Engine Toggling**: Optionally switches between Open Search (OS) and Oracle Text (OT) engines with cache refresh.
+- **Concurrency**: Utilizes multi-threading for efficient processing and analysis.
+- **Output**: Produces Excel files with detailed results, including inputs, responses, and test statuses.
 
-The tool is useful for testing and validating sanctions screening systems, ensuring compliance with financial regulations.
+This tool is designed for testing sanctions screening systems, ensuring accurate detection of compliance risks in financial messages.
 
 ## Architecture
 
-The utility follows a modular flow:
+The utility follows a modular, multi-threaded architecture:
 
-1. **Configuration Loading**: Reads from `config.properties` and `source.json`.
-2. **Raw Message Generation**: Queries database, generates variants, and writes to Excel.
-3. **Processing**: Posts messages to API, handles retries, and updates Excel with responses.
-4. **Analysis**: Fetches feedback from database, analyzes matches, and updates results.
-5. **Optional Toggling**: Switches matching engines and refreshes caches.
+1. **Configuration Loading**: Reads settings from `config.properties` and message templates from `source.json`.
+2. **Raw Message Generation**: Queries database for watchlist data, generates variants, and writes to split Excel files.
+3. **Processing**: Multi-threaded posting of messages to API, updating Excel with responses.
+4. **Analysis**: Multi-threaded evaluation of matches, updating Excel with PASS/FAIL statuses.
+5. **Optional Toggling**: Switches matching engines and refreshes caches via API calls.
 
-### Flow Diagram
+### Conditional Flow Diagram (Feature Flags)
 
 ```mermaid
-graph TD
-    A[Config (config.properties, source.json)] --> B[Main]
-    B --> C[RawMessageGenerator]
-    C --> D[Generate Excel Files with Variants (CED, Stopwords, Synonyms)]
-    D --> E[MessageProcessingUtility]
-    E --> F[Post Messages to REST Service]
-    F --> G[Store Responses in Excel]
-    B --> H[ToggleMatchingEngine (Optional)]
-    H --> I[Switch Engine & Refresh Cache]
-    G --> J[MessageResponseAnalyzer]
-    J --> K[Analyze Matches & Update Excel (Pass/Fail)]
-    L[Database (Watchlists, Feedback)] <--> C
-    L <--> J
-    M[External REST API] <--> E
-    M <--> H
+flowchart TD
+  A[Config Loaded] --> C{synonym == Y?}
+  A --> D{stopword == Y?}
+
+  %% Mutually exclusive (doc note)
+  C -->|Yes| C1[Enable Synonym Variants]
+  C -->|No| C0[No Synonym Variants]
+  D -->|Yes| D1[Enable Stopword Variants]
+  D -->|No| D0[No Stopword Variants]
+
+  C1 --> M{Valid configuration?}
+  D1 --> M
+  C0 --> M
+  D0 --> M
+  M -->|Yes| E[Generate Raw Message Variants]
+  M -->|No| VF[Validation Failed: Both synonym and stopword enabled]
+
+  %% Validation handled by "Valid configuration?" decision above
+
+
+  %% Variant Pipeline details
+  subgraph E2 [Generate Raw Message Variants]
+    direction LR
+    E --> V0[Base Templates]
+    V0 --> V1["Apply CED(n) if enabled"]
+    V1 --> V2["Apply Synonym or Stopword rules"]
+    V2 --> V3[Write Split Excel/JSON]
+  end
+  E --> DB[Database-Watchlists]
+
+  %% Processing and Analysis
+  V3 --> P1[ProcessorRunnable Run 1]
+  P1 --> API[Screening API]
+  API --> P1
+  P1 --> R1[Excel Responses/Tokens Run 1]
+
+  %% Decide to toggle and rerun
+  R1 --> DT{toggleMatchingEngine == Y?}
+  DT -->|Yes| T1[Switch Engine OS-OT]
+  T1 --> T2[Refresh Cache via API]
+  T2 --> P2[ProcessorRunnable Run 2]
+  P2 --> API
+  API --> P2
+  P2 --> R2[Excel Responses/Tokens Run 2]
+  R2 --> A1[AnalyzerRunnable Threads]
+
+  DT -->|No| A1
+
+  A1 --> DB
+  A1 --> OUT[Excel PASS/FAIL]
 ```
 
 ## Prerequisites
 
 - **Java**: JDK 8 or higher.
-- **Database**: Oracle Database with access to watchlist tables (e.g., `FCC_TF_DIM_COUNTRY`, `FCC_WL_OFAC`).
-- **Libraries**: 
-  - Oracle JDBC drivers (included in `External Libraries/ojdbc17-full`).
-  - Apache POI for Excel handling.
+- **Database**: Oracle Database with access to relevant watchlist data.
+- **Libraries**:
+  - Oracle JDBC drivers.
+  - Apache POI for Excel manipulation.
   - SLF4J and Logback for logging.
-  - JSON.org or similar for JSON processing.
-  - Other dependencies in `External Libraries/TFCS Libs` (e.g., Jackson, OpenCSV).
-- **Configuration Files**: `config.properties` and `source.json` in `utility/intelligent-raw-message-processor-utility/bin/`.
-- **Wallet**: Oracle wallet for secure DB connections (e.g., `wallet_zip_extracted_file`).
+  - Jackson for JSON processing.
+  - OpenCSV for CSV handling.
+  - Other dependencies (e.g., for HTTP requests and concurrency).
+- **Configuration Files**: `config.properties` and `source.json` in the `bin/` directory.
+- **Secure Connection Setup**: Requires configuration for secure database connections (details generalized for security).
 
-Ensure external APIs (e.g., token and posting endpoints) are accessible.
+Ensure API endpoints for token generation and message posting are accessible.
 
 ## Installation and Setup
 
 1. **Configure Environment**:
-   - Update `config.properties` with DB details, API endpoints, and processing flags.
-   - Prepare `source.json` with raw message templates (e.g., containing `__TOKEN__` placeholders).
-2. **Run Script**: Use `run.bat` in `utility/intelligent-raw-message-processor-utility/bin/` to execute.
+   - Update `config.properties` with database settings, API endpoints, and feature flags.
+   - Prepare `source.json` with message templates containing placeholders (e.g., `__TOKEN__`).
+2. **Run the Utility**: Execute via `run.bat` or directly with `java -jar intelligent-raw-message-processor.jar`.
 
 ## Configuration Guide
 
-Configuration is primarily in `config.properties`:
+The `config.properties` file controls the utility's behavior. Key sections include:
 
-- **Modules**: Enable/disable toggleMatchingEngine (e.g., `toggleMatchingEngine=Y`).
-- **Database**: `jdbcdriver`, `jdbcurl`, `walletName`.
-- **Message Settings**: `tagName`, `webServiceId` (1=NameAndAddress, 2=Identifier, etc.), `watchListType` (e.g., OFAC).
-- **Variants**: `ced1=Y` for 1-char edits, `stopword=Y`, `synonym=Y`.
-- **API**: `msgPosting.tokenUrl`, `msgPosting.client.id`, retry settings.
-- **Filters**: `whereClause` for DB queries.
+- **Feature Flags**: Enable/disable engine toggling (e.g., `toggleMatchingEngine=N`), variants like CED (`ced1=N`), stopwords (`stopword=N`), or synonyms (`synonym=Y`).
+- **Database Settings**: JDBC driver, URL (generalized), and secure connection parameters.
+- **Message Settings**: `tagName` for placeholder location, `webServiceId` (e.g., 1 for NameAndAddress), `watchListType` (e.g., COUNTRY).
+- **API Settings**: Token URL, client credentials (redacted), retry flags, and posting endpoints.
+- **Filters and Replacements**: SQL where clauses and placeholder mappings (e.g., `replace.src[0]=__IDENTIFIER__`, `replace.targetColumn[0]=N_UID`).
 
-`source.json` defines the base message structure with placeholders like `__TOKEN__` and `__IDENTIFIER__`.
+Refer to inline comments in `config.properties` for details. Note: Only one of stopwords or synonyms can be enabled at a time.
 
-For details, see the file comments.
+`source.json` provides the base message structure with placeholders for dynamic data insertion.
 
 ## Usage Instructions
 
-1. **Prepare Config**: Edit `config.properties` and `source.json`.
-2. **Run the Utility**:
-   - Execute `run.bat` or `java -jar intelligent-raw-message-processor.jar`.
-   - The tool logs to `out/log/` and generates Excel in `out/`.
-3. **Process Flow**:
-   - Generates raw messages in Excel chunks (split by row limit).
-   - Prompts to proceed with processing.
-   - Posts messages, analyzes responses, and updates Excel with PASS/FAIL.
-   - If toggling enabled, switches engines and re-processes.
-4. **Output**: Excel files like `executing_1.xlsx` with columns for inputs, responses, and test status.
-
-Example: To test OFAC name matching with 1 CED, set `watchListType=OFAC`, `ced1=Y`, `webServiceId=1`.
+1. **Prepare Configurations**: Edit `config.properties` and `source.json` as needed.
+2. **Execute**:
+   - Run the utility; it generates Excel files in `out/`.
+   - Prompts for confirmation before processing.
+   - Posts messages, analyzes responses, and updates Excel.
+   - If toggling is enabled, repeats processing after engine switch.
+3. **Output**: Excel files (e.g., `executing_1.xlsx`) with columns for sequences, rules, messages, tags, inputs, responses, match counts, statuses, and test results.
+4. **Example**: For country synonym testing, set `watchListType=COUNTRY`, `synonym=Y`, `webServiceId=3`.
 
 ## Key Classes and Components
 
-- **Main.java**: Entry point; orchestrates generation, processing, analysis, and toggling.
-- **Constants.java**: Defines mappings (watchlists, web services), file paths, and constants.
-- **RawMessageGenerator.java**: Queries DB, generates variants (CED, stopwords, synonyms), writes to Excel/JSON.
-- **MessageProcessingUtility.java**: Posts messages to API, handles retries, updates Excel with tokens/matches.
-- **MessageResponseAnalyzer.java**: Fetches feedback, analyzes matches, marks PASS/FAIL in Excel.
-- **ToggleMatchingEngine.java**: Switches between OS/OT, refreshes caches via API.
-- **SQLUtility.java**: Manages DB connections using Oracle wallet.
-- **AnalyzerRunnable.java** and **ProcessorRunnable.java**: Threaded workers for concurrent processing/analysis.
-- **SourceInputModel.java**: Model for raw message structure.
-- **logback.xml**: Logging configuration.
+- **Main.java**: Entry point; manages overall flow, file cleanup, generation, multi-threaded processing/analysis, and optional toggling.
+- **Constants.java**: Defines mappings for watchlists and web services, file paths, headers, and configuration keys.
+- **RawMessageGenerator.java**: Handles database queries, variant generation (CED, stopwords, synonyms), and writing to split Excel/JSON files.
+- **MessageProcessingUtility.java**: Manages API posting with retries, token handling, and updating Excel with responses.
+- **MessageResponseAnalyzer.java**: Analyzes feedback for matches, computes PASS/FAIL, and updates Excel.
+- **ToggleMatchingEngine.java**: Switches between OS/OT engines and refreshes caches via API.
+- **SQLUtility.java**: Establishes secure database connections.
+- **AnalyzerRunnable.java** and **ProcessorRunnable.java**: Implement threaded execution for analysis and processing.
+- **SourceInputModel.java**: Data model for input messages.
+- **logback.xml**: Configures logging levels and outputs.
 
 ## Troubleshooting
 
-- **DB Connection Issues**: Verify wallet path and JDBC URL. Check logs for SQL errors.
-- **API Errors**: Ensure token/client credentials are correct; check retry settings for timeouts.
-- **No Matches**: Confirm `tagName`, `webServiceId`, and variants match expectations.
-- **Performance**: Adjust thread counts (`processor_thread_count`, `analyzer_thread_count`) for large datasets.
-- **Logs**: Check `out/log/` for detailed errors (e.g., UtilityMain.log).
+- **Connection Issues**: Verify database configuration and secure setup; check logs in `out/log/` for errors.
+- **API Failures**: Ensure credentials and endpoints are correct; adjust retry settings for transient issues.
+- **No Matches**: Validate `tagName`, `webServiceId`, and variant flags align with expectations.
+- **Performance**: Tune thread counts (`processor_thread_count`, `analyzer_thread_count`) for large datasets.
+- **Logs**: Enable debug in `logback.xml` for detailed tracing.
 
-If issues persist, enable debug logging in logback.xml.
+If problems persist, review logs for stack traces.
 
 ## Contributing/Extending
 
-- Add new watchlist types to `Constants.TABLE_WL_MAP`.
-- Extend variant generation in `RawMessageGenerator` for custom rules.
+- Add watchlist types to `Constants.TABLE_WL_MAP`.
+- Extend variant logic in `RawMessageGenerator` for custom rules.
 - Contributions welcome; fork and submit pull requests.
 
 For questions, contact the maintainer.
