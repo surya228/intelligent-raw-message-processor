@@ -23,28 +23,6 @@ The utility follows a modular, multi-threaded architecture:
 4. **Analysis**: Multi-threaded evaluation of matches, updating Excel with PASS/FAIL statuses.
 5. **Optional Toggling**: Switches matching engines and refreshes caches via API calls.
 
-### Flow Diagram
-
-```mermaid
-graph TD
-    A["Config (config.properties, source.json)"] --> B["Main: Orchestrate Flow"]
-    B --> C["RawMessageGenerator: Query DB, Generate Variants, Write Excel/JSON"]
-    C --> D["Split Excel Files"]
-    D --> E["ProcessorRunnable: Multi-threaded Posting to API"]
-    E --> F["Update Excel with Responses/Tokens"]
-    B --> G["ToggleMatchingEngine: Switch OS/OT, Refresh Cache (Optional)"]
-    F --> H["AnalyzerRunnable: Multi-threaded Analysis of Matches"]
-    H --> I["Update Excel with PASS/FAIL"]
-    J["Database (Watchlists)"] --> C
-    C --> J
-    J --> H
-    H --> J
-    K["External API"] --> E
-    E --> K
-    K --> G
-    G --> K
-```
-
 ### Conditional Flow Diagram (Feature Flags)
 
 ```mermaid
@@ -62,20 +40,21 @@ flowchart TD
   D1 --> M
   C0 --> M
   D0 --> M
-  M -->|Yes| E[Variant Pipeline]
+  M -->|Yes| E[Generate Raw Message Variants]
   M -->|No| VF[Validation Failed: Both synonym and stopword enabled]
 
   %% Validation handled by "Valid configuration?" decision above
 
 
   %% Variant Pipeline details
-  subgraph E2 [Generate Variants]
+  subgraph E2 [Generate Raw Message Variants]
     direction LR
     E --> V0[Base Templates]
     V0 --> V1["Apply CED(n) if enabled"]
     V1 --> V2["Apply Synonym or Stopword rules"]
     V2 --> V3[Write Split Excel/JSON]
   end
+  E --> DB[(Database (Watchlists))]
 
   %% Processing and Analysis
   V3 --> P1[ProcessorRunnable Run 1]
@@ -95,7 +74,7 @@ flowchart TD
 
   DT -->|No| A1
 
-  A1 --> DB[(Database/Watchlists)]
+  A1 --> DB
   A1 --> OUT[Excel PASS/FAIL]
 ```
 
