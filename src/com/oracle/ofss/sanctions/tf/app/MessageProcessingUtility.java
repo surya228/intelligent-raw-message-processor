@@ -22,8 +22,11 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONObject;
 import org.json.JSONArray;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MessageProcessingUtility {
+    private static final Logger logger = LoggerFactory.getLogger(MessageProcessingUtility.class);
     private static long labelledTime;
     private static String instanceBearerToken;
     private static final Object tokenLock = new Object();
@@ -41,15 +44,15 @@ public class MessageProcessingUtility {
     public static void screenRawMsg(String matchingEngine, List<File> excelFiles) throws Exception {
         long startTime = System.currentTimeMillis();
 
-        System.out.println("=============================================================");
-        System.out.println("                   MESSAGE POSTING STARTED");
-        System.out.println("=============================================================");
+        logger.info("=============================================================");
+        logger.info("                   MESSAGE POSTING STARTED");
+        logger.info("=============================================================");
 
         Properties props = loadProperties();
         long maxIndex = getMaxIndex(props, "msgPosting.");
         if (maxIndex < Constants.MIN_ARGS) {
-            System.out.println("Invalid arguments");
-            System.out.println("Please send Url, filepath, tokenurl, Username and Password as arguments");
+            logger.info("Invalid arguments");
+            logger.info("Please send Url, filepath, tokenurl, Username and Password as arguments");
             return;
         }
 
@@ -61,23 +64,23 @@ public class MessageProcessingUtility {
         String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE).toLowerCase();
         String url = devcorp7 + "/" + namespace + "/" + transactionService + Constants.POSTING_ENDPOINT;
 
-        System.out.println("url: " + url);
+        logger.info("url: " + url);
 
         String webServiceId = props.getProperty(Constants.WEBSERVICE_ID);
         String watchlistType = props.getProperty(Constants.WATCHLIST_TYPE);
 
         if (maxIndex >= 10) {
             configureRetryParameters(props);
-            System.out.println("UserDefinedParams:::retryRequiredFlag=" + retryRequiredFlag + "; retryMaxCount=" + retryMaxCount + "; bearerTokenRefreshInterval=" + bearerTokenRefreshInterval + "min(s); restartFlag=" + restartFlag);
+            logger.info("UserDefinedParams:::retryRequiredFlag=" + retryRequiredFlag + "; retryMaxCount=" + retryMaxCount + "; bearerTokenRefreshInterval=" + bearerTokenRefreshInterval + "min(s); restartFlag=" + restartFlag);
         }
 
         if (excelFiles.isEmpty()) {
-            System.out.println("["+sdf.format(new Date())+"] No Excel files found to process.");
+            logger.info("["+sdf.format(new Date())+"] No Excel files found to process.");
             return;
         }
 
         for (File excelFile : excelFiles) {
-            System.out.println("["+sdf.format(new Date())+"] Processing file: " + excelFile.getName());
+            logger.info("["+sdf.format(new Date())+"] Processing file: " + excelFile.getName());
             try (FileInputStream fis = new FileInputStream(excelFile);
                  Workbook workbook = new XSSFWorkbook(fis)) {
                 Sheet sheet = workbook.getSheetAt(0);
@@ -124,12 +127,12 @@ public class MessageProcessingUtility {
                     }
                 }
 
-                System.out.println("["+sdf.format(new Date())+"] size of seqIdToRequestMap in " + excelFile.getName() + " is " + seqIdToRequestMap.size());
+                logger.info("["+sdf.format(new Date())+"] size of seqIdToRequestMap in " + excelFile.getName() + " is " + seqIdToRequestMap.size());
 
                 Map<String, String> failedRequestMap = processRequests(seqIdToRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId, watchlistType);
 
                 if (!failedRequestMap.isEmpty()) {
-                    System.out.println("Job is not done yet for " + excelFile.getName() + "...");
+                    logger.info("Job is not done yet for " + excelFile.getName() + "...");
                     failedRequestMap = processRequests(failedRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId, watchlistType);
                 }
 
@@ -142,20 +145,20 @@ public class MessageProcessingUtility {
                     workbook.write(outFile);
                 }
 
-                System.out.println("["+sdf.format(new Date())+"] Message Processing Completed for " + excelFile.getName());
+                logger.info("["+sdf.format(new Date())+"] Message Processing Completed for " + excelFile.getName());
 
             } catch (Exception var36) {
                 var36.printStackTrace();
-                System.out.println("["+sdf.format(new Date())+"] Error occurred processing " + excelFile.getName() + ": " + var36.getMessage());
+                logger.info("["+sdf.format(new Date())+"] Error occurred processing " + excelFile.getName() + ": " + var36.getMessage());
                 // Do not exit, continue with other files
             }
         }
-        System.out.println("=============================================================");
-        System.out.println("                   MESSAGE POSTING ENDED                     ");
-        System.out.println("=============================================================");
+        logger.info("=============================================================");
+        logger.info("                   MESSAGE POSTING ENDED                     ");
+        logger.info("=============================================================");
         long endTime = System.currentTimeMillis();
 
-        System.out.println("Time taken by Message Processor: " + (endTime - startTime) / 1000L + " seconds");
+        logger.info("Time taken by Message Processor: " + (endTime - startTime) / 1000L + " seconds");
 
     }
 
@@ -164,7 +167,7 @@ public class MessageProcessingUtility {
         try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
             props.load(reader);
         } catch (IOException e) {
-            System.err.println("Error reading properties file: " + e.getMessage());
+            logger.error("Error reading properties file: " + e.getMessage());
             throw e;
         }
         return props;
@@ -198,7 +201,7 @@ public class MessageProcessingUtility {
             StringBuilder apiResponse = new StringBuilder();
             BufferedReader br = null;
 
-            System.out.println("["+sdf.format(new Date())+"] Executing REST call with SeqId: " + seqId);
+            logger.info("["+sdf.format(new Date())+"] Executing REST call with SeqId: " + seqId);
             do {
                 if (retryCount > 0) {
                     try {
@@ -206,7 +209,7 @@ public class MessageProcessingUtility {
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
                     }
-                    System.out.println("["+sdf.format(new Date())+"] Waiting for REST call to complete...");
+                    logger.info("["+sdf.format(new Date())+"] Waiting for REST call to complete...");
                 }
                 int currentRetry = retryRequestNumber.incrementAndGet();
 
@@ -214,7 +217,7 @@ public class MessageProcessingUtility {
                 synchronized (tokenLock) {
                     bearerToken = getAccessToken(tokenUrl, usernm, pwd);
                 }
-                System.out.println("Access token: " + bearerToken);
+                logger.info("Access token: " + bearerToken);
 
                 try {
                     URL resturl = new URL(url + "?reqId=" + currentRetry);
@@ -248,8 +251,8 @@ public class MessageProcessingUtility {
                     br.close();
                     conn.disconnect();
 
-                    System.out.println("["+sdf.format(new Date())+"] Waiting for Response: " + getResponseMsg(responseCode));
-                    System.out.println("api response::: "+ apiResponse);
+                    logger.info("["+sdf.format(new Date())+"] Waiting for Response: " + getResponseMsg(responseCode));
+                    logger.info("api response::: "+ apiResponse);
                 } catch (Exception e) {
                     e.printStackTrace();
                     responseCode = 500; // Treat as error for retry
@@ -265,13 +268,13 @@ public class MessageProcessingUtility {
                 retryCount++;
             } while (Constants.YES.equalsIgnoreCase(retryRequiredFlag) && responseCode > 399 && retryCount <= retryMaxCount);
 
-            System.out.println("["+sdf.format(new Date())+"] ResponseCode: " + responseCode);
+            logger.info("["+sdf.format(new Date())+"] ResponseCode: " + responseCode);
 
             long endTime = System.currentTimeMillis();
-            System.out.println("=============================================================----------");
-            System.out.println("Time taken for rest call: " + (endTime - startTime) / 1000L + " seconds");
-            System.out.println("=============================================================----------");
-            System.out.println("=============================================================----------------------------------------------");
+            logger.info("=============================================================----------");
+            logger.info("Time taken for rest call: " + (endTime - startTime) / 1000L + " seconds");
+            logger.info("=============================================================----------");
+            logger.info("=============================================================----------------------------------------------");
 
             String responseString = apiResponse.toString();
             if (responseString.length() > 32767) {
@@ -297,11 +300,11 @@ public class MessageProcessingUtility {
 
                     if (responseCode <= 399) {
                         // Existing success logic
-                        System.out.println("response: " + responseJson);
+                        logger.info("response: " + responseJson);
                         matchCount = responseJson.has(Constants.FEEDBACK_DATA) ? (responseJson.getJSONObject(Constants.FEEDBACK_DATA).has(Constants.MATCHING_COUNT) ? responseJson.getJSONObject(Constants.FEEDBACK_DATA).getLong(Constants.MATCHING_COUNT) : 0) : 0;
                         status = responseJson.optString(Constants.MATCHING_STATUS, "");
                         feedbackStatus = responseJson.has(Constants.FEEDBACK_DATA) ? responseJson.getJSONObject(Constants.FEEDBACK_DATA).optString(Constants.MATCHING_STATUS, "") : "";
-                        System.out.println("transactionToken: " + tokenString + " matchCount: " + matchCount + " status: " + status + " feedbackStatus: " + feedbackStatus);
+                        logger.info("transactionToken: " + tokenString + " matchCount: " + matchCount + " status: " + status + " feedbackStatus: " + feedbackStatus);
 
                         if (responseJson.has(Constants.FEEDBACK_DATA)) {
                             JSONObject feedbackData = responseJson.getJSONObject(Constants.FEEDBACK_DATA);
@@ -331,12 +334,12 @@ public class MessageProcessingUtility {
                     // Update sheet in synchronized block
                     synchronized (sheet) {
                         int targetRowNum = seqIdToRowNum.get(seqId);
-                        System.out.println("Writing output to file for seqId: " + seqId);
+                        logger.info("Writing output to file for seqId: " + seqId);
                         Row row = (Row) sheet.getRow(targetRowNum);
                         for (int i = 0; i < excelParams.length; i++) {
                             Cell cell = row.getCell(processorStartColumn + i);
                             if (cell == null) cell = row.createCell(processorStartColumn + i);
-                            System.out.println(excelParams[i].toString());
+                            logger.info(excelParams[i].toString());
                             cell.setCellValue(excelParams[i].toString());
                         }
                     }
@@ -348,12 +351,12 @@ public class MessageProcessingUtility {
                     if (isErrorToHandle) {
                         synchronized (sheet) {
                             int targetRowNum = seqIdToRowNum.get(seqId);
-                            System.out.println("Writing output to file for seqId: " + seqId);
+                            logger.info("Writing output to file for seqId: " + seqId);
                             Row row = (Row) sheet.getRow(targetRowNum);
                             for (int i = 0; i < excelParams.length; i++) {
                                 Cell cell = row.getCell(processorStartColumn + i);
                                 if (cell == null) cell = row.createCell(processorStartColumn + i);
-                                System.out.println(excelParams[i].toString());
+                                logger.info(excelParams[i].toString());
                                 cell.setCellValue(excelParams[i].toString());
                             }
                         }
@@ -364,7 +367,7 @@ public class MessageProcessingUtility {
             if (responseCode > 399) {
                 failedRequestMap.put(seqId, requestBody);
             }
-            System.out.println("===========================================================================================================");
+            logger.info("===========================================================================================================");
         });
 
         return failedRequestMap;
@@ -394,7 +397,7 @@ public class MessageProcessingUtility {
                     ++rowNum;
                 } else {
                     String seqId = formatter.formatCellValue(row.getCell(0));
-                    System.out.println("Writing output to file:" + seqId);
+                    logger.info("Writing output to file:" + seqId);
                     if (seqIdToResponseMap.get(seqId) != null) {
                         Cell cell;
                         if (row.getCell(3) == null) {
@@ -466,7 +469,7 @@ public class MessageProcessingUtility {
         long currentTime = System.currentTimeMillis();
         long timeDiff = (currentTime - labelledTime) / 60000L;
         if (labelledTime != 0L && timeDiff < bearerTokenRefreshInterval) {
-            System.out.println("--- Using cached bearerToken for " + (bearerTokenRefreshInterval - timeDiff) + " more min(s)");
+            logger.info("--- Using cached bearerToken for " + (bearerTokenRefreshInterval - timeDiff) + " more min(s)");
             return instanceBearerToken;
         }
 
@@ -498,13 +501,13 @@ public class MessageProcessingUtility {
                 }
 
                 response = result.toString(Constants.ENCODER);
-                System.out.println("AuthToken response: " + response);
+                logger.info("AuthToken response: " + response);
                 JSONObject jsonObject = new JSONObject(response);
                 bearerToken = jsonObject.getString("access_token");
                 httpConn1.disconnect();
             }
 
-            System.out.println("AuthToken status: " + status);
+            logger.info("AuthToken status: " + status);
         } catch (Exception var19) {
             var19.printStackTrace();
         }

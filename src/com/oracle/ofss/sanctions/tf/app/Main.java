@@ -1,5 +1,8 @@
 package com.oracle.ofss.sanctions.tf.app;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -18,16 +21,18 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class Main {
+    private static final Logger logger = LoggerFactory.getLogger(Main.class);
+
     public static void main(String[] args) throws Exception {
         Properties props = new Properties();
         try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
             props.load(reader);
         } catch (IOException e) {
-            System.err.println("Error reading properties file: " + e.getMessage());
+            logger.error("Error reading properties file: " + e.getMessage());
             throw e;
         }
         saveConfigProperties(props);
-        System.out.println("Saved config file");
+        logger.info("Saved config file");
 
         Date startDateObj = new Date();
         SimpleDateFormat dateFormat = new SimpleDateFormat("ddMMyy");
@@ -44,31 +49,31 @@ public class Main {
 
         ToggleMatchingEngine toggleMatchingEngine = new ToggleMatchingEngine();
         String matchingEngine = toggleMatchingEngine.findCurrentMatchingEngine();
-        System.out.println("Current Matching Engine::: " + matchingEngine);
+        logger.info("Current Matching Engine::: " + matchingEngine);
 
         // Delete previous output files and count file
         File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
         if (countFile.exists()) {
             if (countFile.delete()) {
-                System.out.println("Deleted previous count file: " + countFile.getName());
+                logger.info("Deleted previous count file: " + countFile.getName());
             } else {
-                System.err.println("Failed to delete previous count file: " + countFile.getName());
+                logger.error("Failed to delete previous count file: " + countFile.getName());
             }
         }
         File[] prevFiles = Constants.OUTPUT_FOLDER.listFiles((dir, name) -> name.matches(Constants.OUTPUT_FILE_NAME+"_\\d+\\.xlsx"));
         if (prevFiles != null) {
             for (File file : prevFiles) {
                 if (file.delete()) {
-                    System.out.println("Deleted previous output file: " + file.getName());
+                    logger.info("Deleted previous output file: " + file.getName());
                 } else {
-                    System.err.println("Failed to delete previous output file: " + file.getName());
+                    logger.error("Failed to delete previous output file: " + file.getName());
                 }
             }
         }
         if (generate) {
             int generatedCount = RawMessageGenerator.generateRawMessage(null); // Generation is always sequential
             if (generatedCount == 0) {
-                System.out.println("No raw messages generated. Exiting utility.");
+                logger.info("No raw messages generated. Exiting utility.");
                 System.exit(0);
             }
         }
@@ -80,15 +85,15 @@ public class Main {
 
             if (isToggle) {
                 matchingEngine = toggleMatchingEngine.toggleMatchingEngine();
-                System.out.println("Matching engine toggled to ::: " + matchingEngine);
+                logger.info("Matching engine toggled to ::: " + matchingEngine);
                 runProcessing(matchingEngine, excelFiles, props, isToggle, true, renamePrefix, startDate, startTimeStr);
             }
         }
 
         long endTime = System.currentTimeMillis();
-        System.out.println("\n==========================================================");
-        System.out.println("Total time taken by utility: "+ (endTime - startTime) / 1000L + " seconds");
-        System.out.println("=========================================================");
+        logger.info("\n==========================================================");
+        logger.info("Total time taken by utility: "+ (endTime - startTime) / 1000L + " seconds");
+        logger.info("=========================================================");
     }
 
     /**
@@ -140,9 +145,9 @@ public class Main {
         String newName = renamePrefix + enginePart + "_" + startDate + "_" + startTimeStr + "_" + sequence + ".xlsx";
         File newFile = new File(Constants.OUTPUT_FOLDER, newName);
         if (file.renameTo(newFile)) {
-            System.out.println("Renamed " + file.getName() + " to " + newName);
+            logger.info("Renamed " + file.getName() + " to " + newName);
         } else {
-            System.err.println("Failed to rename " + file.getName());
+            logger.error("Failed to rename " + file.getName());
         }
     }
 
@@ -166,7 +171,7 @@ public class Main {
                     String countStr = new String(Files.readAllBytes(countFile.toPath())).trim();
                     fileLimit = Integer.parseInt(countStr);
                 } catch (Exception e) {
-                    System.err.println("Error reading file count: " + e.getMessage());
+                    logger.error("Error reading file count: " + e.getMessage());
                 }
             }
             if (fileLimit > 0) {
@@ -189,9 +194,9 @@ public class Main {
         File originalConfig = new File(Constants.CONFIG_FILE_PATH);
         try {
             Files.copy(originalConfig.toPath(), configFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            System.out.println("Config properties saved to " + configFile.getName());
+            logger.info("Config properties saved to " + configFile.getName());
         } catch (IOException e) {
-            System.err.println("Error saving config properties: " + e.getMessage());
+            logger.error("Error saving config properties: " + e.getMessage());
         }
     }
 }

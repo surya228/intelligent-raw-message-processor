@@ -11,6 +11,8 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -20,11 +22,12 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 
 public class RawMessageGenerator {
+    private static final Logger logger = LoggerFactory.getLogger(RawMessageGenerator.class);
     public static int generateRawMessage(BlockingQueue<File> queue) throws Exception {
         long startTime = System.currentTimeMillis();
-        System.out.println("\n=============================================================");
-        System.out.println("                RAW MESSAGE GENERATOR STARTED                ");
-        System.out.println("=============================================================");
+        logger.info("\n=============================================================");
+        logger.info("                RAW MESSAGE GENERATOR STARTED                ");
+        logger.info("=============================================================");
         Connection connection = null;
         JSONArray rawMessageJsonArray = null;
         ResultSet rs = null;
@@ -36,7 +39,7 @@ public class RawMessageGenerator {
             try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
                 props.load(reader);
             } catch (IOException e) {
-                System.err.println("Error reading properties file: " + e.getMessage());
+                logger.error("Error reading properties file: " + e.getMessage());
                 throw e;
             }
 
@@ -52,14 +55,14 @@ public class RawMessageGenerator {
 
             try {
                 validateConfigProperties(watchlistType, webserviceId, isStopwordEnabled, isSynonymEnabled);
-                System.out.println("Config Properties Validation Passed.");
+                logger.info("Config Properties Validation Passed.");
             } catch (Exception e){
-                System.out.println("Config Properties Validation Failed.");
+                logger.info("Config Properties Validation Failed.");
                 throw new Exception(e);
             }
 
             String srcFile = loadJsonFromFile(Constants.SOURCE_FILE_PATH);
-            System.out.println("srcFile: "+srcFile);
+            logger.info("srcFile: "+srcFile);
 
 
             connection = SQLUtility.getDbConnection();
@@ -73,12 +76,12 @@ public class RawMessageGenerator {
                 writeJsonAsExcelFile(rawMessageJsonArray,tansactionService,tagName,webService,watchlistType, queue);
             }
 
-            System.out.println("\n=============================================================");
-            System.out.println("                 RAW MESSAGE GENERATOR ENDED                 ");
-            System.out.println("=============================================================");
+            logger.info("\n=============================================================");
+            logger.info("                 RAW MESSAGE GENERATOR ENDED                 ");
+            logger.info("=============================================================");
             long endTime = System.currentTimeMillis();
 
-            System.out.println("Time taken by Raw Message Generator: " + (endTime - startTime) / 1000L + " seconds");
+            logger.info("Time taken by Raw Message Generator: " + (endTime - startTime) / 1000L + " seconds");
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -89,9 +92,9 @@ public class RawMessageGenerator {
             if (connection != null) {
                 try {
                     connection.close();
-                    System.out.println("Connection closed.");
+                    logger.info("Connection closed.");
                 } catch (SQLException e) {
-                    System.err.println("Failed to close the connection:");
+                    logger.error("Failed to close the connection:");
                     e.printStackTrace();
                 }
             }
@@ -157,7 +160,7 @@ public class RawMessageGenerator {
         }
 
         String query = "select * from "+tableName+" "+filter;
-        System.out.println("SQL Query generated:: "+query);
+        logger.info("SQL Query generated:: "+query);
         try {
             pst = connection.prepareStatement(query);
             rs = pst.executeQuery();
@@ -267,8 +270,8 @@ public class RawMessageGenerator {
             }
             cnt++;
         }
-        System.out.println("No. of rows selected from Watchlist:: "+ cnt);
-        System.out.println("No. of raw message created by Generator:: "+ updatedCount);
+        logger.info("No. of rows selected from Watchlist:: "+ cnt);
+        logger.info("No. of raw message created by Generator:: "+ updatedCount);
         return jsonArray;
 
     }
@@ -278,7 +281,7 @@ public class RawMessageGenerator {
                                    String tableName, JSONArray jsonArray, int updatedCount, String originalValue, int ced, String uid,
                                    String tagName, String webserviceId, String lookupIds, String lookupValueIds){
         if (value != null) {
-            System.out.println("toBeReplaced: " + value + " originalValue: " + originalValue + "  token: " + token + "  column: "+ targetColumn + "  identifier: "+ identifierToBeReplaced + " ced: "+ ced);
+            logger.info("toBeReplaced: " + value + " originalValue: " + originalValue + "  token: " + token + "  column: "+ targetColumn + "  identifier: "+ identifierToBeReplaced + " ced: "+ ced);
             identifierToBeReplaced = Constants.IDEN_PREFIX+identifierToBeReplaced;
             temp = temp.replace(token, value);
             temp = temp.replace(identifierToken,identifierToBeReplaced);
@@ -604,7 +607,7 @@ public class RawMessageGenerator {
 
             // Check if the file exists
             if (!file.exists()) {
-                System.out.println("File not found: " + filePath);
+                logger.info("File not found: " + filePath);
                 return null;
             }
 
@@ -620,7 +623,7 @@ public class RawMessageGenerator {
             // Convert the parsed JSON back to a string
             return jsonObject.toString(4);
         } catch (Exception e) {
-            System.out.println("An error occurred while reading the file: " + e.getMessage());
+            logger.info("An error occurred while reading the file: " + e.getMessage());
             e.printStackTrace();
             return null;
         }
@@ -636,7 +639,7 @@ public class RawMessageGenerator {
         try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
             props.load(reader);
         } catch (IOException e) {
-            System.err.println("Error reading properties file for Excel splitting: " + e.getMessage());
+            logger.error("Error reading properties file for Excel splitting: " + e.getMessage());
             throw e;
         }
 
@@ -645,7 +648,7 @@ public class RawMessageGenerator {
             String rowLimitStr = props.getProperty(Constants.EXCEL_SPLIT_ROW_LIMIT, String.valueOf(Constants.DEFAULT_ROW_LIMIT));
             rowLimit = Integer.parseInt(rowLimitStr);
         } catch (NumberFormatException e) {
-            System.err.println("Invalid row limit value, using default: " + Constants.DEFAULT_ROW_LIMIT);
+            logger.error("Invalid row limit value, using default: " + Constants.DEFAULT_ROW_LIMIT);
             rowLimit = Constants.DEFAULT_ROW_LIMIT;
         }
 
@@ -664,10 +667,10 @@ public class RawMessageGenerator {
             try (FileWriter fw = new FileWriter(countFile)) {
                 fw.write("1");
             } catch (IOException e) {
-                System.err.println("Error writing output file count to " + countFile.getAbsolutePath() + ": " + e.getMessage());
+                logger.error("Error writing output file count to " + countFile.getAbsolutePath() + ": " + e.getMessage());
             }
-            System.out.println("Successfully wrote to Excel (" + outputFile.getName() + ") file.");
-            System.out.println("Output file count (1) saved to: " + countFile.getAbsolutePath());
+            logger.info("Successfully wrote to Excel (" + outputFile.getName() + ") file.");
+            logger.info("Output file count (1) saved to: " + countFile.getAbsolutePath());
         } else {
             // Split data into multiple files
             int fileIndex = 1;
@@ -693,10 +696,10 @@ public class RawMessageGenerator {
             try (FileWriter fw = new FileWriter(countFile)) {
                 fw.write(String.valueOf(totalFiles));
             } catch (IOException e) {
-                System.err.println("Error writing output file count to " + countFile.getAbsolutePath() + ": " + e.getMessage());
+                logger.error("Error writing output file count to " + countFile.getAbsolutePath() + ": " + e.getMessage());
             }
-            System.out.println("Successfully wrote to multiple Excel files with prefix (" + Constants.OUTPUT_FILE_NAME + "_N.xlsx).");
-            System.out.println("Output file count (" + totalFiles + ") saved to: " + countFile.getAbsolutePath());
+            logger.info("Successfully wrote to multiple Excel files with prefix (" + Constants.OUTPUT_FILE_NAME + "_N.xlsx).");
+            logger.info("Output file count (" + totalFiles + ") saved to: " + countFile.getAbsolutePath());
             if (queue != null) {
                 queue.put(new File(Constants.POISON_PILL));
             }
@@ -774,7 +777,7 @@ public class RawMessageGenerator {
             workbook.write(fileOut);
         }
         workbook.close();
-        System.out.println("Successfully wrote to Excel (" + outputFile.getName() + ") file.");
+        logger.info("Successfully wrote to Excel (" + outputFile.getName() + ") file.");
     }
 
     public static void writeRawMessagesToJsonFile(JSONArray jsonArray) throws IOException {
@@ -787,7 +790,7 @@ public class RawMessageGenerator {
         try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
             props.load(reader);
         } catch (IOException e) {
-            System.err.println("Error reading properties file for JSON splitting: " + e.getMessage());
+            logger.error("Error reading properties file for JSON splitting: " + e.getMessage());
             throw e;
         }
 
@@ -796,7 +799,7 @@ public class RawMessageGenerator {
             String rowLimitStr = props.getProperty(Constants.EXCEL_SPLIT_ROW_LIMIT, String.valueOf(Constants.DEFAULT_ROW_LIMIT));
             rowLimit = Integer.parseInt(rowLimitStr);
         } catch (NumberFormatException e) {
-            System.err.println("Invalid row limit value for JSON splitting, using default: " + Constants.DEFAULT_ROW_LIMIT);
+            logger.error("Invalid row limit value for JSON splitting, using default: " + Constants.DEFAULT_ROW_LIMIT);
             rowLimit = Constants.DEFAULT_ROW_LIMIT;
         }
 
@@ -811,10 +814,10 @@ public class RawMessageGenerator {
             try (FileWriter fw = new FileWriter(countFile)) {
                 fw.write("1");
             } catch (IOException e) {
-                System.err.println("Error writing output file count to " + countFile.getAbsolutePath() + ": " + e.getMessage());
+                logger.error("Error writing output file count to " + countFile.getAbsolutePath() + ": " + e.getMessage());
             }
-            System.out.println("Successfully wrote raw messages to JSON (" + outputFile.getName() + ") file.");
-            System.out.println("Output file count (1) saved to: " + countFile.getAbsolutePath());
+            logger.info("Successfully wrote raw messages to JSON (" + outputFile.getName() + ") file.");
+            logger.info("Output file count (1) saved to: " + countFile.getAbsolutePath());
         } else {
             // Split data into multiple files
             int fileIndex = 1;
@@ -830,7 +833,7 @@ public class RawMessageGenerator {
                 try (FileOutputStream fos = new FileOutputStream(outputFile)) {
                     fos.write(chunk.toString(4).getBytes(Constants.ENCODER));
                 }
-                System.out.println("Successfully wrote raw messages to JSON (" + fileName + ") file.");
+                logger.info("Successfully wrote raw messages to JSON (" + fileName + ") file.");
                 fileIndex++;
                 startIndex = endIndex;
             }
@@ -840,10 +843,10 @@ public class RawMessageGenerator {
             try (FileWriter fw = new FileWriter(countFile)) {
                 fw.write(String.valueOf(totalFiles));
             } catch (IOException e) {
-                System.err.println("Error writing output file count to " + countFile.getAbsolutePath() + ": " + e.getMessage());
+                logger.error("Error writing output file count to " + countFile.getAbsolutePath() + ": " + e.getMessage());
             }
-            System.out.println("Successfully wrote to multiple Excel files with prefix (" + Constants.OUTPUT_FILE_NAME + "_N.xlsx).");
-            System.out.println("Output file count (" + totalFiles + ") saved to: " + countFile.getAbsolutePath());
+            logger.info("Successfully wrote to multiple Excel files with prefix (" + Constants.OUTPUT_FILE_NAME + "_N.xlsx).");
+            logger.info("Output file count (" + totalFiles + ") saved to: " + countFile.getAbsolutePath());
         }
     }
 }

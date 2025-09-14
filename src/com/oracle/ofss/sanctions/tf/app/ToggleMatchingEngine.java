@@ -1,5 +1,8 @@
 package com.oracle.ofss.sanctions.tf.app;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -15,6 +18,7 @@ import java.util.Properties;
 import javax.net.ssl.HttpsURLConnection;
 
 public class ToggleMatchingEngine {
+    private static final Logger logger = LoggerFactory.getLogger(ToggleMatchingEngine.class);
 
     int currentNId=-1;
 
@@ -31,7 +35,7 @@ public class ToggleMatchingEngine {
         try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
             props.load(reader);
         } catch (IOException e) {
-            System.err.println("Error reading properties file: " + e.getMessage());
+            logger.error("Error reading properties file: " + e.getMessage());
             throw e;
         }
 
@@ -90,7 +94,7 @@ public class ToggleMatchingEngine {
             throw new Exception("Failed to refresh cache after " + retryMaxCount + " retries. Response: " + responseCode + " - " + apiResponse.toString());
         }
 
-        System.out.println("Cache refreshed successfully.");
+        logger.info("Cache refreshed successfully.");
     }
 
     private String toggle() throws Exception {

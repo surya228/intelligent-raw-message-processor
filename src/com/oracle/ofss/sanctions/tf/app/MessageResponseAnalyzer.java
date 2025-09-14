@@ -12,6 +12,8 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.sql.Connection;
@@ -23,6 +25,7 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 public class MessageResponseAnalyzer {
+    private static final Logger logger = LoggerFactory.getLogger(MessageResponseAnalyzer.class);
     public static void analyseResponseAndPrepareResults(String matchingEngine, File excelFile) throws Exception {
         analyseResponseAndPrepareResults(matchingEngine, Collections.singletonList(excelFile));
     }
@@ -30,15 +33,15 @@ public class MessageResponseAnalyzer {
     public static void analyseResponseAndPrepareResults(String matchingEngine, List<File> excelFiles) throws Exception {
         long startTime = System.currentTimeMillis();
 
-        System.out.println("\n=============================================================");
-        System.out.println("                  RESPONSE ANALYZER STARTED                  ");
-        System.out.println("=============================================================");
+        logger.info("\n=============================================================");
+        logger.info("                  RESPONSE ANALYZER STARTED                  ");
+        logger.info("=============================================================");
 
         Properties props = new Properties();
         try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
             props.load(reader);
         } catch (IOException e) {
-            System.err.println("Error reading properties file: " + e.getMessage());
+            logger.error("Error reading properties file: " + e.getMessage());
             throw e;
         }
         String tagName = props.getProperty(Constants.TAGNAME);
@@ -49,25 +52,25 @@ public class MessageResponseAnalyzer {
         if (transactionService.equalsIgnoreCase("SWIFT")) msgCategory = "SWIFT";
         else if (transactionService.equalsIgnoreCase("FEDWIRE")) msgCategory = "FEDWIRE";
         else if (transactionService.equalsIgnoreCase("ISO20022")) msgCategory = "SEPA";
-        System.out.println("tagName: " + tagName);
+        logger.info("tagName: " + tagName);
         processAllResponses(tagName, msgCategory, watchListType, webServiceId, matchingEngine, excelFiles);
 
-        System.out.println("\n=============================================================");
-        System.out.println("                   RESPONSE ANALYZER ENDED                   ");
-        System.out.println("=============================================================");
+        logger.info("\n=============================================================");
+        logger.info("                   RESPONSE ANALYZER ENDED                   ");
+        logger.info("=============================================================");
         long endTime = System.currentTimeMillis();
 
-        System.out.println("Time taken by Message Response Analyzer: " + (endTime - startTime) / 1000L + " seconds");
+        logger.info("Time taken by Message Response Analyzer: " + (endTime - startTime) / 1000L + " seconds");
     }
 
     private static void processAllResponses(String tagName, String msgCategory, String watchListType, String webServiceId, String matchingEngine, List<File> excelFiles) throws Exception {
         if (excelFiles.isEmpty()) {
-            System.out.println("No Excel files found to analyze.");
+            logger.info("No Excel files found to analyze.");
             return;
         }
 
         for (File excelFile : excelFiles) {
-            System.out.println("Analyzing file: " + excelFile.getName());
+            logger.info("Analyzing file: " + excelFile.getName());
             try (FileInputStream fis = new FileInputStream(excelFile);
                  Workbook workbook = new XSSFWorkbook(fis)) {
 
@@ -100,7 +103,7 @@ public class MessageResponseAnalyzer {
                     }
                 }
                 if (latestProcessorColumn == -1) {
-                    System.out.println("No Transaction Token column found in " + excelFile.getName() + ". Skipping analysis.");
+                    logger.info("No Transaction Token column found in " + excelFile.getName() + ". Skipping analysis.");
                     continue;
                 }
 
@@ -242,7 +245,7 @@ public class MessageResponseAnalyzer {
                     workbook.write(fos);
                 }
 
-                System.out.println("Analysis completed for " + excelFile.getName());
+                logger.info("Analysis completed for " + excelFile.getName());
             }
         }
     }

@@ -2,6 +2,8 @@ package com.oracle.ofss.sanctions.tf.app;
 
 import java.io.File;
 import java.util.concurrent.BlockingQueue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AnalyzerRunnable implements Runnable {
     private final BlockingQueue<File> inputQueue;
@@ -11,6 +13,9 @@ public class AnalyzerRunnable implements Runnable {
     private final String renamePrefix;
     private final String startDate;
     private final String startTimeStr;
+
+    private static final Logger logger = LoggerFactory.getLogger(AnalyzerRunnable.class);
+    
 
     public AnalyzerRunnable(BlockingQueue<File> inputQueue, String matchingEngine, boolean isToggle, boolean isFinalRun, String renamePrefix, String startDate, String startTimeStr) {
         this.inputQueue = inputQueue;
@@ -24,6 +29,7 @@ public class AnalyzerRunnable implements Runnable {
 
     @Override
     public void run() {
+        logger.info("Entering run()");
         try {
             while (true) {
                 File file = inputQueue.take();
@@ -39,9 +45,9 @@ public class AnalyzerRunnable implements Runnable {
                     String newName = renamePrefix + enginePart + "_" + startDate + "_" + startTimeStr + "_" + sequence + ".xlsx";
                     File newFile = new File(Constants.OUTPUT_FOLDER, newName);
                     if (file.renameTo(newFile)) {
-                        System.out.println("Renamed " + file.getName() + " to " + newName);
+                        logger.info("Renamed " + file.getName() + " to " + newName);
                     } else {
-                        System.err.println("Failed to rename " + file.getName());
+                        logger.error("Failed to rename " + file.getName());
                     }
                 }
             }
@@ -49,6 +55,8 @@ public class AnalyzerRunnable implements Runnable {
             Thread.currentThread().interrupt();
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            logger.info("Exiting run()");
         }
     }
 }
