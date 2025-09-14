@@ -27,18 +27,22 @@ The utility follows a modular, multi-threaded architecture:
 
 ```mermaid
 graph TD
-    A[Config (config.properties, source.json)] --> B[Main: Orchestrate Flow]
-    B --> C[RawMessageGenerator: Query DB, Generate Variants, Write Excel/JSON]
-    C --> D[Split Excel Files]
-    D --> E[ProcessorRunnable: Multi-threaded Posting to API]
-    E --> F[Update Excel with Responses/Tokens]
-    B --> G[ToggleMatchingEngine: Switch OS/OT, Refresh Cache (Optional)]
-    F --> H[AnalyzerRunnable: Multi-threaded Analysis of Matches]
-    H --> I[Update Excel with PASS/FAIL]
-    J[Database (Watchlists)] <--> C
-    J <--> H
-    K[External API] <--> E
-    K <--> G
+    A["Config (config.properties, source.json)"] --> B["Main: Orchestrate Flow"]
+    B --> C["RawMessageGenerator: Query DB, Generate Variants, Write Excel/JSON"]
+    C --> D["Split Excel Files"]
+    D --> E["ProcessorRunnable: Multi-threaded Posting to API"]
+    E --> F["Update Excel with Responses/Tokens"]
+    B --> G["ToggleMatchingEngine: Switch OS/OT, Refresh Cache (Optional)"]
+    F --> H["AnalyzerRunnable: Multi-threaded Analysis of Matches"]
+    H --> I["Update Excel with PASS/FAIL"]
+    J["Database (Watchlists)"] --> C
+    C --> J
+    J --> H
+    H --> J
+    K["External API"] --> E
+    E --> K
+    K --> G
+    G --> K
 ```
 
 ## Prerequisites
