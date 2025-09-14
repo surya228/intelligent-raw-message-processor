@@ -61,21 +61,16 @@ public class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) throws Exception {
-        Properties props = new Properties();
-        try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
-            props.load(reader);
-        } catch (IOException e) {
-            logger.error("Error reading properties file: " + e.getMessage());
-            throw e;
-        }
-        saveConfigProperties(props);
-        logger.info("Saved config file");
-
+        logger.info("***********Utility Main Started************");
         Date startDateObj = new Date();
-        SimpleDateFormat dateFormat = new SimpleDateFormat("ddMMyy");
-        SimpleDateFormat timeFormat = new SimpleDateFormat("HHmmss");
+        SimpleDateFormat dateFormat = new SimpleDateFormat(Constants.DATE_SUFFIX_FORMAT);
+        SimpleDateFormat timeFormat = new SimpleDateFormat(Constants.TIME_SUFFIX_FORMAT);
         String startDate = dateFormat.format(startDateObj);
         String startTimeStr = timeFormat.format(startDateObj);
+
+        Properties props = loadProperties();
+        saveConfigProperties(props);
+
         String renamePrefix = props.getProperty(Constants.WEBSERVICE) + "_";
 
         long startTime = System.currentTimeMillis();
@@ -84,53 +79,61 @@ public class Main {
         boolean process = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.MODULE_RAW_MSG_PROCESSOR));
         boolean isToggle = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.TOGGLE_MATCHING_ENGINE));
 
-        ToggleMatchingEngine toggleMatchingEngine = new ToggleMatchingEngine();
-        String matchingEngine = toggleMatchingEngine.findCurrentMatchingEngine();
-        logger.info("Current Matching Engine::: " + matchingEngine);
 
         // Delete previous output files and count file
+        deletePreviousFiles();
+
+        if (generate) {
+            int generatedCount = RawMessageGenerator.generateRawMessage(null, props); // Generation is always sequential
+            if (generatedCount == 0) {
+                logger.info("No raw messages generated. Exiting utility.");
+                System.exit(0);
+            }
+            logger.info("Raw Message Generator Completed");
+        }
+
+        ToggleMatchingEngine toggleMatchingEngine = new ToggleMatchingEngine();
+        String matchingEngine = toggleMatchingEngine.findCurrentMatchingEngine();
+        logger.info("Proceeding for Processor and Analyzer");
+        logger.info("Current Matching Engine::: {}", matchingEngine);
+
+        if (process) {
+            List<File> excelFiles = getExcelFiles(props);
+
+            runProcessing(matchingEngine, excelFiles, props, isToggle, false, renamePrefix, startDate, startTimeStr);
+            logger.info("Processor and Analyzer Completed with matching engine :: {}",matchingEngine);
+            if (isToggle) {
+                logger.info("Toggling Matching engine....");
+                matchingEngine = toggleMatchingEngine.toggleMatchingEngine();
+                logger.info("Matching engine toggled to ::: {}", matchingEngine);
+                runProcessing(matchingEngine, excelFiles, props, isToggle, true, renamePrefix, startDate, startTimeStr);
+                logger.info("Processor and Analyzer Completed after toggling matching engine to :: {}",matchingEngine);
+
+            }
+        }
+        long endTime = System.currentTimeMillis();
+        logger.info("Total time taken by utility: {} Seconds ", (endTime - startTime) / 1000L );
+    }
+
+    private static void deletePreviousFiles() {
         File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
         if (countFile.exists()) {
             if (countFile.delete()) {
-                logger.info("Deleted previous count file: " + countFile.getName());
+                logger.info("Deleted previous count file: {}", countFile.getName());
             } else {
-                logger.error("Failed to delete previous count file: " + countFile.getName());
+                logger.error("Failed to delete previous count file: {}", countFile.getName());
             }
         }
         File[] prevFiles = Constants.OUTPUT_FOLDER.listFiles((dir, name) -> name.matches(Constants.OUTPUT_FILE_NAME+"_\\d+\\.xlsx"));
         if (prevFiles != null) {
             for (File file : prevFiles) {
                 if (file.delete()) {
-                    logger.info("Deleted previous output file: " + file.getName());
+                    logger.info("Deleted previous output file: {}", file.getName());
                 } else {
-                    logger.error("Failed to delete previous output file: " + file.getName());
+                    logger.error("Failed to delete previous output file: {}", file.getName());
                 }
             }
         }
-        if (generate) {
-            int generatedCount = RawMessageGenerator.generateRawMessage(null); // Generation is always sequential
-            if (generatedCount == 0) {
-                logger.info("No raw messages generated. Exiting utility.");
-                System.exit(0);
-            }
-        }
-
-        if (process) {
-            List<File> excelFiles = getExcelFiles(props);
-
-            runProcessing(matchingEngine, excelFiles, props, isToggle, false, renamePrefix, startDate, startTimeStr);
-
-            if (isToggle) {
-                matchingEngine = toggleMatchingEngine.toggleMatchingEngine();
-                logger.info("Matching engine toggled to ::: " + matchingEngine);
-                runProcessing(matchingEngine, excelFiles, props, isToggle, true, renamePrefix, startDate, startTimeStr);
-            }
-        }
-
-        long endTime = System.currentTimeMillis();
-        logger.info("\n==========================================================");
-        logger.info("Total time taken by utility: "+ (endTime - startTime) / 1000L + " seconds");
-        logger.info("=========================================================");
     }
 
     /**
@@ -148,10 +151,10 @@ public class Main {
         ExecutorService analyzerPool = Executors.newFixedThreadPool(analyzerThreads);
 
         for (int i = 0; i < processorThreads; i++) {
-            processorPool.submit(new ProcessorRunnable(processorQueue, analyzerQueue, matchingEngine));
+            processorPool.submit(new ProcessorRunnable(processorQueue, analyzerQueue, matchingEngine, props));
         }
         for (int i = 0; i < analyzerThreads; i++) {
-            analyzerPool.submit(new AnalyzerRunnable(analyzerQueue, matchingEngine, isToggle, isFinalRun, renamePrefix, startDate, startTimeStr));
+            analyzerPool.submit(new AnalyzerRunnable(analyzerQueue, matchingEngine, isToggle, isFinalRun, renamePrefix, startDate, startTimeStr, props));
         }
 
         // Add existing files to queue for processing
@@ -174,18 +177,6 @@ public class Main {
 
         analyzerPool.shutdown();
         analyzerPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-    }
-
-    private static void renameFile(File file, String matchingEngine, boolean isToggle, String renamePrefix, String startDate, String startTimeStr) {
-        String sequence = file.getName().replace(Constants.OUTPUT_FILE_NAME+"_", "").replace(".xlsx", "");
-        String enginePart = isToggle ? "OS_OT" : matchingEngine;
-        String newName = renamePrefix + enginePart + "_" + startDate + "_" + startTimeStr + "_" + sequence + ".xlsx";
-        File newFile = new File(Constants.OUTPUT_FOLDER, newName);
-        if (file.renameTo(newFile)) {
-            logger.info("Renamed " + file.getName() + " to " + newName);
-        } else {
-            logger.error("Failed to rename " + file.getName());
-        }
     }
 
     private static List<File> getExcelFiles(Properties props) throws IOException {
@@ -235,5 +226,17 @@ public class Main {
         } catch (IOException e) {
             logger.error("Error saving config properties: " + e.getMessage());
         }
+    }
+
+    private static Properties loadProperties() throws IOException {
+        Properties props = new Properties();
+        try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
+            props.load(reader);
+            logger.info("Properties file loaded");
+        } catch (IOException e) {
+            logger.error("Error reading properties file: " + e.getMessage());
+            throw e;
+        }
+        return props;
     }
 }

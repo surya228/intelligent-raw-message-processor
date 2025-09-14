@@ -26,24 +26,17 @@ import java.util.stream.Collectors;
 
 public class MessageResponseAnalyzer {
     private static final Logger logger = LoggerFactory.getLogger(MessageResponseAnalyzer.class);
-    public static void analyseResponseAndPrepareResults(String matchingEngine, File excelFile) throws Exception {
-        analyseResponseAndPrepareResults(matchingEngine, Collections.singletonList(excelFile));
+    public static void analyseResponseAndPrepareResults(String matchingEngine, File excelFile, Properties props) throws Exception {
+        analyseResponseAndPrepareResults(matchingEngine, Collections.singletonList(excelFile), props);
     }
 
-    public static void analyseResponseAndPrepareResults(String matchingEngine, List<File> excelFiles) throws Exception {
+    public static void analyseResponseAndPrepareResults(String matchingEngine, List<File> excelFiles, Properties props) throws Exception {
         long startTime = System.currentTimeMillis();
 
         logger.info("\n=============================================================");
         logger.info("                  RESPONSE ANALYZER STARTED                  ");
         logger.info("=============================================================");
 
-        Properties props = new Properties();
-        try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
-            props.load(reader);
-        } catch (IOException e) {
-            logger.error("Error reading properties file: " + e.getMessage());
-            throw e;
-        }
         String tagName = props.getProperty(Constants.TAGNAME);
         String msgCategory = "";
         String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE);

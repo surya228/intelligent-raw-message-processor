@@ -23,7 +23,7 @@ import java.util.concurrent.BlockingQueue;
 
 public class RawMessageGenerator {
     private static final Logger logger = LoggerFactory.getLogger(RawMessageGenerator.class);
-    public static int generateRawMessage(BlockingQueue<File> queue) throws Exception {
+    public static int generateRawMessage(BlockingQueue<File> queue, Properties props) throws Exception {
         long startTime = System.currentTimeMillis();
         logger.info("\n=============================================================");
         logger.info("                RAW MESSAGE GENERATOR STARTED                ");
@@ -33,16 +33,6 @@ public class RawMessageGenerator {
         ResultSet rs = null;
 
         try {
-
-            Properties props = new Properties();
-
-            try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
-                props.load(reader);
-            } catch (IOException e) {
-                logger.error("Error reading properties file: " + e.getMessage());
-                throw e;
-            }
-
 
             String watchlistType = props.getProperty(Constants.WATCHLIST_TYPE);
             String tableName = Constants.TABLE_WL_MAP.get(watchlistType);

@@ -37,18 +37,17 @@ public class MessageProcessingUtility {
     private static SimpleDateFormat sdf = new SimpleDateFormat(Constants.DATE_FORMAT);
     private static final AtomicInteger retryRequestNumber = new AtomicInteger(0);
 
-    public static void screenRawMsg(String matchingEngine, File excelFile) throws Exception {
-        screenRawMsg(matchingEngine, Collections.singletonList(excelFile));
+    public static void screenRawMsg(String matchingEngine, File excelFile, Properties props) throws Exception {
+        screenRawMsg(matchingEngine, Collections.singletonList(excelFile), props);
     }
 
-    public static void screenRawMsg(String matchingEngine, List<File> excelFiles) throws Exception {
+    public static void screenRawMsg(String matchingEngine, List<File> excelFiles, Properties props) throws Exception {
         long startTime = System.currentTimeMillis();
 
         logger.info("=============================================================");
         logger.info("                   MESSAGE POSTING STARTED");
         logger.info("=============================================================");
 
-        Properties props = loadProperties();
         long maxIndex = getMaxIndex(props, "msgPosting.");
         if (maxIndex < Constants.MIN_ARGS) {
             logger.info("Invalid arguments");
@@ -160,17 +159,6 @@ public class MessageProcessingUtility {
 
         logger.info("Time taken by Message Processor: " + (endTime - startTime) / 1000L + " seconds");
 
-    }
-
-    private static Properties loadProperties() throws IOException {
-        Properties props = new Properties();
-        try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
-            props.load(reader);
-        } catch (IOException e) {
-            logger.error("Error reading properties file: " + e.getMessage());
-            throw e;
-        }
-        return props;
     }
 
     private static void configureRetryParameters(Properties props) {

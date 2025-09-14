@@ -1,6 +1,7 @@
 package com.oracle.ofss.sanctions.tf.app;
 
 import java.io.File;
+import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,11 +14,12 @@ public class AnalyzerRunnable implements Runnable {
     private final String renamePrefix;
     private final String startDate;
     private final String startTimeStr;
+    private final Properties props;
 
     private static final Logger logger = LoggerFactory.getLogger(AnalyzerRunnable.class);
     
 
-    public AnalyzerRunnable(BlockingQueue<File> inputQueue, String matchingEngine, boolean isToggle, boolean isFinalRun, String renamePrefix, String startDate, String startTimeStr) {
+    public AnalyzerRunnable(BlockingQueue<File> inputQueue, String matchingEngine, boolean isToggle, boolean isFinalRun, String renamePrefix, String startDate, String startTimeStr, Properties props) {
         this.inputQueue = inputQueue;
         this.matchingEngine = matchingEngine;
         this.isToggle = isToggle;
@@ -25,6 +27,7 @@ public class AnalyzerRunnable implements Runnable {
         this.renamePrefix = renamePrefix;
         this.startDate = startDate;
         this.startTimeStr = startTimeStr;
+        this.props = props;
     }
 
     @Override
@@ -36,7 +39,7 @@ public class AnalyzerRunnable implements Runnable {
                 if (Constants.POISON_PILL.equals(file.getName())) {
                     break;
                 }
-                MessageResponseAnalyzer.analyseResponseAndPrepareResults(matchingEngine, file);
+                MessageResponseAnalyzer.analyseResponseAndPrepareResults(matchingEngine, file, props);
 
                 // Rename if this is the final run or no toggle
                 if (!isToggle || (isToggle && isFinalRun)) {
