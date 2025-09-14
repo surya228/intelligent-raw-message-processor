@@ -49,8 +49,7 @@ graph TD
 
 ```mermaid
 flowchart TD
-  A[Config Loaded] --> B{toggleMatchingEngine == Y?}
-  A --> C{synonym == Y?}
+  A[Config Loaded] --> C{synonym == Y?}
   A --> D{stopword == Y?}
 
   %% Mutually exclusive (doc note)
@@ -68,9 +67,6 @@ flowchart TD
 
   %% Validation handled by "Valid configuration?" decision above
 
-  %% Toggling occurs after first processor run (not before generation)
-  B -->|Yes| E
-  B -->|No| E
 
   %% Variant Pipeline details
   subgraph E2 [Generate Variants]
