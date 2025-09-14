@@ -92,9 +92,19 @@ public class Main {
         logger.info("Raw Message Generator Completed");
 
         if (generatedCount > 0) {
-            logger.info("Generated {} raw messages. Do you want to proceed with running the processor? (Y/N): ", generatedCount);
+            int fileCount = 1;
+            try {
+                File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
+                if (countFile.exists()) {
+                    String countStr = new String(Files.readAllBytes(countFile.toPath())).trim();
+                    fileCount = Integer.parseInt(countStr);
+                }
+            } catch (Exception e) {
+                logger.error("Error reading file count: {}", e.getMessage());
+            }
+            logger.info("Generated {} raw messages across {} Excel files. Do you want to proceed with running the processor? (Y/N): ", generatedCount, fileCount);
             Scanner scanner = new Scanner(System.in);
-            String response = scanner.nextLine().trim().toLowerCase();
+            String response = scanner.next();
             if (!response.equalsIgnoreCase(Constants.YES)) {
                 logger.info("User chose not to proceed with processor. Exiting.");
                 System.exit(0);
