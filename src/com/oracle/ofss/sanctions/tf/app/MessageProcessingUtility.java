@@ -45,7 +45,7 @@ public class MessageProcessingUtility {
         long startTime = System.currentTimeMillis();
 
         logger.info("=============================================================");
-        logger.info("                   MESSAGE POSTING STARTED");
+        logger.info("                   MESSAGE POSTING STARTED                   ");
         logger.info("=============================================================");
 
         long maxIndex = getMaxIndex(props, "msgPosting.");
@@ -63,14 +63,14 @@ public class MessageProcessingUtility {
         String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE).toLowerCase();
         String url = devcorp7 + "/" + namespace + "/" + transactionService + Constants.POSTING_ENDPOINT;
 
-        logger.info("url: " + url);
+        logger.info("url: {}", url);
 
         String webServiceId = props.getProperty(Constants.WEBSERVICE_ID);
         String watchlistType = props.getProperty(Constants.WATCHLIST_TYPE);
 
         if (maxIndex >= 10) {
             configureRetryParameters(props);
-            logger.info("UserDefinedParams:::retryRequiredFlag=" + retryRequiredFlag + "; retryMaxCount=" + retryMaxCount + "; bearerTokenRefreshInterval=" + bearerTokenRefreshInterval + "min(s); restartFlag=" + restartFlag);
+            logger.info("UserDefinedParams:::retryRequiredFlag={}; retryMaxCount={}; bearerTokenRefreshInterval={}min(s); restartFlag={}", retryRequiredFlag, retryMaxCount, bearerTokenRefreshInterval, restartFlag);
         }
 
         if (excelFiles.isEmpty()) {
@@ -79,7 +79,7 @@ public class MessageProcessingUtility {
         }
 
         for (File excelFile : excelFiles) {
-            logger.info("Processing file: " + excelFile.getName());
+            logger.info("Processing file: {}", excelFile.getName());
             try (FileInputStream fis = new FileInputStream(excelFile);
                  Workbook workbook = new XSSFWorkbook(fis)) {
                 Sheet sheet = workbook.getSheetAt(0);
@@ -126,12 +126,12 @@ public class MessageProcessingUtility {
                     }
                 }
 
-                logger.info("size of seqIdToRequestMap in " + excelFile.getName() + " is " + seqIdToRequestMap.size());
+                logger.info("size of seqIdToRequestMap in {} is {}", excelFile.getName(), seqIdToRequestMap.size());
 
                 Map<String, String> failedRequestMap = processRequests(seqIdToRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId, watchlistType);
 
                 if (!failedRequestMap.isEmpty()) {
-                    logger.info("Job is not done yet for " + excelFile.getName() + "...");
+                    logger.info("Job is not done yet for {}...", excelFile.getName());
                     failedRequestMap = processRequests(failedRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId, watchlistType);
                 }
 
@@ -144,11 +144,11 @@ public class MessageProcessingUtility {
                     workbook.write(outFile);
                 }
 
-                logger.info("Message Processing Completed for " + excelFile.getName());
+                logger.info("Message Processing Completed for {}", excelFile.getName());
 
             } catch (Exception var36) {
                 var36.printStackTrace();
-                logger.info("Error occurred processing " + excelFile.getName() + ": " + var36.getMessage());
+                logger.info("Error occurred processing {}: {}", excelFile.getName(), var36.getMessage());
                 // Do not exit, continue with other files
             }
         }
@@ -157,7 +157,7 @@ public class MessageProcessingUtility {
         logger.info("=============================================================");
         long endTime = System.currentTimeMillis();
 
-        logger.info("Time taken by Message Processor: " + (endTime - startTime) / 1000L + " seconds");
+        logger.info("Time taken by Message Processor: {} seconds", (endTime - startTime) / 1000L);
 
     }
 
@@ -189,7 +189,7 @@ public class MessageProcessingUtility {
             StringBuilder apiResponse = new StringBuilder();
             BufferedReader br = null;
 
-            logger.info("Executing REST call with SeqId: " + seqId);
+            logger.info("Executing REST call with SeqId: {}", seqId);
             do {
                 if (retryCount > 0) {
                     try {
@@ -205,7 +205,7 @@ public class MessageProcessingUtility {
                 synchronized (tokenLock) {
                     bearerToken = getAccessToken(tokenUrl, usernm, pwd);
                 }
-                logger.info("Access token: " + bearerToken);
+                logger.info("Access token: {}", bearerToken);
 
                 try {
                     URL resturl = new URL(url + "?reqId=" + currentRetry);
@@ -239,8 +239,8 @@ public class MessageProcessingUtility {
                     br.close();
                     conn.disconnect();
 
-                    logger.info("Waiting for Response: " + getResponseMsg(responseCode));
-                    logger.info("api response::: "+ apiResponse);
+                    logger.info("Waiting for Response: {}", getResponseMsg(responseCode));
+                    logger.info("api response::: {}", apiResponse);
                 } catch (Exception e) {
                     e.printStackTrace();
                     responseCode = 500; // Treat as error for retry
@@ -256,13 +256,11 @@ public class MessageProcessingUtility {
                 retryCount++;
             } while (Constants.YES.equalsIgnoreCase(retryRequiredFlag) && responseCode > 399 && retryCount <= retryMaxCount);
 
-            logger.info("ResponseCode: " + responseCode);
+            logger.info("ResponseCode: {}", responseCode);
 
             long endTime = System.currentTimeMillis();
-            logger.info("=============================================================----------");
-            logger.info("Time taken for rest call: " + (endTime - startTime) / 1000L + " seconds");
-            logger.info("=============================================================----------");
-            logger.info("=============================================================----------------------------------------------");
+
+            logger.info("Time taken for rest call: {} seconds", (endTime - startTime) / 1000L);
 
             String responseString = apiResponse.toString();
             if (responseString.length() > 32767) {
@@ -288,11 +286,11 @@ public class MessageProcessingUtility {
 
                     if (responseCode <= 399) {
                         // Existing success logic
-                        logger.info("response: " + responseJson);
+                        logger.info("response: {}", responseJson);
                         matchCount = responseJson.has(Constants.FEEDBACK_DATA) ? (responseJson.getJSONObject(Constants.FEEDBACK_DATA).has(Constants.MATCHING_COUNT) ? responseJson.getJSONObject(Constants.FEEDBACK_DATA).getLong(Constants.MATCHING_COUNT) : 0) : 0;
                         status = responseJson.optString(Constants.MATCHING_STATUS, "");
                         feedbackStatus = responseJson.has(Constants.FEEDBACK_DATA) ? responseJson.getJSONObject(Constants.FEEDBACK_DATA).optString(Constants.MATCHING_STATUS, "") : "";
-                        logger.info("transactionToken: " + tokenString + " matchCount: " + matchCount + " status: " + status + " feedbackStatus: " + feedbackStatus);
+                        logger.info("transactionToken: {} matchCount: {} status: {} feedbackStatus: {}", tokenString, matchCount, status, feedbackStatus);
 
                         if (responseJson.has(Constants.FEEDBACK_DATA)) {
                             JSONObject feedbackData = responseJson.getJSONObject(Constants.FEEDBACK_DATA);
@@ -322,7 +320,7 @@ public class MessageProcessingUtility {
                     // Update sheet in synchronized block
                     synchronized (sheet) {
                         int targetRowNum = seqIdToRowNum.get(seqId);
-                        logger.info("Writing output to file for seqId: " + seqId);
+                        logger.info("Writing output to file for seqId: {}", seqId);
                         Row row = (Row) sheet.getRow(targetRowNum);
                         for (int i = 0; i < excelParams.length; i++) {
                             Cell cell = row.getCell(processorStartColumn + i);
@@ -339,7 +337,7 @@ public class MessageProcessingUtility {
                     if (isErrorToHandle) {
                         synchronized (sheet) {
                             int targetRowNum = seqIdToRowNum.get(seqId);
-                            logger.info("Writing output to file for seqId: " + seqId);
+                            logger.info("Writing output to file for seqId: {}", seqId);
                             Row row = (Row) sheet.getRow(targetRowNum);
                             for (int i = 0; i < excelParams.length; i++) {
                                 Cell cell = row.getCell(processorStartColumn + i);
@@ -355,7 +353,6 @@ public class MessageProcessingUtility {
             if (responseCode > 399) {
                 failedRequestMap.put(seqId, requestBody);
             }
-            logger.info("===========================================================================================================");
         });
 
         return failedRequestMap;
@@ -385,7 +382,7 @@ public class MessageProcessingUtility {
                     ++rowNum;
                 } else {
                     String seqId = formatter.formatCellValue(row.getCell(0));
-                    logger.info("Writing output to file:" + seqId);
+                    logger.info("Writing output to file: {}", seqId);
                     if (seqIdToResponseMap.get(seqId) != null) {
                         Cell cell;
                         if (row.getCell(3) == null) {
@@ -457,7 +454,7 @@ public class MessageProcessingUtility {
         long currentTime = System.currentTimeMillis();
         long timeDiff = (currentTime - labelledTime) / 60000L;
         if (labelledTime != 0L && timeDiff < bearerTokenRefreshInterval) {
-            logger.info("--- Using cached bearerToken for " + (bearerTokenRefreshInterval - timeDiff) + " more min(s)");
+            logger.info("--- Using cached bearerToken for {} more min(s)", (bearerTokenRefreshInterval - timeDiff));
             return instanceBearerToken;
         }
 
@@ -489,13 +486,13 @@ public class MessageProcessingUtility {
                 }
 
                 response = result.toString(Constants.ENCODER);
-                logger.info("AuthToken response: " + response);
+                logger.info("AuthToken response: {}", response);
                 JSONObject jsonObject = new JSONObject(response);
                 bearerToken = jsonObject.getString("access_token");
                 httpConn1.disconnect();
             }
 
-            logger.info("AuthToken status: " + status);
+            logger.info("AuthToken status: {}", status);
         } catch (Exception var19) {
             var19.printStackTrace();
         }

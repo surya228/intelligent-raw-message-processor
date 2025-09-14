@@ -61,7 +61,9 @@ public class Main {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) throws Exception {
-        logger.info("***********Utility Main Started************");
+        logger.info("=============================================================");
+        logger.info("      INTELLIGENT RAW MESSAGE PROCESSOR UTILITY STARTED      ");
+        logger.info("=============================================================");
         Date startDateObj = new Date();
         SimpleDateFormat dateFormat = new SimpleDateFormat(Constants.DATE_SUFFIX_FORMAT);
         SimpleDateFormat timeFormat = new SimpleDateFormat(Constants.TIME_SUFFIX_FORMAT);
@@ -111,6 +113,9 @@ public class Main {
 
             }
         }
+        logger.info("=============================================================");
+        logger.info("     INTELLIGENT RAW MESSAGE PROCESSOR UTILITY COMPLETED     ");
+        logger.info("=============================================================");
         long endTime = System.currentTimeMillis();
         logger.info("Total time taken by utility: {} Seconds ", (endTime - startTime) / 1000L );
     }
@@ -199,7 +204,7 @@ public class Main {
                     String countStr = new String(Files.readAllBytes(countFile.toPath())).trim();
                     fileLimit = Integer.parseInt(countStr);
                 } catch (Exception e) {
-                    logger.error("Error reading file count: " + e.getMessage());
+                    logger.error("Error reading file count: {}", e.getMessage());
                 }
             }
             if (fileLimit > 0) {
@@ -222,9 +227,9 @@ public class Main {
         File originalConfig = new File(Constants.CONFIG_FILE_PATH);
         try {
             Files.copy(originalConfig.toPath(), configFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            logger.info("Config properties saved to " + configFile.getName());
+            logger.info("Config properties saved to {}", configFile.getName());
         } catch (IOException e) {
-            logger.error("Error saving config properties: " + e.getMessage());
+            logger.error("Error saving config properties: {}", e.getMessage());
         }
     }
 
@@ -234,7 +239,7 @@ public class Main {
             props.load(reader);
             logger.info("Properties file loaded");
         } catch (IOException e) {
-            logger.error("Error reading properties file: " + e.getMessage());
+            logger.error("Error reading properties file: {}", e.getMessage());
             throw e;
         }
         return props;

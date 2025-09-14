@@ -48,9 +48,9 @@ public class AnalyzerRunnable implements Runnable {
                     String newName = renamePrefix + enginePart + "_" + startDate + "_" + startTimeStr + "_" + sequence + ".xlsx";
                     File newFile = new File(Constants.OUTPUT_FOLDER, newName);
                     if (file.renameTo(newFile)) {
-                        logger.info("Renamed " + file.getName() + " to " + newName);
+                        logger.info("Renamed {} to {}", file.getName(), newName);
                     } else {
-                        logger.error("Failed to rename " + file.getName());
+                        logger.error("Failed to rename {}", file.getName());
                     }
                 }
             }

@@ -35,7 +35,7 @@ public class ToggleMatchingEngine {
         try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
             props.load(reader);
         } catch (IOException e) {
-            logger.error("Error reading properties file: " + e.getMessage());
+            logger.error("Error reading properties file: {}", e.getMessage());
             throw e;
         }
 
