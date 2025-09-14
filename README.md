@@ -68,10 +68,8 @@ flowchart TD
 
   %% Validation handled by "Valid configuration?" decision above
 
-  %% Toggling branch
-  B -->|Yes| T1[Switch Engine OS <-> OT]
-  T1 --> T2[Refresh Cache via API]
-  T2 --> E
+  %% Toggling occurs after first processor run (not before generation)
+  B -->|Yes| E
   B -->|No| E
 
   %% Variant Pipeline details
@@ -84,16 +82,25 @@ flowchart TD
   end
 
   %% Processing and Analysis
-  V3 --> P[ProcessorRunnable Threads]
-  P --> API[(Screening API)]
-  API --> P
-  P --> R[Excel Responses/Tokens]
-  R --> A1[AnalyzerRunnable Threads]
+  V3 --> P1[ProcessorRunnable Run #1]
+  P1 --> API[(Screening API)]
+  API --> P1
+  P1 --> R1[Excel Responses/Tokens (Run #1)]
+
+  %% Decide to toggle and rerun
+  R1 --> DT{toggleMatchingEngine == Y?}
+  DT -->|Yes| T1[Switch Engine OS <-> OT]
+  T1 --> T2[Refresh Cache via API]
+  T2 --> P2[ProcessorRunnable Run #2]
+  P2 --> API
+  API --> P2
+  P2 --> R2[Excel Responses/Tokens (Run #2)]
+  R2 --> A1[AnalyzerRunnable Threads]
+
+  DT -->|No| A1
+
   A1 --> DB[(Database/Watchlists)]
   A1 --> OUT[Excel PASS/FAIL]
-
-  %% Optional retest after toggle: re-run full flow on other engine
-  T2 -.->|if toggle=Y| P
 ```
 
 ## Prerequisites
