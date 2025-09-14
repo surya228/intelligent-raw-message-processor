@@ -54,26 +54,22 @@ graph TD
   - JSON.org or similar for JSON processing.
   - Other dependencies in `External Libraries/TFCS Libs` (e.g., Jackson, OpenCSV).
 - **Configuration Files**: `config.properties` and `source.json` in `utility/intelligent-raw-message-processor-utility/bin/`.
-- **Wallet**: Oracle wallet for secure DB connections (e.g., `wallet_deviut3j16`).
+- **Wallet**: Oracle wallet for secure DB connections (e.g., `wallet_zip_extracted_file`).
 
 Ensure external APIs (e.g., token and posting endpoints) are accessible.
 
 ## Installation and Setup
 
-1. **Clone the Repository** (if applicable) or navigate to the project directory: `c:/Users/Suryansh/Documents/Work/Utilities/Utility Source Code/intelligent-raw-message-processor`.
-2. **Build the JAR**:
-   - Use IntelliJ or Maven (if pom.xml is set up) to build `intelligent-raw-message-processor.jar`.
-   - Place it in `utility/intelligent-raw-message-processor-utility/lib/`.
-3. **Configure Environment**:
+1. **Configure Environment**:
    - Update `config.properties` with DB details, API endpoints, and processing flags.
    - Prepare `source.json` with raw message templates (e.g., containing `__TOKEN__` placeholders).
-4. **Run Script**: Use `run.bat` in `utility/intelligent-raw-message-processor-utility/bin/` to execute.
+2. **Run Script**: Use `run.bat` in `utility/intelligent-raw-message-processor-utility/bin/` to execute.
 
 ## Configuration Guide
 
 Configuration is primarily in `config.properties`:
 
-- **Modules**: Enable/disable generators/processors/analyzers (e.g., `module.rawMsgGenerator=Y`).
+- **Modules**: Enable/disable toggleMatchingEngine (e.g., `toggleMatchingEngine=Y`).
 - **Database**: `jdbcdriver`, `jdbcurl`, `walletName`.
 - **Message Settings**: `tagName`, `webServiceId` (1=NameAndAddress, 2=Identifier, etc.), `watchListType` (e.g., OFAC).
 - **Variants**: `ced1=Y` for 1-char edits, `stopword=Y`, `synonym=Y`.
