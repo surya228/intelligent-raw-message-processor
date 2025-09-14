@@ -29,6 +29,30 @@ public class Main {
                     System.err.println("Could not create log directory at " + logDir.getAbsolutePath());
                 }
             }
+            // Truncate existing log files on startup to ensure a fresh run
+            try {
+                String[] logFiles = new String[] {
+                        "UtilityMain.log",
+                        "RawMessageGenrator.log",
+                        "MessageProcessor.log",
+                        "MessageAnalyzer.log"
+                };
+                for (String lf : logFiles) {
+                    File f = new File(logDir, lf);
+                    if (f.exists()) {
+                        try {
+                            new java.io.FileOutputStream(f, false).close();
+                        } catch (Throwable clearEx) {
+                            // Fallback to delete if truncation fails
+                            if (!f.delete()) {
+                                System.err.println("Failed to clear log file: " + f.getAbsolutePath() + " due to: " + clearEx.getMessage());
+                            }
+                        }
+                    }
+                }
+            } catch (Throwable t2) {
+                System.err.println("Failed while clearing previous log files: " + t2.getMessage());
+            }
             System.setProperty("log.dir", logDir.getAbsolutePath());
         } catch (Throwable t) {
             System.err.println("Failed to initialize log directory: " + t.getMessage());

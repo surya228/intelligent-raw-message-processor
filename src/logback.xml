@@ -13,6 +13,7 @@
     <!-- File Appender for Main -->
     <appender name="MAIN_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_DIR}/UtilityMain.log</file>
+        <append>false</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>${LOG_DIR}/UtilityMain.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory>
@@ -25,6 +26,7 @@
     <!-- File Appender for RawMessageGenerator -->
     <appender name="RAWMSG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_DIR}/RawMessageGenrator.log</file>
+        <append>false</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>${LOG_DIR}/RawMessageGenrator.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory>
@@ -37,6 +39,7 @@
     <!-- File Appender for MessageProcessingUtility (assumed as MessageProcessor) -->
     <appender name="PROCESSOR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_DIR}/MessageProcessor.log</file>
+        <append>false</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>${LOG_DIR}/MessageProcessor.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory>
@@ -49,6 +52,7 @@
     <!-- File Appender for MessageResponseAnalyzer (assumed as MessageAnalyzer) -->
     <appender name="ANALYZER_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_DIR}/MessageAnalyzer.log</file>
+        <append>false</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>${LOG_DIR}/MessageAnalyzer.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory>
@@ -89,6 +93,7 @@
 
     <!-- Package-wide logger (for other classes) -->
     <logger name="com.oracle.ofss.sanctions.tf.app" level="debug" additivity="false">
+        <appender-ref ref="MAIN_FILE" />
         <appender-ref ref="CONSOLE" />
     </logger>
 </configuration>
