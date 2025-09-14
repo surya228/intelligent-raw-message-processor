@@ -77,41 +77,35 @@ public class Main {
 
         long startTime = System.currentTimeMillis();
 
-        boolean generate = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.MODULE_RAW_MSG_GENERATOR));
-        boolean process = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.MODULE_RAW_MSG_PROCESSOR));
         boolean isToggle = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.TOGGLE_MATCHING_ENGINE));
-
 
         // Delete previous output files and count file
         deletePreviousFiles();
 
-        if (generate) {
-            int generatedCount = RawMessageGenerator.generateRawMessage(null, props); // Generation is always sequential
-            if (generatedCount == 0) {
-                logger.info("No raw messages generated. Exiting utility.");
-                System.exit(0);
-            }
-            logger.info("Raw Message Generator Completed");
+        // grenerate raw message
+        int generatedCount = RawMessageGenerator.generateRawMessage(null, props); // Generation is always sequential
+        if (generatedCount == 0) {
+            logger.info("No raw messages generated. Exiting utility.");
+            System.exit(0);
         }
+        logger.info("Raw Message Generator Completed");
 
         ToggleMatchingEngine toggleMatchingEngine = new ToggleMatchingEngine();
         String matchingEngine = toggleMatchingEngine.findCurrentMatchingEngine();
         logger.info("Proceeding for Message Processor and Analyzer");
         logger.info("Current Matching Engine::: {}", matchingEngine);
 
-        if (process) {
-            List<File> excelFiles = getExcelFiles(props);
+        List<File> excelFiles = getExcelFiles(props);
 
-            runProcessing(matchingEngine, excelFiles, props, isToggle, false, renamePrefix, startDate, startTimeStr);
-            logger.info("Processor and Analyzer Completed with matching engine :: {}",matchingEngine);
-            if (isToggle) {
-                logger.info("Toggling Matching engine....");
-                matchingEngine = toggleMatchingEngine.toggleMatchingEngine();
-                logger.info("Matching engine toggled to ::: {}", matchingEngine);
-                runProcessing(matchingEngine, excelFiles, props, isToggle, true, renamePrefix, startDate, startTimeStr);
-                logger.info("Processor and Analyzer Completed after toggling matching engine to :: {}",matchingEngine);
+        runProcessing(matchingEngine, excelFiles, props, isToggle, false, renamePrefix, startDate, startTimeStr);
+        logger.info("Processor and Analyzer Completed with matching engine :: {}",matchingEngine);
+        if (isToggle) {
+            logger.info("Toggling Matching engine....");
+            matchingEngine = toggleMatchingEngine.toggleMatchingEngine();
+            logger.info("Matching engine toggled to ::: {}", matchingEngine);
+            runProcessing(matchingEngine, excelFiles, props, isToggle, true, renamePrefix, startDate, startTimeStr);
+            logger.info("Processor and Analyzer Completed after toggling matching engine to :: {}",matchingEngine);
 
-            }
         }
         logger.info("=============================================================");
         logger.info("     INTELLIGENT RAW MESSAGE PROCESSOR UTILITY COMPLETED     ");

@@ -44,8 +44,6 @@ public class Constants {
     public static String ENCODER = "UTF-8";
 
     // Module Configuration Flags
-    public static String MODULE_RAW_MSG_GENERATOR = "module.rawMsgGenerator";
-    public static String MODULE_RAW_MSG_PROCESSOR = "module.rawMsgProcessor";
     public static final String TOGGLE_MATCHING_ENGINE = "toggleMatchingEngine";
 
     // Property Keys for Configuration
