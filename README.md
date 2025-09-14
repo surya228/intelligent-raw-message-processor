@@ -49,57 +49,51 @@ graph TD
 
 ```mermaid
 flowchart TD
-  %% Legend: Flags from config.properties
-  classDef flag fill:#fff2cc,stroke:#d6b656,color:#000;
-  classDef io fill:#dae8fc,stroke:#6c8ebf,color:#000;
-  classDef process fill:#e1d5e7,stroke:#9673a6,color:#000;
-  classDef decision fill:#ffe6e6,stroke:#b85450,color:#000;
-  classDef store fill:#d5e8d4,stroke:#82b366,color:#000;
+  A[Config Loaded] --> B{toggleMatchingEngine == Y?}
+  A --> C{synonym == Y?}
+  A --> D{stopword == Y?}
 
-  A[Config Loaded]:::flag --> B{toggleMatchingEngine == 'Y'?}:::decision
-  A --> C{synonym == 'Y'}:::decision
-  A --> D{stopword == 'Y'}:::decision
+  %% Mutually exclusive (doc note)
+  C -->|Yes| C1[Enable Synonym Variants]
+  C -->|No| C0[No Synonym Variants]
+  D -->|Yes| D1[Enable Stopword Variants]
+  D -->|No| D0[No Stopword Variants]
 
-  %% Enforce mutual exclusivity: synonym XOR stopword
-  C -->|Yes| C1[Enable Synonym Variant Generation]:::process
-  C -->|No| C0[No Synonym Variants]:::process
-  D -->|Yes| D1[Enable Stopword Variant Generation]:::process
-  D -->|No| D0[No Stopword Variants]:::process
-  C1 --> E[Variant Pipeline]:::process
+  C1 --> E[Variant Pipeline]
   D1 --> E
   C0 --> E
   D0 --> E
 
-  %% If both set, short-circuit with warning path (doc note says only one should be Y)
-  C1 -.->|and D1 also Yes| W[Config Warning: Only one of synonym/stopword should be Y]:::flag
+  %% Warning if both are set
+  C1 -.->|and D1 also Yes| W[Config Warning: Only one of synonym/stopword should be Y]
   W -.-> E
 
   %% Toggling branch
-  B -->|Yes| T1[Switch Engine OS <-> OT]:::process
-  T1 --> T2[Refresh Cache via API]:::process
+  B -->|Yes| T1[Switch Engine OS <-> OT]
+  T1 --> T2[Refresh Cache via API]
   T2 --> E
   B -->|No| E
 
   %% Variant Pipeline details
-  subgraph E2[Generate Variants]
+  subgraph E2 [Generate Variants]
     direction LR
-    E --> V0[Base Templates]:::store
-    V0 --> V1[Apply CED(n) if enabled]:::process
-    V1 --> V2[Apply Synonym or Stopword rules]:::process
-    V2 --> V3[Write Split Excel/JSON]:::io
+    E --> V0[Base Templates]
+    V0 --> V1["Apply CED(n) if enabled"]
+    V1 --> V2["Apply Synonym or Stopword rules"]
+    V2 --> V3[Write Split Excel/JSON]
   end
 
   %% Processing and Analysis
-  V3 --> P[ProcessorRunnable Threads]:::process
-  P --> API[(Screening API)]:::io
+  V3 --> P[ProcessorRunnable Threads]
+  P --> API[(Screening API)]
   API --> P
-  P --> R[Excel Responses/Tokens]:::io
-  R --> A1[AnalyzerRunnable Threads]:::process
-  A1 --> DB[(Database/Watchlists)]:::store
-  A1 --> OUT[Excel PASS/FAIL]:::io
+  P --> R[Excel Responses/Tokens]
+  R --> A1[AnalyzerRunnable Threads]
+  A1 --> DB[(Database/Watchlists)]
+  A1 --> OUT[Excel PASS/FAIL]
 
   %% Optional retest after toggle: re-run full flow on other engine
-  T2 -. if toggle=Y .-> P
+  T2 -.->|if toggle=Y| P
 ```
 
 ## Prerequisites
