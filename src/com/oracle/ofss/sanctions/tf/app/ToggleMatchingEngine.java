@@ -1,16 +1,24 @@
 package com.oracle.ofss.sanctions.tf.app;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.Properties;
 
 import javax.net.ssl.HttpsURLConnection;
 
 public class ToggleMatchingEngine {
+    private static final Logger logger = LoggerFactory.getLogger(ToggleMatchingEngine.class);
 
     int currentNId=-1;
 
@@ -18,7 +26,7 @@ public class ToggleMatchingEngine {
         String newEsOs = toggle();
         refreshCache("/tfcs-matching-service/refreshCacheSearchengine");
         refreshCache("/tfcs-matching-service/refreshCache");
-        Thread.sleep(3000); // wait for 5 seconds to refresh cache fully
+        Thread.sleep(Constants.THREAD_SLEEP_MS); // wait for some time to refresh cache fully
         return newEsOs;
     }
 
@@ -27,7 +35,7 @@ public class ToggleMatchingEngine {
         try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
             props.load(reader);
         } catch (IOException e) {
-            System.err.println("Error reading properties file: " + e.getMessage());
+            logger.error("Error reading properties file: {}", e.getMessage());
             throw e;
         }
 
@@ -36,8 +44,8 @@ public class ToggleMatchingEngine {
         String clientSecret = props.getProperty(Constants.CLIENT_SECRET);
         String devcorp7 = props.getProperty(Constants.DEVCORP7);
         String namespace = props.getProperty(Constants.NAMESPACE);
-        String retryRequiredFlag = props.getProperty(Constants.RETRY_REQUIRED_FLAG, "Y");
-        int retryMaxCount = Integer.parseInt(props.getProperty(Constants.RETRY_MAX_COUNT, "5"));
+        String retryRequiredFlag = props.getProperty(Constants.RETRY_REQUIRED_FLAG, Constants.YES);
+        int retryMaxCount = Integer.parseInt(props.getProperty(Constants.RETRY_MAX_COUNT, String.valueOf(Constants.DEFAULT_RETRY_MAX)));
 
         String bearerToken = MessageProcessingUtility.getAccessToken(tokenUrl, clientId, clientSecret);
 
@@ -51,7 +59,7 @@ public class ToggleMatchingEngine {
         do {
             if (retryCount > 0) {
                 try {
-                    Thread.sleep(5000);
+                    Thread.sleep(Constants.THREAD_SLEEP_MS);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                 }
@@ -62,14 +70,14 @@ public class ToggleMatchingEngine {
             conn.setRequestMethod("GET");
             conn.setRequestProperty("ofs_remote_user", "OFS_SRV_ACCT");
             conn.setRequestProperty("accept-language", "en-US,en-U");
-            conn.setRequestProperty("authorization", "Bearer " + bearerToken);
+            conn.setRequestProperty("authorization", Constants.AUTH_BEARER_PREFIX + bearerToken);
             conn.setRequestProperty("idcs_remote_user", "appuser");
             conn.setRequestProperty("locale", "en-US");
             conn.setHostnameVerifier((hostname, sslSession) -> true);
 
             responseCode = conn.getResponseCode();
 
-            if (responseCode != 204) {
+            if (responseCode != Constants.NO_CONTENT) {
                 br = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
                 String output;
                 while ((output = br.readLine()) != null) {
@@ -80,13 +88,13 @@ public class ToggleMatchingEngine {
             conn.disconnect();
 
             retryCount++;
-        } while ("Y".equalsIgnoreCase(retryRequiredFlag) && responseCode != 204 && retryCount <= retryMaxCount);
+        } while (Constants.YES.equalsIgnoreCase(retryRequiredFlag) && responseCode != Constants.NO_CONTENT && retryCount <= retryMaxCount);
 
-        if (responseCode != 204) {
+        if (responseCode != Constants.NO_CONTENT) {
             throw new Exception("Failed to refresh cache after " + retryMaxCount + " retries. Response: " + responseCode + " - " + apiResponse.toString());
         }
 
-        System.out.println("Cache refreshed successfully.");
+        logger.info("Cache refreshed successfully.");
     }
 
     private String toggle() throws Exception {

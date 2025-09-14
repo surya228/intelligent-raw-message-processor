@@ -12,6 +12,8 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.sql.Connection;
@@ -23,229 +25,221 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 public class MessageResponseAnalyzer {
-    public static void analyseResponseAndPrepareResults(String matchingEngine) throws Exception {
-        try {
-            long startTime = System.currentTimeMillis();
-
-            System.out.println("\n=============================================================");
-            System.out.println("                  RESPONSE ANALYZER STARTED                  ");
-            System.out.println("=============================================================");
-
-            Properties props = new Properties();
-            try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
-                props.load(reader);
-            } catch (IOException e) {
-                System.err.println("Error reading properties file: " + e.getMessage());
-                throw e;
-            }
-            String tagName = props.getProperty(Constants.TAGNAME);
-            String msgCategory = "";
-            String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE);
-            String watchListType = props.getProperty(Constants.WATCHLIST_TYPE);
-            String webServiceId = props.getProperty(Constants.WEBSERVICE_ID);
-            if(transactionService.equalsIgnoreCase("SWIFT")) msgCategory="SWIFT";
-            else if(transactionService.equalsIgnoreCase("FEDWIRE")) msgCategory="FEDWIRE";
-            else if(transactionService.equalsIgnoreCase("ISO20022")) msgCategory="SEPA";
-            System.out.println("tagName: " + tagName);
-            processAllResponses(tagName, msgCategory, watchListType, webServiceId,matchingEngine);
-            System.out.println("\n=============================================================");
-            System.out.println("                   RESPONSE ANALYZER ENDED                   ");
-            System.out.println("=============================================================");
-            long endTime = System.currentTimeMillis();
-
-            System.out.println("Time taken by Message Response Analyzer: " + (endTime - startTime) / 1000L + " seconds");
-
-        } catch (Exception e){
-            e.printStackTrace();
-            throw new Exception("Something went wrong while analyzing responses",e);
-        }
+    private static final Logger logger = LoggerFactory.getLogger(MessageResponseAnalyzer.class);
+    public static void analyseResponseAndPrepareResults(String matchingEngine, File excelFile, Properties props) throws Exception {
+        analyseResponseAndPrepareResults(matchingEngine, Collections.singletonList(excelFile), props);
     }
 
-    public static void processAllResponses(String tagName, String msgCategory, String watchListType, String webServiceId, String matchingEngine) throws Exception {
-        try (FileInputStream fis = new FileInputStream(Constants.OUTPUT_XLSX_FILE_PATH);
-             Workbook workbook = new XSSFWorkbook(fis)) {
+    public static void analyseResponseAndPrepareResults(String matchingEngine, List<File> excelFiles, Properties props) throws Exception {
+        long startTime = System.currentTimeMillis();
 
-            Sheet sheet = workbook.getSheetAt(0);
+        logger.info("=============================================================");
+        logger.info("                  RESPONSE ANALYZER STARTED                  ");
+        logger.info("=============================================================");
 
-            // Dynamically add analyzer columns
-            Row headerRow = sheet.getRow(0);
-            if (headerRow == null) headerRow = sheet.createRow(0);
-            int lastColumn = headerRow.getLastCellNum();
-            if (lastColumn < 0) lastColumn = 0;
+        String tagName = props.getProperty(Constants.TAGNAME);
+        String msgCategory = "";
+        String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE);
+        String watchListType = props.getProperty(Constants.WATCHLIST_TYPE);
+        String webServiceId = props.getProperty(Constants.WEBSERVICE_ID);
+        if (transactionService.equalsIgnoreCase("SWIFT")) msgCategory = "SWIFT";
+        else if (transactionService.equalsIgnoreCase("FEDWIRE")) msgCategory = "FEDWIRE";
+        else if (transactionService.equalsIgnoreCase("ISO20022")) msgCategory = "SEPA";
+        logger.info("tagName: {}", tagName);
+        processAllResponses(tagName, msgCategory, watchListType, webServiceId, matchingEngine, excelFiles);
 
-            String[] analyzerHeaders = {
-                    matchingEngine+" "+Constants.TEST_STATUS,
-                    matchingEngine+" "+Constants.COMMENTS
-            };
-            int analyzerStartColumn = lastColumn;
-            for (int i = 0; i < analyzerHeaders.length; i++) {
-                Cell headerCell = headerRow.getCell(analyzerStartColumn + i);
-                if (headerCell == null) headerCell = headerRow.createCell(analyzerStartColumn + i);
-                headerCell.setCellValue(analyzerHeaders[i]);
-            }
+        logger.info("=============================================================");
+        logger.info("                   RESPONSE ANALYZER ENDED                   ");
+        logger.info("=============================================================");
+        long endTime = System.currentTimeMillis();
 
-            // Find the latest processor start column by locating the rightmost TRXN_TOKEN header
-            int latestProcessorColumn = -1;
-            for (int col = headerRow.getLastCellNum() - 1; col >= 0; col--) {
-                Cell cell = headerRow.getCell(col);
-                if (cell != null && cell.getStringCellValue().contains(Constants.TRXN_TOKEN)) {
-                    latestProcessorColumn = col;
-                    break;
+        logger.info("Time taken by Message Response Analyzer: {} seconds", (endTime - startTime) / 1000L);
+    }
+
+    private static void processAllResponses(String tagName, String msgCategory, String watchListType, String webServiceId, String matchingEngine, List<File> excelFiles) throws Exception {
+        if (excelFiles.isEmpty()) {
+            logger.info("No Excel files found to analyze.");
+            return;
+        }
+
+        for (File excelFile : excelFiles) {
+            logger.info("Analyzing file: {}", excelFile.getName());
+            try (FileInputStream fis = new FileInputStream(excelFile);
+                 Workbook workbook = new XSSFWorkbook(fis)) {
+
+                Sheet sheet = workbook.getSheetAt(0);
+
+                // Dynamically add analyzer columns
+                Row headerRow = sheet.getRow(0);
+                if (headerRow == null) headerRow = sheet.createRow(0);
+                int lastColumn = headerRow.getLastCellNum();
+                if (lastColumn < 0) lastColumn = 0;
+
+                String[] analyzerHeaders = {
+                        matchingEngine + " " + Constants.TEST_STATUS,
+                        matchingEngine + " " + Constants.COMMENTS
+                };
+                int analyzerStartColumn = lastColumn;
+                for (int i = 0; i < analyzerHeaders.length; i++) {
+                    Cell headerCell = headerRow.getCell(analyzerStartColumn + i);
+                    if (headerCell == null) headerCell = headerRow.createCell(analyzerStartColumn + i);
+                    headerCell.setCellValue(analyzerHeaders[i]);
                 }
-            }
-            if (latestProcessorColumn == -1) {
-                // No processor columns found, skip or handle error
-                System.out.println("No Transaction Token column found. Skipping analysis.");
-                return;
-            }
 
-            // Collect all transactionTokens and row data in memory using the latest processor column
-            List<Long> transactionTokens = new ArrayList<>();
-            Map<Long, Integer> tokenToRowNum = new HashMap<>();
-            Map<Long, String> tokenToTargetColumn = new HashMap<>();
-            Map<Long, String> tokenToUid = new HashMap<>();
-
-            int rowNum = 1; // Skip header
-            for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue; // Skip header
-
-                Cell tokenCell = row.getCell(latestProcessorColumn);
-                if (tokenCell == null) continue;
-
-                long transactionToken = 0;
-                if (tokenCell.getCellType() == CellType.NUMERIC) {
-                    transactionToken = (long) tokenCell.getNumericCellValue();
-                } else if (tokenCell.getCellType() == CellType.STRING) {
-                    String value = tokenCell.getStringCellValue().trim();
-                    if (!value.isEmpty()) {
-                        transactionToken = Long.parseLong(value);
+                // Find the latest processor start column by locating the rightmost TRXN_TOKEN header
+                int latestProcessorColumn = -1;
+                for (int col = headerRow.getLastCellNum() - 1; col >= 0; col--) {
+                    Cell cell = headerRow.getCell(col);
+                    if (cell != null && cell.getStringCellValue().contains(Constants.TRXN_TOKEN)) {
+                        latestProcessorColumn = col;
+                        break;
                     }
                 }
-                if (transactionToken == 0) continue;
+                if (latestProcessorColumn == -1) {
+                    logger.info("No Transaction Token column found in {}. Skipping analysis.", excelFile.getName());
+                    continue;
+                }
 
-                transactionTokens.add(transactionToken);
-                tokenToRowNum.put(transactionToken, row.getRowNum());
+                // Collect all transactionTokens and row data in memory using the latest processor column
+                List<Long> transactionTokens = new ArrayList<>();
+                Map<Long, Integer> tokenToRowNum = new HashMap<>();
+                Map<Long, String> tokenToTargetColumn = new HashMap<>();
+                Map<Long, String> tokenToUid = new HashMap<>();
 
-                Cell targetColumnCell = row.getCell(6);
-                Cell uidCell = row.getCell(8);
-                tokenToTargetColumn.put(transactionToken, targetColumnCell != null ? targetColumnCell.getStringCellValue() : "");
-                tokenToUid.put(transactionToken, uidCell != null ? uidCell.getStringCellValue() : "");
-            }
+                int rowNum = 1; // Skip header
+                for (Row row : sheet) {
+                    if (row.getRowNum() == 0) continue; // Skip header
 
-            // Bulk fetch feedback responses
-            Map<Long, JSONObject> feedbackMap = getBulkResponsesFromFeedbackTable(transactionTokens, msgCategory);
+                    Cell tokenCell = row.getCell(latestProcessorColumn);
+                    if (tokenCell == null) continue;
 
-            // Bulk fetch WLS column names
-            int msgCategoryNumber = msgCategory.equalsIgnoreCase("SWIFT") ? 1 : msgCategory.equalsIgnoreCase("FEDWIRE") ? 2 : 3;
-            Map<Long, Map<Long, String>> tokenToCsvColumnNamesMap = getBulkColumnNameCsvWLS(transactionTokens, msgCategoryNumber);
+                    long transactionToken = 0;
+                    if (tokenCell.getCellType() == CellType.NUMERIC) {
+                        transactionToken = (long) tokenCell.getNumericCellValue();
+                    } else if (tokenCell.getCellType() == CellType.STRING) {
+                        String value = tokenCell.getStringCellValue().trim();
+                        if (!value.isEmpty()) {
+                            transactionToken = Long.parseLong(value);
+                        }
+                    }
+                    if (transactionToken == 0) continue;
 
-            // Prepare styles
-            Font boldFont = workbook.createFont();
-            boldFont.setBold(true);
+                    transactionTokens.add(transactionToken);
+                    tokenToRowNum.put(transactionToken, row.getRowNum());
 
-            CellStyle highlightGreen = workbook.createCellStyle();
-            highlightGreen.setFillForegroundColor(IndexedColors.BRIGHT_GREEN.getIndex());
-            highlightGreen.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            highlightGreen.setFont(boldFont);
+                    Cell targetColumnCell = row.getCell(6);
+                    Cell uidCell = row.getCell(8);
+                    tokenToTargetColumn.put(transactionToken, targetColumnCell != null ? targetColumnCell.getStringCellValue() : "");
+                    tokenToUid.put(transactionToken, uidCell != null ? uidCell.getStringCellValue() : "");
+                }
 
-            CellStyle highlightRed = workbook.createCellStyle();
-            highlightRed.setFillForegroundColor(IndexedColors.RED.getIndex());
-            highlightRed.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            highlightRed.setFont(boldFont);
+                // Bulk fetch feedback responses
+                Map<Long, JSONObject> feedbackMap = getBulkResponsesFromFeedbackTable(transactionTokens, msgCategory);
 
-//            CellStyle highlightYellow = workbook.createCellStyle();
-//            highlightYellow.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
-//            highlightYellow.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                // Bulk fetch WLS column names
+                int msgCategoryNumber = msgCategory.equalsIgnoreCase("SWIFT") ? 1 : msgCategory.equalsIgnoreCase("FEDWIRE") ? 2 : 3;
+                Map<Long, Map<Long, String>> tokenToCsvColumnNamesMap = getBulkColumnNameCsvWLS(transactionTokens, msgCategoryNumber);
 
+                // Prepare styles
+                Font boldFont = workbook.createFont();
+                boldFont.setBold(true);
 
-            // Parallel processing of rows
-            ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-            List<CompletableFuture<Void>> futures = new ArrayList<>();
+                CellStyle highlightGreen = workbook.createCellStyle();
+                highlightGreen.setFillForegroundColor(IndexedColors.BRIGHT_GREEN.getIndex());
+                highlightGreen.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                highlightGreen.setFont(boldFont);
 
-            for (long transactionToken : transactionTokens) {
-                CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-                    try {
-                        JSONObject eachResponse = feedbackMap.get(transactionToken);
-                        if (eachResponse == null || !eachResponse.has("matches")) return;
+                CellStyle highlightRed = workbook.createCellStyle();
+                highlightRed.setFillForegroundColor(IndexedColors.RED.getIndex());
+                highlightRed.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                highlightRed.setFont(boldFont);
 
-                        JSONArray matches = eachResponse.getJSONArray("matches");
-                        int truePositives = 0;
-                        String targetColumnName = tokenToTargetColumn.get(transactionToken);
-                        String uid = tokenToUid.get(transactionToken);
-                        Map<Long, String> csvColumnNamesMap = tokenToCsvColumnNamesMap.getOrDefault(transactionToken, Collections.emptyMap());
+                // Parallel processing of rows
+                ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+                List<CompletableFuture<Void>> futures = new ArrayList<>();
 
-                        boolean failedDueToColumnMismatch = false;
-                        for (int i = 0; i < matches.length(); i++) {
-                            JSONObject match = matches.getJSONObject(i);
-                            String tagNameCsv = match.optString("tagName", "");
-                            Set<String> tagNames = Arrays.stream(tagNameCsv.split(",")).map(String::trim).collect(Collectors.toSet());
+                for (long transactionToken : transactionTokens) {
+                    CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                        try {
+                            JSONObject eachResponse = feedbackMap.get(transactionToken);
+                            if (eachResponse == null || !eachResponse.has(Constants.MATCHES)) return;
 
-                            String targetUid = match.getString("matchedWatchlistId");
-                            Long responseId = match.getLong("responseID");
-                            String columnNamesCsvWLS = csvColumnNamesMap.get(responseId);
-                            Set<String> columnNames = columnNamesCsvWLS != null ? Arrays.stream(columnNamesCsvWLS.split(",")).collect(Collectors.toSet()) : Collections.emptySet();
+                            JSONArray matches = eachResponse.getJSONArray(Constants.MATCHES);
+                            int truePositives = 0;
+                            String targetColumnName = tokenToTargetColumn.get(transactionToken);
+                            String uid = tokenToUid.get(transactionToken);
+                            Map<Long, String> csvColumnNamesMap = tokenToCsvColumnNamesMap.getOrDefault(transactionToken, Collections.emptyMap());
 
-                            boolean flag = uid.equals(targetUid)
-                                    && watchListType.equalsIgnoreCase(match.optString("watchlistType"))
-                                    && webServiceId.equalsIgnoreCase(String.valueOf(match.getInt("webServiceID")))
-                                    && tagNames.contains(tagName);
+                            boolean failedDueToColumnMismatch = false;
+                            for (int i = 0; i < matches.length(); i++) {
+                                JSONObject match = matches.getJSONObject(i);
+                                String tagNameCsv = match.optString("tagName", "");
+                                Set<String> tagNames = Arrays.stream(tagNameCsv.split(",")).map(String::trim).collect(Collectors.toSet());
 
-                            if (flag) {
-                                if (columnNames.stream().anyMatch(col -> col.equalsIgnoreCase(targetColumnName))) { // Case-insensitive match
-                                    truePositives++;failedDueToColumnMismatch = false;
-                                    break; // Early exit if we only need count >=1
-                                } else {
-                                    failedDueToColumnMismatch = true;
+                                String targetUid = match.getString(Constants.MATCHED_WATCHLIST_ID);
+                                Long responseId = match.getLong(Constants.RESPONSE_ID);
+                                String columnNamesCsvWLS = csvColumnNamesMap.get(responseId);
+                                Set<String> columnNames = columnNamesCsvWLS != null ? Arrays.stream(columnNamesCsvWLS.split(",")).collect(Collectors.toSet()) : Collections.emptySet();
+
+                                boolean flag = uid.equals(targetUid)
+                                        && watchListType.equalsIgnoreCase(match.optString("watchlistType"))
+                                        && webServiceId.equalsIgnoreCase(String.valueOf(match.getInt("webServiceID")))
+                                        && tagNames.contains(tagName);
+
+                                if (flag) {
+                                    if (columnNames.stream().anyMatch(col -> col.equalsIgnoreCase(targetColumnName))) { // Case-insensitive match
+                                        truePositives++;
+                                        failedDueToColumnMismatch = false;
+                                        break; // Early exit if we only need count >=1
+                                    } else {
+                                        failedDueToColumnMismatch = true;
+                                    }
                                 }
                             }
-                        }
 
-                        String testStatus = truePositives > 0 ? Constants.PASS : Constants.FAIL;
+                            String testStatus = truePositives > 0 ? Constants.PASS : Constants.FAIL;
 
-                        // Update sheet in synchronized block for thread safety
-                        synchronized (sheet) {
-                            Row row = sheet.getRow(tokenToRowNum.get(transactionToken));
-                            Cell testStatusCell = row.getCell(analyzerStartColumn);
-                            if (testStatusCell == null) testStatusCell = row.createCell(analyzerStartColumn);
-                            testStatusCell.setCellValue(testStatus);
-                            testStatusCell.setCellStyle(testStatus.equalsIgnoreCase(Constants.PASS) ? highlightGreen : highlightRed);
+                            // Update sheet in synchronized block for thread safety
+                            synchronized (sheet) {
+                                Row row = sheet.getRow(tokenToRowNum.get(transactionToken));
+                                Cell testStatusCell = row.getCell(analyzerStartColumn);
+                                if (testStatusCell == null) testStatusCell = row.createCell(analyzerStartColumn);
+                                testStatusCell.setCellValue(testStatus);
+                                testStatusCell.setCellStyle(testStatus.equalsIgnoreCase(Constants.PASS) ? highlightGreen : highlightRed);
 
-                            Cell commentsCell = row.getCell(analyzerStartColumn + 1);
-                            if (commentsCell == null) commentsCell = row.createCell(analyzerStartColumn + 1);
+                                Cell commentsCell = row.getCell(analyzerStartColumn + 1);
+                                if (commentsCell == null) commentsCell = row.createCell(analyzerStartColumn + 1);
 
-                            if(failedDueToColumnMismatch){
-                                commentsCell.setCellValue(Constants.COLUMN_MISMATCH_COMMENT);
-                            } else if (testStatus.equalsIgnoreCase(Constants.FAIL)) {
-                                commentsCell.setCellValue(Constants.NO_MATCH_COMMENT);
+                                if (failedDueToColumnMismatch) {
+                                    commentsCell.setCellValue(Constants.COLUMN_MISMATCH_COMMENT);
+                                } else if (testStatus.equalsIgnoreCase(Constants.FAIL)) {
+                                    commentsCell.setCellValue(Constants.NO_MATCH_COMMENT);
+                                }
                             }
 
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
+                    }, executor);
+                    futures.add(future);
+                }
 
-//                        System.out.println("------------------------------------------------------------");
-//                        System.out.println("transactionToken::: "+ transactionToken);
-//                        System.out.println("testStatus::: "+ testStatus);
-//                        System.out.println("------------------------------------------------------------");
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }, executor);
-                futures.add(future);
+                // Wait for all tasks to complete
+                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+                executor.shutdown();
+
+                // Auto-size new columns
+                for (int i = analyzerStartColumn; i < analyzerStartColumn + analyzerHeaders.length; i++) {
+                    sheet.autoSizeColumn(i);
+                }
+
+                // Write the updated workbook once
+                try (FileOutputStream fos = new FileOutputStream(excelFile)) {
+                    workbook.write(fos);
+                }
+
+                logger.info("Analysis completed for {}", excelFile.getName());
             }
-
-            // Wait for all tasks to complete
-            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-            executor.shutdown();
-
-            // Auto-size new columns
-            for (int i = analyzerStartColumn; i < analyzerStartColumn + analyzerHeaders.length; i++) {
-                sheet.autoSizeColumn(i);
-            }
-
-            // Write the updated workbook once
-            try (FileOutputStream fos = new FileOutputStream(Constants.OUTPUT_XLSX_FILE_PATH)) {
-                workbook.write(fos);
-            }
-
         }
     }
 

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <property name="LOG_DIR" value="${log.dir:-log}" />
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n" />
+
+    <!-- Console Appender -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- File Appender for Main -->
+    <appender name="MAIN_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/UtilityMain.log</file>
+        <append>false</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/UtilityMain.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- File Appender for RawMessageGenerator -->
+    <appender name="RAWMSG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/RawMessageGenrator.log</file>
+        <append>false</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/RawMessageGenrator.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- File Appender for MessageProcessingUtility (assumed as MessageProcessor) -->
+    <appender name="PROCESSOR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/MessageProcessor.log</file>
+        <append>false</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/MessageProcessor.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- File Appender for MessageResponseAnalyzer (assumed as MessageAnalyzer) -->
+    <appender name="ANALYZER_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/MessageAnalyzer.log</file>
+        <append>false</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/MessageAnalyzer.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Root Logger -->
+    <root level="info">
+        <!-- <appender-ref ref="CONSOLE" /> -->
+    </root>
+
+    <!-- Logger for Main -->
+    <logger name="com.oracle.ofss.sanctions.tf.app.Main" level="debug" additivity="false">
+        <appender-ref ref="MAIN_FILE" />
+         <appender-ref ref="CONSOLE" />
+    </logger>
+
+    <!-- Logger for RawMessageGenerator -->
+    <logger name="com.oracle.ofss.sanctions.tf.app.RawMessageGenerator" level="debug" additivity="false">
+        <appender-ref ref="RAWMSG_FILE" />
+        <!-- <appender-ref ref="CONSOLE" /> -->
+    </logger>
+
+    <!-- Logger for MessageProcessingUtility -->
+    <logger name="com.oracle.ofss.sanctions.tf.app.MessageProcessingUtility" level="debug" additivity="false">
+        <appender-ref ref="PROCESSOR_FILE" />
+        <!-- <appender-ref ref="CONSOLE" /> -->
+    </logger>
+
+    <!-- Logger for MessageResponseAnalyzer -->
+    <logger name="com.oracle.ofss.sanctions.tf.app.MessageResponseAnalyzer" level="debug" additivity="false">
+        <appender-ref ref="ANALYZER_FILE" />
+        <!-- <appender-ref ref="CONSOLE" /> -->
+    </logger>
+
+    <!-- Logger for ProcessorRunnable -->
+    <logger name="com.oracle.ofss.sanctions.tf.app.ProcessorRunnable" level="debug" additivity="false">
+        <appender-ref ref="PROCESSOR_FILE" />
+        <!-- <appender-ref ref="CONSOLE" /> -->
+    </logger>
+
+    <!-- Logger for AnalyzerRunnable -->
+    <logger name="com.oracle.ofss.sanctions.tf.app.AnalyzerRunnable" level="debug" additivity="false">
+        <appender-ref ref="ANALYZER_FILE" />
+        <!-- <appender-ref ref="CONSOLE" /> -->
+    </logger>
+
+    <!-- Package-wide logger (for other classes) -->
+    <logger name="com.oracle.ofss.sanctions.tf.app" level="debug" additivity="false">
+        <appender-ref ref="MAIN_FILE" />
+<!--         <appender-ref ref="CONSOLE" /> -->
+    </logger>
+</configuration>

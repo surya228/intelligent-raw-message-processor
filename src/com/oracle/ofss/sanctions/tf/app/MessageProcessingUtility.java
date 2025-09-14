@@ -22,81 +22,65 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONObject;
 import org.json.JSONArray;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MessageProcessingUtility {
-    public MessageProcessingUtility() {
-    }
-    
+    private static final Logger logger = LoggerFactory.getLogger(MessageProcessingUtility.class);
     private static long labelledTime;
     private static String instanceBearerToken;
     private static final Object tokenLock = new Object();
-    private static long bearerTokenRefreshInterval = 30L;
-    private static String restartFlag = "N";
-    private static int retryMaxCount = 5;
-    private static String retryRequiredFlag = "Y";
+    private static long bearerTokenRefreshInterval = Constants.DEFAULT_REFRESH_INTERVAL_MIN;
+    private static String restartFlag = Constants.NO;
+    private static int retryMaxCount = Constants.DEFAULT_RETRY_MAX;
+    private static String retryRequiredFlag = Constants.YES;
     private static SimpleDateFormat sdf = new SimpleDateFormat(Constants.DATE_FORMAT);
     private static final AtomicInteger retryRequestNumber = new AtomicInteger(0);
-    
-    public static void screenRawMsg(String matchingEngine) throws Exception {
+
+    public static void screenRawMsg(String matchingEngine, File excelFile, Properties props) throws Exception {
+        screenRawMsg(matchingEngine, Collections.singletonList(excelFile), props);
+    }
+
+    public static void screenRawMsg(String matchingEngine, List<File> excelFiles, Properties props) throws Exception {
         long startTime = System.currentTimeMillis();
 
-        System.out.println("=============================================================");
-        System.out.println("                   MESSAGE POSTING STARTED                   ");
-        System.out.println("=============================================================");
-        Properties props = new Properties();
+        logger.info("=============================================================");
+        logger.info("                   MESSAGE POSTING STARTED                   ");
+        logger.info("=============================================================");
 
-        try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
-            props.load(reader);
-        } catch (IOException e) {
-            System.err.println("Error reading properties file: " + e.getMessage());
-            throw e;
+        long maxIndex = getMaxIndex(props, "msgPosting.");
+        if (maxIndex < Constants.MIN_ARGS) {
+            logger.info("Invalid arguments");
+            logger.info("Please send Url, filepath, tokenurl, Username and Password as arguments");
+            return;
         }
-        long maxIndex = getMaxIndex(props,"msgPosting.");
-        System.out.println("Inside MessageProcessingUtility main method");
-        if (maxIndex < 6) {
-            System.out.println("Invalid arguments");
-            System.out.println("Please send Url, filepath, tokenurl, Username and Password as arguments");
-        } else {
-            String tokenUrl = props.getProperty(Constants.TOKEN_URL);
-            String usernm = props.getProperty(Constants.CLIENT_ID);
-            String pwd = props.getProperty(Constants.CLIENT_SECRET);
-            String devcorp7 = props.getProperty(Constants.DEVCORP7);
-            String namespace = props.getProperty(Constants.NAMESPACE);
-            String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE).toLowerCase();
-            String url = devcorp7+"/"+namespace+"/"+transactionService+Constants.POSTING_ENDPOINT;
 
+        String tokenUrl = props.getProperty(Constants.TOKEN_URL);
+        String usernm = props.getProperty(Constants.CLIENT_ID);
+        String pwd = props.getProperty(Constants.CLIENT_SECRET);
+        String devcorp7 = props.getProperty(Constants.DEVCORP7);
+        String namespace = props.getProperty(Constants.NAMESPACE);
+        String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE).toLowerCase();
+        String url = devcorp7 + "/" + namespace + "/" + transactionService + Constants.POSTING_ENDPOINT;
 
+        logger.info("url: {}", url);
 
-//            System.out.println("tokenUrl: "+tokenUrl);
-//            System.out.println("usernm: "+usernm);
-//            System.out.println("pwd: "+pwd);
-            System.out.println("url: "+url);
+        String webServiceId = props.getProperty(Constants.WEBSERVICE_ID);
+        String watchlistType = props.getProperty(Constants.WATCHLIST_TYPE);
 
-            String webServiceId = props.getProperty(Constants.WEBSERVICE_ID);
-            String watchlistType = props.getProperty(Constants.WATCHLIST_TYPE);
+        if (maxIndex >= 10) {
+            configureRetryParameters(props);
+            logger.info("UserDefinedParams:::retryRequiredFlag={}; retryMaxCount={}; bearerTokenRefreshInterval={}min(s); restartFlag={}", retryRequiredFlag, retryMaxCount, bearerTokenRefreshInterval, restartFlag);
+        }
 
+        if (excelFiles.isEmpty()) {
+            logger.info("No Excel files found to process.");
+            return;
+        }
 
-            if(maxIndex >= 10 ) {
-            	retryRequiredFlag = props.getProperty(Constants.RETRY_REQUIRED_FLAG);
-	            String retryMaxArg = props.getProperty(Constants.RETRY_MAX_COUNT);
-	            String bearerTokenRefreshArg = props.getProperty(Constants.RETRY_REFRESH_INTERVAL);
-	            String restartFlagArg = props.getProperty(Constants.RESTART_FLAG);
-	            if(!retryMaxArg.isEmpty()) {
-	            	retryMaxCount = Integer.parseInt(retryMaxArg);
-	            }
-	            if(!restartFlagArg.isEmpty()) {
-	            	restartFlag = restartFlagArg;
-	            }
-	            if(!bearerTokenRefreshArg.isEmpty()) {
-	            	bearerTokenRefreshInterval = Long.parseLong(bearerTokenRefreshArg);
-	            }
-	            System.out.println("UserDefinedParams:::retryRequiredFlag="+retryRequiredFlag+"; retryMaxCount="+retryMaxCount+"; bearerTokenRefreshInterval="+bearerTokenRefreshInterval+"min(s); restartFlag="+restartFlag);
-            }
-
-
-
-
-            try (FileInputStream fis = new FileInputStream(Constants.OUTPUT_XLSX_FILE_PATH);
+        for (File excelFile : excelFiles) {
+            logger.info("Processing file: {}", excelFile.getName());
+            try (FileInputStream fis = new FileInputStream(excelFile);
                  Workbook workbook = new XSSFWorkbook(fis)) {
                 Sheet sheet = workbook.getSheetAt(0);
 
@@ -142,12 +126,12 @@ public class MessageProcessingUtility {
                     }
                 }
 
-                System.out.println("["+sdf.format(new Date())+"] size of seqIdToRequestMap is " + seqIdToRequestMap.size());
+                logger.info("size of seqIdToRequestMap in {} is {}", excelFile.getName(), seqIdToRequestMap.size());
 
                 Map<String, String> failedRequestMap = processRequests(seqIdToRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId, watchlistType);
 
                 if (!failedRequestMap.isEmpty()) {
-                    System.out.println("Job is not done yet...");
+                    logger.info("Job is not done yet for {}...", excelFile.getName());
                     failedRequestMap = processRequests(failedRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId, watchlistType);
                 }
 
@@ -156,26 +140,41 @@ public class MessageProcessingUtility {
                     sheet.autoSizeColumn(i);
                 }
 
-                FileOutputStream outFile = new FileOutputStream(Constants.OUTPUT_XLSX_FILE_PATH);
-                workbook.write(outFile);
-                outFile.close();
+                try (FileOutputStream outFile = new FileOutputStream(excelFile)) {
+                    workbook.write(outFile);
+                }
 
-                System.out.println("["+sdf.format(new Date())+"] Message Processing Completed");
+                logger.info("Message Processing Completed for {}", excelFile.getName());
 
             } catch (Exception var36) {
                 var36.printStackTrace();
-                System.out.println("["+sdf.format(new Date())+"] Error occurred: " + var36.getMessage());
-                System.exit(1);
+                logger.info("Error occurred processing {}: {}", excelFile.getName(), var36.getMessage());
+                // Do not exit, continue with other files
             }
-
         }
-        System.out.println("=============================================================");
-        System.out.println("                   MESSAGE POSTING ENDED                     ");
-        System.out.println("=============================================================");
+        logger.info("=============================================================");
+        logger.info("                   MESSAGE POSTING ENDED                     ");
+        logger.info("=============================================================");
         long endTime = System.currentTimeMillis();
 
-        System.out.println("Time taken by Message Processor: " + (endTime - startTime) / 1000L + " seconds");
+        logger.info("Time taken by Message Processor: {} seconds", (endTime - startTime) / 1000L);
 
+    }
+
+    private static void configureRetryParameters(Properties props) {
+        retryRequiredFlag = props.getProperty(Constants.RETRY_REQUIRED_FLAG);
+        String retryMaxArg = props.getProperty(Constants.RETRY_MAX_COUNT);
+        String bearerTokenRefreshArg = props.getProperty(Constants.RETRY_REFRESH_INTERVAL);
+        String restartFlagArg = props.getProperty(Constants.RESTART_FLAG);
+        if (!retryMaxArg.isEmpty()) {
+            retryMaxCount = Integer.parseInt(retryMaxArg);
+        }
+        if (!restartFlagArg.isEmpty()) {
+            restartFlag = restartFlagArg;
+        }
+        if (!bearerTokenRefreshArg.isEmpty()) {
+            bearerTokenRefreshInterval = Long.parseLong(bearerTokenRefreshArg);
+        }
     }
 
     private static Map<String, String> processRequests(Map<String, String> seqIdToRequestMap, String tokenUrl, String usernm, String pwd, String url, Sheet sheet, Map<String, Integer> seqIdToRowNum, DataFormatter formatter, int processorStartColumn, String webServiceId, String watchlistType) {
@@ -190,7 +189,7 @@ public class MessageProcessingUtility {
             StringBuilder apiResponse = new StringBuilder();
             BufferedReader br = null;
 
-            System.out.println("["+sdf.format(new Date())+"] Executing REST call with SeqId: " + seqId);
+            logger.info("Executing REST call with SeqId: {}", seqId);
             do {
                 if (retryCount > 0) {
                     try {
@@ -198,7 +197,7 @@ public class MessageProcessingUtility {
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
                     }
-                    System.out.println("["+sdf.format(new Date())+"] Waiting for REST call to complete...");
+                    logger.info("Waiting for REST call to complete...");
                 }
                 int currentRetry = retryRequestNumber.incrementAndGet();
 
@@ -206,16 +205,16 @@ public class MessageProcessingUtility {
                 synchronized (tokenLock) {
                     bearerToken = getAccessToken(tokenUrl, usernm, pwd);
                 }
-                System.out.println("Access token: " + bearerToken);
+                logger.info("Access token: {}", bearerToken);
 
                 try {
                     URL resturl = new URL(url + "?reqId=" + currentRetry);
                     HttpsURLConnection conn = (HttpsURLConnection) resturl.openConnection();
                     conn.setRequestMethod("POST");
-                    conn.setRequestProperty("Content-Type", "application/json");
+                    conn.setRequestProperty("Content-Type", Constants.CONTENT_TYPE_JSON);
                     conn.setRequestProperty("ofs_remote_user", "OFS_SRV_ACCT");
                     conn.setRequestProperty("accept-language", "en-US,en-U");
-                    conn.setRequestProperty("authorization", "Bearer " + bearerToken);
+                    conn.setRequestProperty("authorization", Constants.AUTH_BEARER_PREFIX + bearerToken);
                     conn.setRequestProperty("idcs_remote_user", "appuser");
                     conn.setRequestProperty("locale", "en-US");
                     conn.setHostnameVerifier((hostname, sslSession) -> true);
@@ -240,8 +239,8 @@ public class MessageProcessingUtility {
                     br.close();
                     conn.disconnect();
 
-                    System.out.println("["+sdf.format(new Date())+"] Waiting for Response: " + getResponseMsg(responseCode));
-                    System.out.println("api response::: "+ apiResponse);
+                    logger.info("Waiting for Response: {}", getResponseMsg(responseCode));
+                    logger.info("api response::: {}", apiResponse);
                 } catch (Exception e) {
                     e.printStackTrace();
                     responseCode = 500; // Treat as error for retry
@@ -255,15 +254,13 @@ public class MessageProcessingUtility {
                     }
                 }
                 retryCount++;
-            } while ("Y".equalsIgnoreCase(retryRequiredFlag) && responseCode > 399 && retryCount <= retryMaxCount);
+            } while (Constants.YES.equalsIgnoreCase(retryRequiredFlag) && responseCode > 399 && retryCount <= retryMaxCount);
 
-            System.out.println("["+sdf.format(new Date())+"] ResponseCode: " + responseCode);
+            logger.info("ResponseCode: {}", responseCode);
 
             long endTime = System.currentTimeMillis();
-            System.out.println("=============================================================----------");
-            System.out.println("Time taken for rest call: " + (endTime - startTime) / 1000L + " seconds");
-            System.out.println("=============================================================----------");
-            System.out.println("=============================================================----------------------------------------------");
+
+            logger.info("Time taken for rest call: {} seconds", (endTime - startTime) / 1000L);
 
             String responseString = apiResponse.toString();
             if (responseString.length() > 32767) {
@@ -276,7 +273,7 @@ public class MessageProcessingUtility {
             String feedbackStatus = "NA";
             long filteredCount = 0;
 
-            boolean isErrorToHandle = (responseCode == 400 || responseCode == 500 || responseCode == 503);
+            boolean isErrorToHandle = (responseCode == 400 || responseCode == 500 || responseCode == Constants.SERVICE_UNAVAILABLE);
 
             if (responseCode <= 399 || isErrorToHandle) {
                 // Try to parse JSON for transaction token
@@ -289,16 +286,16 @@ public class MessageProcessingUtility {
 
                     if (responseCode <= 399) {
                         // Existing success logic
-                        System.out.println("response: " + responseJson);
+                        logger.info("response: {}", responseJson);
                         matchCount = responseJson.has(Constants.FEEDBACK_DATA) ? (responseJson.getJSONObject(Constants.FEEDBACK_DATA).has(Constants.MATCHING_COUNT) ? responseJson.getJSONObject(Constants.FEEDBACK_DATA).getLong(Constants.MATCHING_COUNT) : 0) : 0;
                         status = responseJson.optString(Constants.MATCHING_STATUS, "");
                         feedbackStatus = responseJson.has(Constants.FEEDBACK_DATA) ? responseJson.getJSONObject(Constants.FEEDBACK_DATA).optString(Constants.MATCHING_STATUS, "") : "";
-                        System.out.println("transactionToken: " + tokenString + " matchCount: " + matchCount + " status: " + status + " feedbackStatus: " + feedbackStatus);
+                        logger.info("transactionToken: {} matchCount: {} status: {} feedbackStatus: {}", tokenString, matchCount, status, feedbackStatus);
 
                         if (responseJson.has(Constants.FEEDBACK_DATA)) {
                             JSONObject feedbackData = responseJson.getJSONObject(Constants.FEEDBACK_DATA);
-                            if (feedbackData.has("matches")) {
-                                JSONArray matches = feedbackData.getJSONArray("matches");
+                            if (feedbackData.has(Constants.MATCHES)) {
+                                JSONArray matches = feedbackData.getJSONArray(Constants.MATCHES);
                                 for (int i = 0; i < matches.length(); i++) {
                                     JSONObject match = matches.getJSONObject(i);
                                     String matchWebServiceId = String.valueOf(match.optInt("webServiceID"));
@@ -323,12 +320,12 @@ public class MessageProcessingUtility {
                     // Update sheet in synchronized block
                     synchronized (sheet) {
                         int targetRowNum = seqIdToRowNum.get(seqId);
-                        System.out.println("Writing output to file for seqId: " + seqId);
+                        logger.info("Writing output to file for seqId: {}", seqId);
                         Row row = (Row) sheet.getRow(targetRowNum);
                         for (int i = 0; i < excelParams.length; i++) {
                             Cell cell = row.getCell(processorStartColumn + i);
                             if (cell == null) cell = row.createCell(processorStartColumn + i);
-                            System.out.println(excelParams[i].toString());
+                            logger.info(excelParams[i].toString());
                             cell.setCellValue(excelParams[i].toString());
                         }
                     }
@@ -340,12 +337,12 @@ public class MessageProcessingUtility {
                     if (isErrorToHandle) {
                         synchronized (sheet) {
                             int targetRowNum = seqIdToRowNum.get(seqId);
-                            System.out.println("Writing output to file for seqId: " + seqId);
+                            logger.info("Writing output to file for seqId: {}", seqId);
                             Row row = (Row) sheet.getRow(targetRowNum);
                             for (int i = 0; i < excelParams.length; i++) {
                                 Cell cell = row.getCell(processorStartColumn + i);
                                 if (cell == null) cell = row.createCell(processorStartColumn + i);
-                                System.out.println(excelParams[i].toString());
+                                logger.info(excelParams[i].toString());
                                 cell.setCellValue(excelParams[i].toString());
                             }
                         }
@@ -356,7 +353,6 @@ public class MessageProcessingUtility {
             if (responseCode > 399) {
                 failedRequestMap.put(seqId, requestBody);
             }
-            System.out.println("===========================================================================================================");
         });
 
         return failedRequestMap;
@@ -369,54 +365,54 @@ public class MessageProcessingUtility {
                 .count();
         return count;
     }
-    
-    
+
+
     @SuppressWarnings("unused")
-	private static void writeResponseMapIntoFile(File myFile, Map<String, String> seqIdToResponseMap, DataFormatter formatter) {
-    	try {
-          FileInputStream fs = new FileInputStream(myFile);
-          XSSFWorkbook workBook = new XSSFWorkbook(fs);
-          XSSFSheet newSheet = workBook.getSheetAt(0);
-          Iterator<Row> rowItr = newSheet.iterator();
-          int rowNum = 0;
+    private static void writeResponseMapIntoFile(File myFile, Map<String, String> seqIdToResponseMap, DataFormatter formatter) {
+        try {
+            FileInputStream fs = new FileInputStream(myFile);
+            XSSFWorkbook workBook = new XSSFWorkbook(fs);
+            XSSFSheet newSheet = workBook.getSheetAt(0);
+            Iterator<Row> rowItr = newSheet.iterator();
+            int rowNum = 0;
 
-          while(rowItr.hasNext()) {
-              Row row = (Row)rowItr.next();
-              if (rowNum == 0) {
-                  ++rowNum;
-              } else {
-                  String seqId = formatter.formatCellValue(row.getCell(0));
-                  System.out.println("Writing output to file:" + seqId);
-                  if (seqIdToResponseMap.get(seqId) != null) {
-                      Cell cell;
-                      if (row.getCell(3) == null) {
-                          cell = row.createCell(3);
-                      } else {
-                          cell = row.getCell(3);
-                      }
+            while(rowItr.hasNext()) {
+                Row row = (Row)rowItr.next();
+                if (rowNum == 0) {
+                    ++rowNum;
+                } else {
+                    String seqId = formatter.formatCellValue(row.getCell(0));
+                    logger.info("Writing output to file: {}", seqId);
+                    if (seqIdToResponseMap.get(seqId) != null) {
+                        Cell cell;
+                        if (row.getCell(3) == null) {
+                            cell = row.createCell(3);
+                        } else {
+                            cell = row.getCell(3);
+                        }
 
-                      if (((String)seqIdToResponseMap.get(seqId)).length() < 32000) {
-                          cell.setCellValue((String)seqIdToResponseMap.get(seqId));
-                      } else {
-                          cell.setCellValue(((String)seqIdToResponseMap.get(seqId)).substring(0, 32000));
-                      }
-                  }
-              }
-          }
+                        if (((String)seqIdToResponseMap.get(seqId)).length() < 32000) {
+                            cell.setCellValue((String)seqIdToResponseMap.get(seqId));
+                        } else {
+                            cell.setCellValue(((String)seqIdToResponseMap.get(seqId)).substring(0, 32000));
+                        }
+                    }
+                }
+            }
 
-          fs.close();
-          FileOutputStream outFile = new FileOutputStream(myFile);
-          workBook.write(outFile);
-          outFile.close();
-          workBook.close();
-      } catch (FileNotFoundException var34) {
-          var34.printStackTrace();
-      } catch (IOException var35) {
-          var35.printStackTrace();
-      }
+            fs.close();
+            FileOutputStream outFile = new FileOutputStream(myFile);
+            workBook.write(outFile);
+            outFile.close();
+            workBook.close();
+        } catch (FileNotFoundException var34) {
+            var34.printStackTrace();
+        } catch (IOException var35) {
+            var35.printStackTrace();
+        }
     }
 
-    
+
     private static byte[] getParamsByte(Map<String, String> params) {
         byte[] result = null;
         StringBuilder postData = new StringBuilder();
@@ -458,7 +454,7 @@ public class MessageProcessingUtility {
         long currentTime = System.currentTimeMillis();
         long timeDiff = (currentTime - labelledTime) / 60000L;
         if (labelledTime != 0L && timeDiff < bearerTokenRefreshInterval) {
-            System.out.println("--- Using cached bearerToken for " + (bearerTokenRefreshInterval - timeDiff) + " more min(s)");
+            logger.info("--- Using cached bearerToken for {} more min(s)", (bearerTokenRefreshInterval - timeDiff));
             return instanceBearerToken;
         }
 
@@ -490,41 +486,41 @@ public class MessageProcessingUtility {
                 }
 
                 response = result.toString(Constants.ENCODER);
-                System.out.println("AuthToken response: " + response);
+                logger.info("AuthToken response: {}", response);
                 JSONObject jsonObject = new JSONObject(response);
                 bearerToken = jsonObject.getString("access_token");
                 httpConn1.disconnect();
             }
 
-            System.out.println("AuthToken status: " + status);
+            logger.info("AuthToken status: {}", status);
         } catch (Exception var19) {
             var19.printStackTrace();
         }
-        
+
         instanceBearerToken = bearerToken;
         labelledTime = System.currentTimeMillis();
         return bearerToken;
     }
-    
+
     private static String getResponseMsg(int code) {
-    	String msg = "will do the needful";
-    	
+        String msg = "will do the needful";
+
         switch(code) {
-        case 502:
-        	msg = Constants.WAIT_MSG;
-        	break;
-        case 504:
-        	msg = Constants.HOLD_ON_MSG_1;
-        	break;
-        case 503:
-        	msg = Constants.HOLD_ON_MSG_2;
-        	break;
-        case 200:
-        	msg = Constants.SUCCESS_MSG;
-        	break;
-        default:
-        	msg = Constants.LOAD_MSG;
-        	break;
+            case Constants.BAD_GATEWAY:
+                msg = Constants.WAIT_MSG;
+                break;
+            case Constants.GATEWAY_TIMEOUT:
+                msg = Constants.HOLD_ON_MSG_1;
+                break;
+            case Constants.SERVICE_UNAVAILABLE:
+                msg = Constants.HOLD_ON_MSG_2;
+                break;
+            case Constants.SUCCESS_CODE:
+                msg = Constants.SUCCESS_MSG;
+                break;
+            default:
+                msg = Constants.LOAD_MSG;
+                break;
         }
         return msg;
     }
