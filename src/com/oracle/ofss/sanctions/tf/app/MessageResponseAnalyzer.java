@@ -155,9 +155,9 @@ public class MessageResponseAnalyzer {
                 highlightRed.setFont(boldFont);
 
                 CellStyle highlightYellow = workbook.createCellStyle();
-                highlightRed.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
-                highlightRed.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-                highlightRed.setFont(boldFont);
+                highlightYellow.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
+                highlightYellow.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                highlightYellow.setFont(boldFont);
 
                 // Parallel processing of rows
                 ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
