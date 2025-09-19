@@ -71,69 +71,83 @@ public class Main {
         String startDate = dateFormat.format(startDateObj);
         String startTimeStr = timeFormat.format(startDateObj);
 
-        Properties props = loadProperties();
-        saveConfigProperties(props);
-
-        String renamePrefix = props.getProperty(Constants.WEBSERVICE) + "_";
-
         long startTime = System.currentTimeMillis();
 
-        boolean isToggle = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.TOGGLE_MATCHING_ENGINE));
+        // Load common properties
+        Properties commonProps = loadProperties(Constants.COMMON_CONFIG_FILE_PATH);
+        logger.info("Common properties loaded");
 
-        // Delete previous output files and count file
-        deletePreviousFiles();
+        // Get all specific config files
+        List<File> allSpecificConfigs = getSpecificConfigFiles();
 
-        // grenerate raw message
-        int generatedCount = RawMessageGenerator.generateRawMessage(null, props); // Generation is always sequential
-        if (generatedCount == 0) {
-            logger.info("No raw messages generated. Exiting utility.");
+        // Filter enabled configs based on common.properties
+        List<File> enabledConfigs = filterEnabledConfigs(allSpecificConfigs, commonProps);
+
+        if (enabledConfigs.isEmpty()) {
+            logger.info("No enabled configs found. Exiting utility.");
             System.exit(0);
         }
-        logger.info("Raw Message Generator Completed");
 
-        if (generatedCount > 0) {
-            int fileCount = 1;
-            try {
-                File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
-                if (countFile.exists()) {
-                    String countStr = new String(Files.readAllBytes(countFile.toPath())).trim();
-                    fileCount = Integer.parseInt(countStr);
-                }
-            } catch (Exception e) {
-                logger.error("Error reading file count: {}", e.getMessage());
-            }
-            logger.info("Generated {} raw messages across {} Excel files.", generatedCount, fileCount);
-            System.out.print("Do you want to proceed with running the processor? (Y/N): ");
-            Scanner scanner = new Scanner(System.in);
-            String response = scanner.nextLine().trim().toLowerCase();
-            if (!response.equalsIgnoreCase(Constants.YES)) {
-                logger.info("User chose not to proceed with processor. Exiting.");
-                System.exit(0);
-            }
-        }
+        boolean isToggle = Constants.YES.equalsIgnoreCase(commonProps.getProperty(Constants.TOGGLE_MATCHING_ENGINE));
 
         ToggleMatchingEngine toggleMatchingEngine = new ToggleMatchingEngine();
         String matchingEngine = toggleMatchingEngine.findCurrentMatchingEngine();
-        logger.info("Proceeding for Message Processor and Analyzer");
-        logger.info("Current Matching Engine::: {}", matchingEngine);
+        logger.info("Initial Matching Engine: {}", matchingEngine);
 
-        List<File> excelFiles = getExcelFiles(props);
+        // Process all enabled configs with current matching engine
+        logger.info("=============================================================");
+        logger.info("Processing {} enabled configs with matching engine: {}", enabledConfigs.size(), matchingEngine);
+        logger.info("=============================================================");
 
-        runProcessing(matchingEngine, excelFiles, props, isToggle, false, renamePrefix, startDate, startTimeStr);
-        logger.info("Processor and Analyzer Completed with matching engine :: {}",matchingEngine);
-        if (isToggle) {
-            logger.info("Toggling Matching engine....");
-            matchingEngine = toggleMatchingEngine.toggleMatchingEngine();
-            logger.info("Matching engine toggled to ::: {}", matchingEngine);
-            runProcessing(matchingEngine, excelFiles, props, isToggle, true, renamePrefix, startDate, startTimeStr);
-            logger.info("Processor and Analyzer Completed after toggling matching engine to :: {}",matchingEngine);
+        for (File specificConfig : enabledConfigs) {
+            try {
+                String configName = specificConfig.getName().replace(".properties", "");
+                Properties specificProps = loadProperties(specificConfig.getPath());
+                Properties mergedProps = mergeProperties(commonProps, specificProps);
 
+                processSingleConfig(mergedProps, configName, matchingEngine, isToggle, false, startDate, startTimeStr);
+            } catch (Exception e) {
+                logger.error("Error processing config {}: {}", specificConfig.getName(), e.getMessage());
+                // Continue with other configs
+            }
         }
+
+        logger.info("All configs processed with matching engine: {}", matchingEngine);
+
+        // Handle toggle if enabled
+        if (isToggle) {
+            logger.info("=============================================================");
+            logger.info("Toggling Matching Engine...");
+            logger.info("=============================================================");
+            matchingEngine = toggleMatchingEngine.toggleMatchingEngine();
+            logger.info("Matching engine toggled to: {}", matchingEngine);
+
+            // Process all enabled configs again with new matching engine
+            logger.info("=============================================================");
+            logger.info("Re-processing {} enabled configs with new matching engine: {}", enabledConfigs.size(), matchingEngine);
+            logger.info("=============================================================");
+
+            for (File specificConfig : enabledConfigs) {
+                try {
+                    String configName = specificConfig.getName().replace(".properties", "");
+                    Properties specificProps = loadProperties(specificConfig.getPath());
+                    Properties mergedProps = mergeProperties(commonProps, specificProps);
+
+                    processSingleConfig(mergedProps, configName, matchingEngine, isToggle, true, startDate, startTimeStr);
+                } catch (Exception e) {
+                    logger.error("Error re-processing config {}: {}", specificConfig.getName(), e.getMessage());
+                    // Continue with other configs
+                }
+            }
+
+            logger.info("All configs re-processed with matching engine: {}", matchingEngine);
+        }
+
         logger.info("=============================================================");
         logger.info("     INTELLIGENT RAW MESSAGE PROCESSOR UTILITY COMPLETED     ");
         logger.info("=============================================================");
         long endTime = System.currentTimeMillis();
-        logger.info("Total time taken by utility: {} Seconds ", (endTime - startTime) / 1000L );
+        logger.info("Total time taken by utility: {} seconds", (endTime - startTime) / 1000L);
     }
 
     private static void deletePreviousFiles() {
@@ -250,14 +264,155 @@ public class Main {
     }
 
     private static Properties loadProperties() throws IOException {
+        return loadProperties(Constants.CONFIG_FILE_PATH);
+    }
+
+    private static Properties loadProperties(String filePath) throws IOException {
         Properties props = new Properties();
-        try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
+        try (FileReader reader = new FileReader(filePath)) {
             props.load(reader);
-            logger.info("Properties file loaded");
+            logger.info("Properties file loaded from: {}", filePath);
         } catch (IOException e) {
-            logger.error("Error reading properties file: {}", e.getMessage());
+            logger.error("Error reading properties file from {}: {}", filePath, e.getMessage());
             throw e;
         }
         return props;
+    }
+
+    private static List<File> getSpecificConfigFiles() {
+        List<File> configFiles = new ArrayList<>();
+        File binDir = new File(Constants.COMMON_CONFIG_FILE_PATH).getParentFile();
+        if (binDir.exists() && binDir.isDirectory()) {
+            File[] files = binDir.listFiles((dir, name) -> name.endsWith(".properties") && !name.equals("common.properties"));
+            if (files != null) {
+                Arrays.sort(files, (f1, f2) -> f1.getName().compareTo(f2.getName()));
+                configFiles.addAll(Arrays.asList(files));
+            }
+        }
+        logger.info("Found {} specific config files", configFiles.size());
+        return configFiles;
+    }
+
+    private static List<File> filterEnabledConfigs(List<File> allConfigs, Properties commonProps) {
+        List<File> enabledConfigs = new ArrayList<>();
+        for (File config : allConfigs) {
+            String configName = config.getName().replace(".properties", "");
+            String enabledKey = configName + ".enabled";
+            String enabledValue = commonProps.getProperty(enabledKey, Constants.NO); // Default to disabled
+            if (Constants.YES.equalsIgnoreCase(enabledValue)) {
+                enabledConfigs.add(config);
+                logger.info("Config {} is enabled", configName);
+            } else {
+                logger.info("Config {} is disabled", configName);
+            }
+        }
+        logger.info("Enabled configs: {} out of {}", enabledConfigs.size(), allConfigs.size());
+        return enabledConfigs;
+    }
+
+    private static Properties mergeProperties(Properties base, Properties override) {
+        Properties merged = new Properties();
+        merged.putAll(base);
+        merged.putAll(override);
+        return merged;
+    }
+
+    private static void processSingleConfig(Properties mergedProps, String configName, String matchingEngine,
+            boolean isToggle, boolean isFinalRun, String startDate, String startTimeStr) throws Exception {
+        logger.info("=============================================================");
+        logger.info("Processing config: {}", configName);
+        logger.info("=============================================================");
+
+        // Update config name in properties for file naming
+        mergedProps.setProperty("configName", configName);
+
+        // Delete previous output files for this config
+        deletePreviousFilesForConfig(configName);
+
+        // Generate raw message
+        int generatedCount = RawMessageGenerator.generateRawMessage(null, mergedProps);
+        if (generatedCount == 0) {
+            logger.info("No raw messages generated for config {}. Skipping processing.", configName);
+            return;
+        }
+        logger.info("Raw Message Generator completed for config: {}", configName);
+
+        if (generatedCount > 0) {
+            int fileCount = 1;
+            try {
+                File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
+                if (countFile.exists()) {
+                    String countStr = new String(Files.readAllBytes(countFile.toPath())).trim();
+                    fileCount = Integer.parseInt(countStr);
+                }
+            } catch (Exception e) {
+                logger.error("Error reading file count for config {}: {}", configName, e.getMessage());
+            }
+            logger.info("Generated {} raw messages across {} Excel files for config {}.", generatedCount, fileCount, configName);
+
+            // Auto-proceed for multi-config (no user prompt)
+            logger.info("Auto-proceeding with processor for config: {}", configName);
+        }
+
+        List<File> excelFiles = getExcelFilesForConfig(mergedProps, configName);
+
+        String renamePrefix = mergedProps.getProperty(Constants.WEBSERVICE) + "_" + configName + "_";
+
+        runProcessing(matchingEngine, excelFiles, mergedProps, isToggle, isFinalRun, renamePrefix, startDate, startTimeStr);
+        logger.info("Processor and Analyzer completed for config: {} with matching engine: {}", configName, matchingEngine);
+    }
+
+    private static void deletePreviousFilesForConfig(String configName) {
+        // Delete files with config-specific naming pattern
+        File[] prevFiles = Constants.OUTPUT_FOLDER.listFiles((dir, name) ->
+            name.matches(Constants.OUTPUT_FILE_NAME + "_" + configName + "_\\d+\\.xlsx") ||
+            name.matches(Constants.OUTPUT_FILE_NAME + "_\\d+\\.xlsx")); // fallback for old pattern
+        if (prevFiles != null) {
+            for (File file : prevFiles) {
+                if (file.delete()) {
+                    logger.info("Deleted previous output file: {}", file.getName());
+                } else {
+                    logger.error("Failed to delete previous output file: {}", file.getName());
+                }
+            }
+        }
+    }
+
+    private static List<File> getExcelFilesForConfig(Properties props, String configName) throws IOException {
+        List<File> excelFiles = new ArrayList<>();
+        // Look for files with config-specific naming first, then fallback to general pattern
+        File[] files = Constants.OUTPUT_FOLDER.listFiles((dir, name) ->
+            name.matches(Constants.OUTPUT_FILE_NAME + "_" + configName + "_\\d+\\.xlsx") ||
+            name.matches(Constants.OUTPUT_FILE_NAME + "_\\d+\\.xlsx"));
+        if (files != null) {
+            Arrays.sort(files, (f1, f2) -> {
+                try {
+                    String name1 = f1.getName();
+                    String name2 = f2.getName();
+                    // Extract the number part after the last underscore
+                    int index1 = Integer.parseInt(name1.substring(name1.lastIndexOf("_") + 1).replace(Constants.XLSX_EXT, ""));
+                    int index2 = Integer.parseInt(name2.substring(name2.lastIndexOf("_") + 1).replace(Constants.XLSX_EXT, ""));
+                    return Integer.compare(index1, index2);
+                } catch (NumberFormatException e) {
+                    return f1.getName().compareTo(f2.getName());
+                }
+            });
+            int fileLimit = 0;
+            File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
+            if (countFile.exists()) {
+                try {
+                    String countStr = new String(Files.readAllBytes(countFile.toPath())).trim();
+                    fileLimit = Integer.parseInt(countStr);
+                } catch (Exception e) {
+                    logger.error("Error reading file count: {}", e.getMessage());
+                }
+            }
+            if (fileLimit > 0) {
+                for (int i = 0; i < Math.min(files.length, fileLimit); i++) {
+                    excelFiles.add(files[i]);
+                }
+            }
+        }
+        return excelFiles;
     }
 }
