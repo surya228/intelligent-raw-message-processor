@@ -154,6 +154,11 @@ public class MessageResponseAnalyzer {
                 highlightRed.setFillPattern(FillPatternType.SOLID_FOREGROUND);
                 highlightRed.setFont(boldFont);
 
+                CellStyle highlightYellow = workbook.createCellStyle();
+                highlightYellow.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
+                highlightYellow.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+                highlightYellow.setFont(boldFont);
+
                 // Parallel processing of rows
                 ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
                 List<CompletableFuture<Void>> futures = new ArrayList<>();
@@ -170,7 +175,7 @@ public class MessageResponseAnalyzer {
                             String uid = tokenToUid.get(transactionToken);
                             Map<Long, String> csvColumnNamesMap = tokenToCsvColumnNamesMap.getOrDefault(transactionToken, Collections.emptyMap());
 
-                            boolean failedDueToColumnMismatch = false;
+                            boolean isColumnMismatched = false;
                             for (int i = 0; i < matches.length(); i++) {
                                 JSONObject match = matches.getJSONObject(i);
                                 String tagNameCsv = match.optString("tagName", "");
@@ -189,15 +194,15 @@ public class MessageResponseAnalyzer {
                                 if (flag) {
                                     if (columnNames.stream().anyMatch(col -> col.equalsIgnoreCase(targetColumnName))) { // Case-insensitive match
                                         truePositives++;
-                                        failedDueToColumnMismatch = false;
+                                        isColumnMismatched = false;
                                         break; // Early exit if we only need count >=1
                                     } else {
-                                        failedDueToColumnMismatch = true;
+                                        isColumnMismatched = true;
                                     }
                                 }
                             }
 
-                            String testStatus = truePositives > 0 ? Constants.PASS : Constants.FAIL;
+                            String testStatus = truePositives > 0 || isColumnMismatched ? Constants.PASS : Constants.FAIL;
 
                             // Update sheet in synchronized block for thread safety
                             synchronized (sheet) {
@@ -205,12 +210,16 @@ public class MessageResponseAnalyzer {
                                 Cell testStatusCell = row.getCell(analyzerStartColumn);
                                 if (testStatusCell == null) testStatusCell = row.createCell(analyzerStartColumn);
                                 testStatusCell.setCellValue(testStatus);
-                                testStatusCell.setCellStyle(testStatus.equalsIgnoreCase(Constants.PASS) ? highlightGreen : highlightRed);
+
+                                if(testStatus.equalsIgnoreCase(Constants.PASS)){
+                                    if(isColumnMismatched) testStatusCell.setCellStyle(highlightYellow);
+                                    else testStatusCell.setCellStyle(highlightGreen);
+                                } else testStatusCell.setCellStyle(highlightRed);
 
                                 Cell commentsCell = row.getCell(analyzerStartColumn + 1);
                                 if (commentsCell == null) commentsCell = row.createCell(analyzerStartColumn + 1);
 
-                                if (failedDueToColumnMismatch) {
+                                if (isColumnMismatched) {
                                     commentsCell.setCellValue(Constants.COLUMN_MISMATCH_COMMENT);
                                 } else if (testStatus.equalsIgnoreCase(Constants.FAIL)) {
                                     commentsCell.setCellValue(Constants.NO_MATCH_COMMENT);
