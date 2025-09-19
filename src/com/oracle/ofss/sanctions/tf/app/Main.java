@@ -105,7 +105,7 @@ public class Main {
                 Properties specificProps = loadProperties(specificConfig.getPath());
                 Properties mergedProps = mergeProperties(commonProps, specificProps);
 
-                processSingleConfig(mergedProps, configName, matchingEngine, isToggle, false, startDate, startTimeStr);
+                    processSingleConfig(mergedProps, configName, matchingEngine, isToggle, false, startDate, startTimeStr, false);
             } catch (Exception e) {
                 logger.error("Error processing config {}: {}", specificConfig.getName(), e.getMessage());
                 // Continue with other configs
@@ -133,7 +133,7 @@ public class Main {
                     Properties specificProps = loadProperties(specificConfig.getPath());
                     Properties mergedProps = mergeProperties(commonProps, specificProps);
 
-                    processSingleConfig(mergedProps, configName, matchingEngine, isToggle, true, startDate, startTimeStr);
+                    processSingleConfig(mergedProps, configName, matchingEngine, isToggle, true, startDate, startTimeStr, true);
                 } catch (Exception e) {
                     logger.error("Error re-processing config {}: {}", specificConfig.getName(), e.getMessage());
                     // Continue with other configs
@@ -318,7 +318,7 @@ public class Main {
     }
 
     private static void processSingleConfig(Properties mergedProps, String configName, String matchingEngine,
-            boolean isToggle, boolean isFinalRun, String startDate, String startTimeStr) throws Exception {
+            boolean isToggle, boolean isFinalRun, String startDate, String startTimeStr, boolean skipGeneration) throws Exception {
         logger.info("=============================================================");
         logger.info("Processing config: {}", configName);
         logger.info("=============================================================");
@@ -326,32 +326,36 @@ public class Main {
         // Update config name in properties for file naming
         mergedProps.setProperty("configName", configName);
 
-        // Delete previous output files for this config
-        deletePreviousFilesForConfig(configName);
-
-        // Generate raw message
-        int generatedCount = RawMessageGenerator.generateRawMessage(null, mergedProps);
-        if (generatedCount == 0) {
-            logger.info("No raw messages generated for config {}. Skipping processing.", configName);
-            return;
-        }
-        logger.info("Raw Message Generator completed for config: {}", configName);
-
-        if (generatedCount > 0) {
-            int fileCount = 1;
-            try {
-                File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
-                if (countFile.exists()) {
-                    String countStr = new String(Files.readAllBytes(countFile.toPath())).trim();
-                    fileCount = Integer.parseInt(countStr);
-                }
-            } catch (Exception e) {
-                logger.error("Error reading file count for config {}: {}", configName, e.getMessage());
+        int generatedCount = 0;
+        if (!skipGeneration) {
+            // Generate raw message
+            generatedCount = RawMessageGenerator.generateRawMessage(null, mergedProps);
+            if (generatedCount == 0) {
+                logger.info("No raw messages generated for config {}. Skipping processing.", configName);
+                return;
             }
-            logger.info("Generated {} raw messages across {} Excel files for config {}.", generatedCount, fileCount, configName);
+            logger.info("Raw Message Generator completed for config: {}", configName);
 
-            // Auto-proceed for multi-config (no user prompt)
-            logger.info("Auto-proceeding with processor for config: {}", configName);
+            if (generatedCount > 0) {
+                int fileCount = 1;
+                try {
+                    File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
+                    if (countFile.exists()) {
+                        String countStr = new String(Files.readAllBytes(countFile.toPath())).trim();
+                        fileCount = Integer.parseInt(countStr);
+                    }
+                } catch (Exception e) {
+                    logger.error("Error reading file count for config {}: {}", configName, e.getMessage());
+                }
+                logger.info("Generated {} raw messages across {} Excel files for config {}.", generatedCount, fileCount, configName);
+
+                // Auto-proceed for multi-config (no user prompt)
+                logger.info("Auto-proceeding with processor for config: {}", configName);
+            }
+        } else {
+            logger.info("Skipping raw message generation for config {} (after toggle).", configName);
+            // For skip generation, we assume files exist from previous run
+            generatedCount = 1; // Set to non-zero to proceed
         }
 
         List<File> excelFiles = getExcelFilesForConfig(mergedProps, configName);
