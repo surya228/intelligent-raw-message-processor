@@ -175,7 +175,7 @@ public class Main {
      * Renames output files by appending a timestamp and webservice name.
      * @param props Properties containing configuration details like webservice name.
      */
-    private static void runProcessing(String matchingEngine, List<File> excelFiles, Properties props, boolean isToggle, boolean isFinalRun, String renamePrefix, String startDate, String startTimeStr) throws Exception {
+    private static void runProcessing(String matchingEngine, List<File> excelFiles, Properties props, boolean isToggle, boolean isFinalRun, String renamePrefix, String startDate, String startTimeStr, String configName) throws Exception {
         int processorThreads = Integer.parseInt(props.getProperty(Constants.PROCESSOR_THREADS, String.valueOf(Constants.DEFAULT_THREAD_COUNT)));
         int analyzerThreads = Integer.parseInt(props.getProperty(Constants.ANALYZER_THREADS, String.valueOf(Constants.DEFAULT_THREAD_COUNT)));
 
@@ -214,37 +214,7 @@ public class Main {
         analyzerPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
     }
 
-    private static List<File> getExcelFiles(Properties props) throws IOException {
-        List<File> excelFiles = new ArrayList<>();
-        File[] files = Constants.OUTPUT_FOLDER.listFiles((dir, name) -> name.matches(Constants.OUTPUT_FILE_NAME+"_\\d+\\.xlsx"));
-        if (files != null) {
-            Arrays.sort(files, (f1, f2) -> {
-                try {
-                    int index1 = Integer.parseInt(f1.getName().replaceFirst(Constants.OUTPUT_FILE_NAME + "_", "").replace(Constants.XLSX_EXT, ""));
-                    int index2 = Integer.parseInt(f2.getName().replaceFirst(Constants.OUTPUT_FILE_NAME + "_", "").replace(Constants.XLSX_EXT, ""));
-                    return Integer.compare(index1, index2);
-                } catch (NumberFormatException e) {
-                    return f1.getName().compareTo(f2.getName());
-                }
-            });
-            int fileLimit = 0;
-            File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
-            if (countFile.exists()) {
-                try {
-                    String countStr = new String(Files.readAllBytes(countFile.toPath())).trim();
-                    fileLimit = Integer.parseInt(countStr);
-                } catch (Exception e) {
-                    logger.error("Error reading file count: {}", e.getMessage());
-                }
-            }
-            if (fileLimit > 0) {
-                for (int i = 0; i < Math.min(files.length, fileLimit); i++) {
-                    excelFiles.add(files[i]);
-                }
-            }
-        }
-        return excelFiles;
-    }
+
 
     /**
      * Saves the configuration properties to a file with a name based on the webservice.
@@ -337,16 +307,17 @@ public class Main {
             logger.info("Raw Message Generator completed for config: {}", configName);
 
             if (generatedCount > 0) {
-                int fileCount = 1;
-                try {
-                    File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
-                    if (countFile.exists()) {
-                        String countStr = new String(Files.readAllBytes(countFile.toPath())).trim();
-                        fileCount = Integer.parseInt(countStr);
-                    }
-                } catch (Exception e) {
-                    logger.error("Error reading file count for config {}: {}", configName, e.getMessage());
+            int fileCount = 1;
+            try {
+                String countFileName = Constants.OUTPUT_FILE_COUNT_PATH.replace(".txt", "_" + configName + ".txt");
+                File countFile = new File(Constants.OUTPUT_FOLDER, countFileName);
+                if (countFile.exists()) {
+                    String countStr = new String(Files.readAllBytes(countFile.toPath())).trim();
+                    fileCount = Integer.parseInt(countStr);
                 }
+            } catch (Exception e) {
+                logger.error("Error reading file count for config {}: {}", configName, e.getMessage());
+            }
                 logger.info("Generated {} raw messages across {} Excel files for config {}.", generatedCount, fileCount, configName);
 
                 // Auto-proceed for multi-config (no user prompt)
@@ -362,11 +333,22 @@ public class Main {
 
         String renamePrefix = mergedProps.getProperty(Constants.WEBSERVICE) + "_" + configName + "_";
 
-        runProcessing(matchingEngine, excelFiles, mergedProps, isToggle, isFinalRun, renamePrefix, startDate, startTimeStr);
+        runProcessing(matchingEngine, excelFiles, mergedProps, isToggle, isFinalRun, renamePrefix, startDate, startTimeStr, configName);
         logger.info("Processor and Analyzer completed for config: {} with matching engine: {}", configName, matchingEngine);
     }
 
     private static void deletePreviousFilesForConfig(String configName) {
+        // Delete config-specific count file
+        String countFileName = Constants.OUTPUT_FILE_COUNT_PATH.replace(".txt", "_" + configName + ".txt");
+        File countFile = new File(Constants.OUTPUT_FOLDER, countFileName);
+        if (countFile.exists()) {
+            if (countFile.delete()) {
+                logger.info("Deleted previous count file: {}", countFile.getName());
+            } else {
+                logger.error("Failed to delete previous count file: {}", countFile.getName());
+            }
+        }
+
         // Delete files with config-specific naming pattern
         File[] prevFiles = Constants.OUTPUT_FOLDER.listFiles((dir, name) ->
             name.matches(Constants.OUTPUT_FILE_NAME + "_" + configName + "_\\d+\\.xlsx") ||
@@ -402,7 +384,8 @@ public class Main {
                 }
             });
             int fileLimit = 0;
-            File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
+            String countFileName = Constants.OUTPUT_FILE_COUNT_PATH.replace(".txt", "_" + configName + ".txt");
+            File countFile = new File(Constants.OUTPUT_FOLDER, countFileName);
             if (countFile.exists()) {
                 try {
                     String countStr = new String(Files.readAllBytes(countFile.toPath())).trim();

@@ -675,12 +675,13 @@ public class RawMessageGenerator {
                 if (queue != null) {
                     queue.put(new File(Constants.POISON_PILL));
                 }
-                File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
-                try (FileWriter fw = new FileWriter(countFile)) {
-                    fw.write("1");
-                } catch (IOException e) {
-                    logger.error("Error writing output file count to {}: {}", countFile.getAbsolutePath(), e.getMessage());
-                }
+            String countFileName = Constants.OUTPUT_FILE_COUNT_PATH.replace(".txt", "_" + configName + ".txt");
+            File countFile = new File(Constants.OUTPUT_FOLDER, countFileName);
+            try (FileWriter fw = new FileWriter(countFile)) {
+                fw.write("1");
+            } catch (IOException e) {
+                logger.error("Error writing output file count to {}: {}", countFile.getAbsolutePath(), e.getMessage());
+            }
                 logger.info("Successfully wrote to Excel ({}) file.", outputFile.getName());
                 logger.info("Output file count (1) saved to: {}", countFile.getAbsolutePath());
             } else {
@@ -704,7 +705,8 @@ public class RawMessageGenerator {
                     startIndex = endIndex;
                 }
                 // Store the count of output files created, adjusting for the last increment since fileIndex is incremented after the last file
-                File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
+                String countFileName = Constants.OUTPUT_FILE_COUNT_PATH.replace(".txt", "_" + configName + ".txt");
+                File countFile = new File(Constants.OUTPUT_FOLDER, countFileName);
                 int totalFiles = fileIndex - 1; // Adjust for the last increment
                 try (FileWriter fw = new FileWriter(countFile)) {
                     fw.write(String.valueOf(totalFiles));
