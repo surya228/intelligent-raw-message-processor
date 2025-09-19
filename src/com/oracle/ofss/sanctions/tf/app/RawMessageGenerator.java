@@ -51,8 +51,10 @@ public class RawMessageGenerator {
                 throw new Exception(e);
             }
 
-            String srcFile = loadJsonFromFile(Constants.SOURCE_FILE_PATH);
-            logger.info("srcFile: {}", srcFile);
+            String configName = props.getProperty("configName");
+            String sourceFilePath = Constants.PARENT_DIRECTORY + File.separator + Constants.BIN_FOLDER_NAME + File.separator + configName + " source.json";
+            String srcFile = loadJsonFromFile(sourceFilePath);
+            logger.info("srcFile for config {}: {}", configName, srcFile);
 
 
             connection = SQLUtility.getDbConnection();

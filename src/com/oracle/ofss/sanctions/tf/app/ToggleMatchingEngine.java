@@ -32,7 +32,7 @@ public class ToggleMatchingEngine {
 
     private static void refreshCache(String endPoint) throws Exception {
         Properties props = new Properties();
-        try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
+        try (FileReader reader = new FileReader(Constants.COMMON_CONFIG_FILE_PATH)) {
             props.load(reader);
         } catch (IOException e) {
             logger.error("Error reading properties file: {}", e.getMessage());
