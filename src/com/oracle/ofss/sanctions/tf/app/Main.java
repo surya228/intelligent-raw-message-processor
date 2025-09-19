@@ -2,9 +2,12 @@ package com.oracle.ofss.sanctions.tf.app;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -81,6 +84,72 @@ public class Main {
             System.err.println("Failed while clearing previous log files: " + t2.getMessage());
         }
     }
+
+    /**
+     * Cleans up temporary files from previous runs at application startup.
+     * Deletes generated_file_count files and executing Excel files.
+     */
+    private static void cleanupTemporaryFiles() {
+        logger.info("=============================================================");
+        logger.info("                CLEANING UP TEMPORARY FILES                 ");
+        logger.info("=============================================================");
+
+        try {
+            // Clean up generated_file_count files
+            File[] countFiles = Constants.OUTPUT_FOLDER.listFiles((dir, name) ->
+                name.matches("generated_file_count.*\\.txt"));
+            if (countFiles != null) {
+                for (File file : countFiles) {
+                    if (file.delete()) {
+                        logger.info("Cleaned up temporary count file: {}", file.getName());
+                    } else {
+                        logger.warn("Failed to delete temporary count file: {}", file.getName());
+                    }
+                }
+            }
+
+            // Clean up executing Excel files
+            File[] excelFiles = Constants.OUTPUT_FOLDER.listFiles((dir, name) ->
+                name.matches("executing.*\\.xlsx"));
+            if (excelFiles != null) {
+                for (File file : excelFiles) {
+                    if (file.delete()) {
+                        logger.info("Cleaned up temporary Excel file: {}", file.getName());
+                    } else {
+                        logger.warn("Failed to delete temporary Excel file: {}", file.getName());
+                    }
+                }
+            }
+
+            logger.info("Temporary file cleanup completed");
+        } catch (Throwable t) {
+            logger.error("Error during temporary file cleanup: {}", t.getMessage());
+            // Don't fail the application if cleanup has issues
+        }
+    }
+
+    /**
+     * Cleans up remaining individual count files after run_details.json is created.
+     */
+    private static void cleanupIndividualCountFiles() {
+        logger.info("Cleaning up remaining individual count files...");
+
+        try {
+            File[] countFiles = Constants.OUTPUT_FOLDER.listFiles((dir, name) ->
+                name.matches("generated_file_count.*\\.txt"));
+            if (countFiles != null) {
+                for (File file : countFiles) {
+                    if (file.delete()) {
+                        logger.info("Cleaned up individual count file: {}", file.getName());
+                    } else {
+                        logger.warn("Failed to delete individual count file: {}", file.getName());
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            logger.error("Error during individual count file cleanup: {}", t.getMessage());
+        }
+    }
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     /**
@@ -102,6 +171,9 @@ public class Main {
         String formattedStartTime = timeFormatter.format(startTimestamp);
 
         long executionStartMillis = System.currentTimeMillis();
+
+        // Clean up temporary files from previous runs
+        cleanupTemporaryFiles();
 
         // Load common properties
         Properties commonProps = loadProperties(Constants.COMMON_CONFIG_FILE_PATH);
@@ -129,13 +201,38 @@ public class Main {
         logger.info("Processing {} enabled configs with matching engine: {}", enabledConfigs.size(), matchingEngine);
         logger.info("=============================================================");
 
+        // Create a list to store config counts
+        JSONArray runDetails = new JSONArray();
+
         for (File specificConfig : enabledConfigs) {
             try {
                 String configName = specificConfig.getName().replace(".properties", "");
                 Properties specificProps = loadProperties(specificConfig.getPath());
                 Properties mergedProps = mergeProperties(commonProps, specificProps);
 
-                processSingleConfig(mergedProps, configName, matchingEngine, isToggle, false, formattedStartDate, formattedStartTime, false);
+                int generatedCount = processSingleConfig(mergedProps, configName, matchingEngine, isToggle, false, formattedStartDate, formattedStartTime, false);
+
+                // Get file count
+                int fileCount = 1;
+                try {
+                    String countFileName = Constants.OUTPUT_FILE_COUNT_PATH.replace(".txt", "_" + configName + ".txt");
+                    File countFile = new File(Constants.OUTPUT_FOLDER, countFileName);
+                    if (countFile.exists()) {
+                        String countStr = new String(Files.readAllBytes(countFile.toPath())).trim();
+                        fileCount = Integer.parseInt(countStr);
+                    }
+                } catch (Exception e) {
+                    logger.error("Error reading file count for config {}: {}", configName, e.getMessage());
+                }
+
+                // Add to run details
+                JSONObject configDetail = new JSONObject();
+                configDetail.put("configName", configName);
+                configDetail.put("fileNo", fileCount);
+                configDetail.put("rawMessageCount", generatedCount);
+                runDetails.put(configDetail);
+
+                logger.info("Collected counts for config {}: files={}, rawMessages={}", configName, fileCount, generatedCount);
             } catch (Exception e) {
                 logger.error("Error processing config {}: {}", specificConfig.getName(), e.getMessage());
                 // Continue with other configs
@@ -171,6 +268,22 @@ public class Main {
             }
 
             logger.info("All configs re-processed with matching engine: {}", matchingEngine);
+        }
+
+        // Write run details to JSON file
+        if (runDetails.length()!=0) {
+            File runDetailsFile = new File(Constants.OUTPUT_FOLDER, Constants.RUN_DETAILS_FILE_NAME);
+            try (FileWriter fileWriter = new FileWriter(runDetailsFile)) {
+                fileWriter.write(runDetails.toString(4)); // Pretty print with 4-space indentation
+                logger.info("Run details written to: {}", runDetailsFile.getAbsolutePath());
+
+                // Clean up individual count files after JSON is successfully written
+                cleanupIndividualCountFiles();
+            } catch (IOException e) {
+                logger.error("Error writing run details to {}: {}", runDetailsFile.getAbsolutePath(), e.getMessage());
+            }
+        } else {
+            logger.info("No run details to write (no configs processed successfully)");
         }
 
         logger.info("=============================================================");
@@ -281,7 +394,7 @@ public class Main {
         return merged;
     }
 
-    private static void processSingleConfig(Properties mergedProps, String configName, String matchingEngine,
+    private static int processSingleConfig(Properties mergedProps, String configName, String matchingEngine,
             boolean isToggle, boolean isFinalRun, String startDate, String startTimeStr, boolean skipGeneration) throws Exception {
         logger.info("=============================================================");
         logger.info("Processing config: {}", configName);
@@ -296,7 +409,7 @@ public class Main {
             generatedCount = RawMessageGenerator.generateRawMessage(null, mergedProps);
             if (generatedCount == 0) {
                 logger.info("No raw messages generated for config {}. Skipping processing.", configName);
-                return;
+                return generatedCount;
             }
             logger.info("Raw Message Generator completed for config: {}", configName);
 
@@ -329,6 +442,8 @@ public class Main {
 
         runProcessing(matchingEngine, excelFiles, mergedProps, isToggle, isFinalRun, renamePrefix, startDate, startTimeStr, configName);
         logger.info("Processor and Analyzer completed for config: {} with matching engine: {}", configName, matchingEngine);
+
+        return generatedCount;
     }
 
     private static void deletePreviousFilesForConfig(String configName) {

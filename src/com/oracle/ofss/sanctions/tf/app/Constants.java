@@ -122,6 +122,7 @@ public class Constants {
     public static String OUTPUT_FILE_NAME = "executing";
     public static String OUTPUT_FOLDER_NAME = "out";
     public static String BIN_FOLDER_NAME = "bin";
+    public static String RUN_DETAILS_FILE_NAME = "run_details.json";
     public static String CURRENT_DIRECTORY = System.getProperty("user.dir");
     public static File PARENT_DIRECTORY = new File(CURRENT_DIRECTORY).getParentFile();
     public static String SOURCE_FILE_PATH = PARENT_DIRECTORY+File.separator+BIN_FOLDER_NAME+File.separator+SOURCE_FILE_NAME+".json";
