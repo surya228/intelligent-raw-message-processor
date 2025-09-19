@@ -23,71 +23,83 @@ import java.util.concurrent.BlockingQueue;
 
 public class RawMessageGenerator {
     private static final Logger logger = LoggerFactory.getLogger(RawMessageGenerator.class);
+    /**
+     * Generates raw messages based on the provided configuration properties.
+     *
+     * @param queue The blocking queue to store generated files
+     * @param props Configuration properties containing database and processing settings
+     * @return The number of raw messages generated
+     * @throws Exception If an error occurs during message generation
+     */
     public static int generateRawMessage(BlockingQueue<File> queue, Properties props) throws Exception {
-        long startTime = System.currentTimeMillis();
+        long startTimeMillis = System.currentTimeMillis();
         logger.info("=============================================================");
         logger.info("                RAW MESSAGE GENERATOR STARTED                ");
         logger.info("=============================================================");
-        Connection connection = null;
+
+        Connection databaseConnection = null;
         JSONArray rawMessageJsonArray = null;
-        ResultSet rs = null;
+        ResultSet resultSet = null;
 
         try {
-
+            // Extract configuration properties
             String watchlistType = props.getProperty(Constants.WATCHLIST_TYPE);
             String tableName = Constants.TABLE_WL_MAP.get(watchlistType);
             String tagName = props.getProperty(Constants.TAGNAME);
             String webService = props.getProperty(Constants.WEBSERVICE);
-            String tansactionService = props.getProperty(Constants.TRANSACTION_SERVICE);
+            String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE);
             String webserviceId = props.getProperty(Constants.WEBSERVICE_ID);
             boolean isStopwordEnabled = Constants.YES.equalsIgnoreCase(props.getProperty("stopword"));
             boolean isSynonymEnabled = Constants.YES.equalsIgnoreCase(props.getProperty("synonym"));
 
+            // Validate configuration properties
             try {
                 validateConfigProperties(watchlistType, webserviceId, isStopwordEnabled, isSynonymEnabled);
                 logger.info("Config Properties Validation Passed.");
-            } catch (Exception e){
-                logger.info("Config Properties Validation Failed.");
-                throw new Exception(e);
+            } catch (Exception validationException) {
+                logger.error("Config Properties Validation Failed: {}", validationException.getMessage());
+                throw validationException;
             }
 
             String configName = props.getProperty("configName");
             String sourceFilePath = Constants.PARENT_DIRECTORY + File.separator + Constants.BIN_FOLDER_NAME + File.separator + configName + " source.json";
-            String srcFile = loadJsonFromFile(sourceFilePath);
-            logger.info("srcFile for config {}: {}", configName, srcFile);
+            String sourceTemplate = loadJsonFromFile(sourceFilePath);
+            logger.info("Source template for config {}: {}", configName, sourceTemplate);
 
+            databaseConnection = SQLUtility.getDbConnection();
+            resultSet = prepareQueryAndGetTableData(databaseConnection, props, tableName);
 
-            connection = SQLUtility.getDbConnection();
-            rs = prepareQueryAndGetTableData(connection, props, tableName);
+            rawMessageJsonArray = generateRawMessageJsonArray(resultSet, props, sourceTemplate, tableName, tagName, webserviceId, watchlistType, isStopwordEnabled, isSynonymEnabled);
 
-
-
-            rawMessageJsonArray = generateRawMessageJsonArray(rs,props,srcFile,tableName,tagName,webserviceId,watchlistType,isStopwordEnabled,isSynonymEnabled);
-
-            if(rawMessageJsonArray.length()>0){
+            if (rawMessageJsonArray.length() > 0) {
                 writeJsonAsExcelFile(rawMessageJsonArray, props, queue);
             }
 
             logger.info("=============================================================");
             logger.info("                 RAW MESSAGE GENERATOR ENDED                 ");
             logger.info("=============================================================");
-            long endTime = System.currentTimeMillis();
+            long endTimeMillis = System.currentTimeMillis();
 
-            logger.info("Time taken by Raw Message Generator: {} seconds", (endTime - startTime) / 1000L);
+            logger.info("Time taken by Raw Message Generator: {} seconds", (endTimeMillis - startTimeMillis) / 1000L);
 
         } catch (Exception e) {
+            logger.error("Error in Raw Message Generator: {}", e.getMessage());
             e.printStackTrace();
         } finally {
-            if (rs != null) {
-                rs.close();
-            }
-            if (connection != null) {
+            // Close resources in reverse order of creation
+            if (resultSet != null) {
                 try {
-                    connection.close();
-                    logger.info("Connection closed.");
+                    resultSet.close();
                 } catch (SQLException e) {
-                    logger.error("Failed to close the connection:");
-                    e.printStackTrace();
+                    logger.error("Failed to close result set: {}", e.getMessage());
+                }
+            }
+            if (databaseConnection != null) {
+                try {
+                    databaseConnection.close();
+                    logger.info("Database connection closed.");
+                } catch (SQLException e) {
+                    logger.error("Failed to close database connection: {}", e.getMessage());
                 }
             }
         }
@@ -819,9 +831,10 @@ public class RawMessageGenerator {
         }
 
         // Auto-size columns
-        for (int i = 0; i < 9; i++) {
-            sheet.autoSizeColumn(i);
-        }
+
+//        for (int i = 0; i < 9; i++) {
+//            sheet.autoSizeColumn(i);
+//        }
 
         // Write to file
         try (FileOutputStream fileOut = new FileOutputStream(outputFile)) {

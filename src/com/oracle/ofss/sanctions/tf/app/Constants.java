@@ -75,6 +75,11 @@ public class Constants {
     public static String CED2 =  "ced2";
     public static String CED3 =  "ced3";
 
+    // CED values for variant types
+    public static final int CED_EXACT = 0;
+    public static final int CED_STOPWORD = -1;
+    public static final int CED_SYNONYM = -2;
+
     // Database properties
     public static String JDBC_URL =  "jdbcurl";
     public static String JDBC_DRIVER =  "jdbcdriver";

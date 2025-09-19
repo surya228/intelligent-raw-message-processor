@@ -22,7 +22,17 @@ import java.util.concurrent.TimeUnit;
 import java.util.Scanner;
 
 public class Main {
+    /**
+     * Static initializer to set up logging directory and clear existing log files.
+     */
     static {
+        initializeLogging();
+    }
+
+    /**
+     * Initializes the logging system by creating the log directory and clearing existing log files.
+     */
+    private static void initializeLogging() {
         try {
             File logDir = new File(Constants.OUTPUT_FOLDER, "log");
             if (!logDir.exists()) {
@@ -30,48 +40,68 @@ public class Main {
                     System.err.println("Could not create log directory at " + logDir.getAbsolutePath());
                 }
             }
+
             // Truncate existing log files on startup to ensure a fresh run
-            try {
-                String[] logFiles = new String[] {
-                        "UtilityMain.log",
-                        "RawMessageGenrator.log",
-                        "MessageProcessor.log",
-                        "MessageAnalyzer.log"
-                };
-                for (String lf : logFiles) {
-                    File f = new File(logDir, lf);
-                    if (f.exists()) {
-                        try {
-                            new java.io.FileOutputStream(f, false).close();
-                        } catch (Throwable clearEx) {
-                            // Fallback to delete if truncation fails
-                            if (!f.delete()) {
-                                System.err.println("Failed to clear log file: " + f.getAbsolutePath() + " due to: " + clearEx.getMessage());
-                            }
-                        }
-                    }
-                }
-            } catch (Throwable t2) {
-                System.err.println("Failed while clearing previous log files: " + t2.getMessage());
-            }
+            clearExistingLogFiles(logDir);
             System.setProperty("log.dir", logDir.getAbsolutePath());
         } catch (Throwable t) {
             System.err.println("Failed to initialize log directory: " + t.getMessage());
         }
     }
+
+    /**
+     * Clears existing log files in the specified directory.
+     *
+     * @param logDir The directory containing log files to clear
+     */
+    private static void clearExistingLogFiles(File logDir) {
+        try {
+            String[] logFiles = {
+                    "UtilityMain.log",
+                    "RawMessageGenrator.log",
+                    "MessageProcessor.log",
+                    "MessageAnalyzer.log"
+            };
+
+            for (String logFile : logFiles) {
+                File file = new File(logDir, logFile);
+                if (file.exists()) {
+                    try {
+                        new java.io.FileOutputStream(file, false).close();
+                    } catch (Throwable clearEx) {
+                        // Fallback to delete if truncation fails
+                        if (!file.delete()) {
+                            System.err.println("Failed to clear log file: " + file.getAbsolutePath() +
+                                             " due to: " + clearEx.getMessage());
+                        }
+                    }
+                }
+            }
+        } catch (Throwable t2) {
+            System.err.println("Failed while clearing previous log files: " + t2.getMessage());
+        }
+    }
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
+    /**
+     * Main entry point for the Intelligent Raw Message Processor Utility.
+     * Processes multiple configuration files with optional matching engine toggling.
+     *
+     * @param args Command line arguments (not used in current implementation)
+     * @throws Exception If any critical error occurs during processing
+     */
     public static void main(String[] args) throws Exception {
         logger.info("=============================================================");
         logger.info("      INTELLIGENT RAW MESSAGE PROCESSOR UTILITY STARTED      ");
         logger.info("=============================================================");
-        Date startDateObj = new Date();
-        SimpleDateFormat dateFormat = new SimpleDateFormat(Constants.DATE_SUFFIX_FORMAT);
-        SimpleDateFormat timeFormat = new SimpleDateFormat(Constants.TIME_SUFFIX_FORMAT);
-        String startDate = dateFormat.format(startDateObj);
-        String startTimeStr = timeFormat.format(startDateObj);
 
-        long startTime = System.currentTimeMillis();
+        Date startTimestamp = new Date();
+        SimpleDateFormat dateFormatter = new SimpleDateFormat(Constants.DATE_SUFFIX_FORMAT);
+        SimpleDateFormat timeFormatter = new SimpleDateFormat(Constants.TIME_SUFFIX_FORMAT);
+        String formattedStartDate = dateFormatter.format(startTimestamp);
+        String formattedStartTime = timeFormatter.format(startTimestamp);
+
+        long executionStartMillis = System.currentTimeMillis();
 
         // Load common properties
         Properties commonProps = loadProperties(Constants.COMMON_CONFIG_FILE_PATH);
@@ -105,7 +135,7 @@ public class Main {
                 Properties specificProps = loadProperties(specificConfig.getPath());
                 Properties mergedProps = mergeProperties(commonProps, specificProps);
 
-                    processSingleConfig(mergedProps, configName, matchingEngine, isToggle, false, startDate, startTimeStr, false);
+                processSingleConfig(mergedProps, configName, matchingEngine, isToggle, false, formattedStartDate, formattedStartTime, false);
             } catch (Exception e) {
                 logger.error("Error processing config {}: {}", specificConfig.getName(), e.getMessage());
                 // Continue with other configs
@@ -133,7 +163,7 @@ public class Main {
                     Properties specificProps = loadProperties(specificConfig.getPath());
                     Properties mergedProps = mergeProperties(commonProps, specificProps);
 
-                    processSingleConfig(mergedProps, configName, matchingEngine, isToggle, true, startDate, startTimeStr, true);
+                    processSingleConfig(mergedProps, configName, matchingEngine, isToggle, true, formattedStartDate, formattedStartTime, true);
                 } catch (Exception e) {
                     logger.error("Error re-processing config {}: {}", specificConfig.getName(), e.getMessage());
                     // Continue with other configs
@@ -146,30 +176,11 @@ public class Main {
         logger.info("=============================================================");
         logger.info("     INTELLIGENT RAW MESSAGE PROCESSOR UTILITY COMPLETED     ");
         logger.info("=============================================================");
-        long endTime = System.currentTimeMillis();
-        logger.info("Total time taken by utility: {} seconds", (endTime - startTime) / 1000L);
+        long executionEndMillis = System.currentTimeMillis();
+        logger.info("Total time taken by utility: {} seconds", (executionEndMillis - executionStartMillis) / 1000L);
     }
 
-    private static void deletePreviousFiles() {
-        File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
-        if (countFile.exists()) {
-            if (countFile.delete()) {
-                logger.info("Deleted previous count file: {}", countFile.getName());
-            } else {
-                logger.error("Failed to delete previous count file: {}", countFile.getName());
-            }
-        }
-        File[] prevFiles = Constants.OUTPUT_FOLDER.listFiles((dir, name) -> name.matches(Constants.OUTPUT_FILE_NAME+"_\\d+\\.xlsx"));
-        if (prevFiles != null) {
-            for (File file : prevFiles) {
-                if (file.delete()) {
-                    logger.info("Deleted previous output file: {}", file.getName());
-                } else {
-                    logger.error("Failed to delete previous output file: {}", file.getName());
-                }
-            }
-        }
-    }
+
 
     /**
      * Renames output files by appending a timestamp and webservice name.
@@ -216,26 +227,9 @@ public class Main {
 
 
 
-    /**
-     * Saves the configuration properties to a file with a name based on the webservice.
-     * @param props Properties to save.
-     */
-    private static void saveConfigProperties(Properties props) {
-        String webservice = props.getProperty(Constants.WEBSERVICE);
-        String fileName = (webservice != null ? webservice : Constants.DEFAULT_CONFIG_BASE) + ".properties";
-        File configFile = new File(Constants.OUTPUT_FOLDER, fileName);
-        File originalConfig = new File(Constants.CONFIG_FILE_PATH);
-        try {
-            Files.copy(originalConfig.toPath(), configFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            logger.info("Config properties saved to {}", configFile.getName());
-        } catch (IOException e) {
-            logger.error("Error saving config properties: {}", e.getMessage());
-        }
-    }
 
-    private static Properties loadProperties() throws IOException {
-        return loadProperties(Constants.CONFIG_FILE_PATH);
-    }
+
+
 
     private static Properties loadProperties(String filePath) throws IOException {
         Properties props = new Properties();
