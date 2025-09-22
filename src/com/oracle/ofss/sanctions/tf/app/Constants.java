@@ -115,6 +115,7 @@ public class Constants {
     public static String HOLD_ON_MSG_2 =  "Looking for Tortoise...Will find it soon";
     public static String SUCCESS_MSG =  "Heyy...Here it is";
     public static String LOAD_MSG =  "zzzz...on the way";
+    public static final String VALUE_TOO_LARGE = "value too large please check feedback api";
 
     // File names and paths
     public static String CONFIG_FILE_NAME = "config";

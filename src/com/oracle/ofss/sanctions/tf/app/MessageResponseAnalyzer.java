@@ -190,7 +190,7 @@ public class MessageResponseAnalyzer {
                             JSONObject eachResponse = null;
                             String feedbackValue = tokenToFeedbackString.get(transactionToken);
                             if (feedbackValue != null && !feedbackValue.isEmpty()) {
-                                if ("value too large please check feedback api".equals(feedbackValue.trim())) {
+                                if (Constants.VALUE_TOO_LARGE.equalsIgnoreCase(feedbackValue.trim())) {
                                     eachResponse = feedbackMap.get(transactionToken);
                                 } else {
                                     try {

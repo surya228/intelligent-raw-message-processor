@@ -264,7 +264,7 @@ public class MessageProcessingUtility {
 
             String responseString = apiResponse.toString();
             if (responseString.length() > 32767) {
-                responseString = "value too large please check feedback api";
+                responseString = Constants.VALUE_TOO_LARGE;
             }
 
             String tokenString = "NA";
