@@ -23,69 +23,98 @@ import java.util.concurrent.BlockingQueue;
 
 public class RawMessageGenerator {
     private static final Logger logger = LoggerFactory.getLogger(RawMessageGenerator.class);
+    /**
+     * Generates raw messages based on the provided configuration properties.
+     *
+     * @param queue The blocking queue to store generated files
+     * @param props Configuration properties containing database and processing settings
+     * @return The number of raw messages generated
+     * @throws Exception If an error occurs during message generation
+     */
     public static int generateRawMessage(BlockingQueue<File> queue, Properties props) throws Exception {
-        long startTime = System.currentTimeMillis();
+        long startTimeMillis = System.currentTimeMillis();
         logger.info("=============================================================");
         logger.info("                RAW MESSAGE GENERATOR STARTED                ");
         logger.info("=============================================================");
-        Connection connection = null;
-        JSONArray rawMessageJsonArray = null;
-        ResultSet rs = null;
+
+        Connection databaseConnection = null;
+        JSONArray rawMessageJsonArray = new JSONArray();
 
         try {
-
-            String watchlistType = props.getProperty(Constants.WATCHLIST_TYPE);
-            String tableName = Constants.TABLE_WL_MAP.get(watchlistType);
+            // Extract common configuration properties
             String tagName = props.getProperty(Constants.TAGNAME);
             String webService = props.getProperty(Constants.WEBSERVICE);
-            String tansactionService = props.getProperty(Constants.TRANSACTION_SERVICE);
+            String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE);
             String webserviceId = props.getProperty(Constants.WEBSERVICE_ID);
             boolean isStopwordEnabled = Constants.YES.equalsIgnoreCase(props.getProperty("stopword"));
             boolean isSynonymEnabled = Constants.YES.equalsIgnoreCase(props.getProperty("synonym"));
 
-            try {
-                validateConfigProperties(watchlistType, webserviceId, isStopwordEnabled, isSynonymEnabled);
-                logger.info("Config Properties Validation Passed.");
-            } catch (Exception e){
-                logger.info("Config Properties Validation Failed.");
-                throw new Exception(e);
+            // Validate configuration properties
+//            try {
+//                validateConfigProperties(watchlistType, webserviceId, isStopwordEnabled, isSynonymEnabled);
+//                logger.info("Config Properties Validation Passed.");
+//            } catch (Exception validationException) {
+//                logger.error("Config Properties Validation Failed: {}", validationException.getMessage());
+//                throw validationException;
+//            }
+
+            String configName = props.getProperty("configName");
+            String sourceFilePath = Constants.PARENT_DIRECTORY + File.separator + Constants.BIN_FOLDER_NAME + File.separator + configName + " source.json";
+            String sourceTemplate = loadJsonFromFile(sourceFilePath);
+            logger.info("Source template for config {}: {}", configName, sourceTemplate);
+
+            databaseConnection = SQLUtility.getDbConnection();
+
+            String watchlistTypesStr = props.getProperty(Constants.WATCHLIST_TYPE);
+            String[] watchlistTypes = watchlistTypesStr.split(",");
+
+            for (String watchlistType : watchlistTypes) {
+                watchlistType = watchlistType.trim();
+                if (!Constants.TABLE_WL_MAP.containsKey(watchlistType)) {
+                    logger.error("Invalid watchlist type: {}", watchlistType);
+                    continue;
+                }
+                String tableName = Constants.TABLE_WL_MAP.get(watchlistType);
+
+                ResultSet resultSet = prepareQueryAndGetTableData(databaseConnection, props, tableName, watchlistType);
+
+                JSONArray tempArray = generateRawMessageJsonArray(resultSet, props, sourceTemplate, tableName, tagName, webserviceId, watchlistType, isStopwordEnabled, isSynonymEnabled);
+
+                for (int i = 0; i < tempArray.length(); i++) {
+                    rawMessageJsonArray.put(tempArray.getJSONObject(i));
+                }
+
+                if (resultSet != null) {
+                    try {
+                        resultSet.close();
+                    } catch (SQLException e) {
+                        logger.error("Failed to close result set for {}: {}", watchlistType, e.getMessage());
+                    }
+                }
             }
 
-            String srcFile = loadJsonFromFile(Constants.SOURCE_FILE_PATH);
-            logger.info("srcFile: {}", srcFile);
-
-
-            connection = SQLUtility.getDbConnection();
-            rs = prepareQueryAndGetTableData(connection, props, tableName);
-
-
-
-            rawMessageJsonArray = generateRawMessageJsonArray(rs,props,srcFile,tableName,tagName,webserviceId,watchlistType,isStopwordEnabled,isSynonymEnabled);
-
-            if(rawMessageJsonArray.length()>0){
-                writeJsonAsExcelFile(rawMessageJsonArray,tansactionService,tagName,webService,watchlistType, queue);
+            if (rawMessageJsonArray.length() > 0) {
+                writeJsonAsExcelFile(rawMessageJsonArray, props, queue);
             }
 
             logger.info("=============================================================");
             logger.info("                 RAW MESSAGE GENERATOR ENDED                 ");
             logger.info("=============================================================");
-            long endTime = System.currentTimeMillis();
+            long endTimeMillis = System.currentTimeMillis();
 
-            logger.info("Time taken by Raw Message Generator: {} seconds", (endTime - startTime) / 1000L);
+            logger.info("Time taken by Raw Message Generator: {} seconds", (endTimeMillis - startTimeMillis) / 1000L);
 
         } catch (Exception e) {
+            logger.error("Error in Raw Message Generator: {}", e.getMessage());
             e.printStackTrace();
         } finally {
-            if (rs != null) {
-                rs.close();
-            }
-            if (connection != null) {
+            // Close resources in reverse order of creation
+            if (databaseConnection != null) {
                 try {
-                    connection.close();
-                    logger.info("Connection closed.");
+                    databaseConnection.close();
+                    logger.info("Database connection closed.");
                 } catch (SQLException e) {
-                    logger.error("Failed to close the connection:");
-                    e.printStackTrace();
+                    logger.error("Failed to close database connection: {}", e.getMessage());
                 }
             }
         }
@@ -93,15 +122,6 @@ public class RawMessageGenerator {
     }
 
     private static boolean validateConfigProperties(String watchlistType, String webserviceId, boolean isStopwordEnabled, boolean isSynonymEnabled) throws Exception {
-        // Check if both synonym and stopword are enabled
-        if (isSynonymEnabled && isStopwordEnabled) {
-            throw new Exception("Cannot enable both synonym and stopword at the same time. Only one should be enabled.");
-        }
-
-        // If neither synonym nor stopword is enabled, return true
-        if (!isSynonymEnabled && !isStopwordEnabled) {
-            return true;
-        }
 
         // Define unsupported webserviceIds
         List<String> unsupportedWebserviceIds = Arrays.asList("2", "5", "6");
@@ -141,15 +161,16 @@ public class RawMessageGenerator {
     }
 
 
-    private static ResultSet prepareQueryAndGetTableData(Connection connection, Properties props, String tableName) throws Exception {
+    private static ResultSet prepareQueryAndGetTableData(Connection connection, Properties props, String tableName, String watchlistType) throws Exception {
         PreparedStatement pst = null;
         ResultSet rs = null;
         String filter="";
-        if(props.containsKey(Constants.WHERE_CLAUSE)){
-            filter = " where "+ props.get(Constants.WHERE_CLAUSE);
+        String whereClauseKey = Constants.WHERE_CLAUSE + "_" + watchlistType.toUpperCase();
+        if(props.containsKey(whereClauseKey)){
+            filter = " WHERE "+ props.getProperty(whereClauseKey);
         }
 
-        String query = "select * from "+tableName+" "+filter;
+        String query = "SELECT * FROM "+tableName+" "+filter;
         logger.info("SQL Query generated:: {}", query);
         try {
             pst = connection.prepareStatement(query);
@@ -202,56 +223,54 @@ public class RawMessageGenerator {
                         String[] toBeReplacedValues = tokenValue.split(";");
 
                         for (String toBeReplaced : toBeReplacedValues) {
-                            if (isSynonymEnabled) {
-                                List<Map<String, Object>> variantsWithInfo = generateSynonymVariantsWithInfo(toBeReplaced, synonymMap, props);
+                            if (isSynonymEnabled && !synonymMap.isEmpty()) {
+                                List<Map<String, Object>> variantsWithInfo = generateSynonymVariantsWithInfo(toBeReplaced, synonymMap);
                                 for (Map<String, Object> info : variantsWithInfo) {
                                     String variant = (String) info.get("variant");
                                     String lookupIds = (String) info.get("lookupIds");
                                     String lookupValueIds = (String) info.get("lookupValueIds");
                                     temp = srcFile;
-                                    updatedCount = createRawMsg(temp, variant, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, -2, uid, tagName, webserviceId, lookupIds, lookupValueIds);
+                                    updatedCount = createRawMsg(temp, variant, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, -2, uid, tagName, webserviceId, lookupIds, lookupValueIds, watchlistType);
                                 }
-                            } else {
-                                if (!isStopwordEnabled) {
-                                    // 0 ced -> exact
-                                    updatedCount = createRawMsg(temp, toBeReplaced, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 0, uid, tagName, webserviceId, "NA", "NA");
+                            }
 
-                                    if (props.getProperty(Constants.CED1).equalsIgnoreCase(Constants.YES)) { // 1 ced
-                                        List<String> oneCedList = generate1CedVariants(toBeReplaced);
-                                        for (String value : oneCedList) {
-                                            temp = srcFile;
-                                            updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 1, uid, tagName, webserviceId, "NA", "NA");
-                                        }
-                                    }
+                            // 0 ced -> exact
+                            updatedCount = createRawMsg(temp, toBeReplaced, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 0, uid, tagName, webserviceId, "NA", "NA", watchlistType);
 
-                                    if (props.getProperty(Constants.CED2).equalsIgnoreCase(Constants.YES)) { // 2 ced
-                                        List<String> twoCedList = generate2CedVariants(toBeReplaced);
-                                        for (String value : twoCedList) {
-                                            temp = srcFile;
-                                            updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 2, uid, tagName, webserviceId, "NA", "NA");
-                                        }
-                                    }
-
-                                    if (props.getProperty(Constants.CED3).equalsIgnoreCase(Constants.YES)) { // 3 ced
-                                        List<String> threeCedList = generate3CedVariants(toBeReplaced);
-                                        for (String value : threeCedList) {
-                                            temp = srcFile;
-                                            updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 3, uid, tagName, webserviceId, "NA", "NA");
-                                        }
-                                    }
+                            if (props.getProperty(Constants.CED1).equalsIgnoreCase(Constants.YES)) { // 1 ced
+                                List<String> oneCedList = generate1CedVariants(toBeReplaced);
+                                for (String value : oneCedList) {
+                                    temp = srcFile;
+                                    updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 1, uid, tagName, webserviceId, "NA", "NA", watchlistType);
                                 }
+                            }
 
-                                // Stopword variants
-                                if (isStopwordEnabled && stopwords != null && !stopwords.isEmpty()) {
-                                    for (Object[] pair : stopwords) {
-                                        String stop = (String) pair[0];
-                                        String lookupId = (String) pair[1];
-                                        String lookupValueId = (String) pair[2];
-                                        List<String> variants = generateStopwordVariants(toBeReplaced, stop);
-                                        for (String variant : variants) {
-                                            String variantTemp = srcFile;
-                                            updatedCount = createRawMsg(variantTemp, variant, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, -1, uid, tagName, webserviceId, lookupId, lookupValueId);
-                                        }
+                            if (props.getProperty(Constants.CED2).equalsIgnoreCase(Constants.YES)) { // 2 ced
+                                List<String> twoCedList = generate2CedVariants(toBeReplaced);
+                                for (String value : twoCedList) {
+                                    temp = srcFile;
+                                    updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 2, uid, tagName, webserviceId, "NA", "NA", watchlistType);
+                                }
+                            }
+
+                            if (props.getProperty(Constants.CED3).equalsIgnoreCase(Constants.YES)) { // 3 ced
+                                List<String> threeCedList = generate3CedVariants(toBeReplaced);
+                                for (String value : threeCedList) {
+                                    temp = srcFile;
+                                    updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 3, uid, tagName, webserviceId, "NA", "NA", watchlistType);
+                                }
+                            }
+
+                            // Stopword variants
+                            if (isStopwordEnabled && stopwords != null && !stopwords.isEmpty()) {
+                                for (Object[] pair : stopwords) {
+                                    String stop = (String) pair[0];
+                                    String lookupId = (String) pair[1];
+                                    String lookupValueId = (String) pair[2];
+                                    List<String> variants = generateStopwordVariants(toBeReplaced, stop);
+                                    for (String variant : variants) {
+                                        String variantTemp = srcFile;
+                                        updatedCount = createRawMsg(variantTemp, variant, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, -1, uid, tagName, webserviceId, lookupId, lookupValueId, watchlistType);
                                     }
                                 }
                             }
@@ -270,7 +289,7 @@ public class RawMessageGenerator {
     public static int createRawMsg(String temp, String value, String identifierToBeReplaced,
                                    String token, String targetColumn, String identifierToken,
                                    String tableName, JSONArray jsonArray, int updatedCount, String originalValue, int ced, String uid,
-                                   String tagName, String webserviceId, String lookupIds, String lookupValueIds){
+                                   String tagName, String webserviceId, String lookupIds, String lookupValueIds, String watchlistType){
         if (value != null) {
             logger.info("toBeReplaced: {} originalValue: {}  token: {}  column: {}  identifier: {} ced: {}", value, originalValue, token, targetColumn, identifierToBeReplaced, ced);
             identifierToBeReplaced = Constants.IDEN_PREFIX+identifierToBeReplaced;
@@ -294,28 +313,14 @@ public class RawMessageGenerator {
             additionalData.put("isSynonymPresent", (ced == -2 ? "Y" : "N"));
             additionalData.put(Constants.LOOKUP_ID, lookupIds);
             additionalData.put(Constants.LOOKUP_VALUE_ID, lookupValueIds);
+            additionalData.put(Constants.WATCHLIST, watchlistType);
             jsonArray.put(tempJson);
 
             updatedCount++;
         }
         return updatedCount;
     }
-    public static List<String> generate1CedVariants(String input) {
-        List<String> variants = new ArrayList<>();
-        int len = input.length();
 
-        // Delete
-        if (len >= 1) variants.add(input.substring(1)); // remove first
-        if (len >= 3) variants.add(input.substring(0, len / 2) + input.substring((len / 2) + 1)); // remove middle
-        if (len >= 1) variants.add(input.substring(0, len - 1)); // remove last
-
-//        // Insert
-//        variants.add(INSERT_CHAR + input); // insert at start
-//        variants.add(input.substring(0, len / 2) + INSERT_CHAR + input.substring(len / 2)); // middle
-//        variants.add(input + INSERT_CHAR); // insert at end
-
-        return variants;
-    }
 
     private static List<Object[]> getRelevantStopwords(Properties props, Connection connection) throws SQLException {
         List<Object[]> stopwords = new ArrayList<>();
@@ -406,94 +411,46 @@ public class RawMessageGenerator {
         return lookupIds;
     }
 
-    private static List<Map<String, Object>> generateSynonymVariantsWithInfo(String toBeReplaced, Map<String, Map<String, String>> synonymMap, Properties props) {
+    private static List<Map<String, Object>> generateSynonymVariantsWithInfo(String toBeReplaced, Map<String, Map<String, String>> synonymMap) {
         List<Map<String, Object>> result = new ArrayList<>();
-        boolean multiword = "Y".equalsIgnoreCase(props.getProperty("synonym.multiword", "N"));
-        boolean multipleGroups = "Y".equalsIgnoreCase(props.getProperty("synonym.multipleGroups", "N"));
-
-        if (!multiword) {
-            Set<String> usedLookupIds = new HashSet<>();
-            Set<String> usedValueIds = new HashSet<>();
-            List<String> alts = new ArrayList<>();
-            boolean found = false;
-            outer: for (Map.Entry<String, Map<String, String>> lookupEntry : synonymMap.entrySet()) {
+        String[] words = toBeReplaced.split("\\s+");
+        List<List<String>> options = new ArrayList<>();
+        List<Set<String>> lidsPer = new ArrayList<>();
+        List<Set<String>> vidsPer = new ArrayList<>();
+        for (String word : words) {
+            List<String> wordOptions = new ArrayList<>();
+            wordOptions.add(word);
+            Set<String> wordLids = new HashSet<>();
+            Set<String> wordVids = new HashSet<>();
+            for (Map.Entry<String, Map<String, String>> lookupEntry : synonymMap.entrySet()) {
                 String lookupId = lookupEntry.getKey();
                 for (Map.Entry<String, String> valueEntry : lookupEntry.getValue().entrySet()) {
                     String valueId = valueEntry.getKey();
                     String valuesStr = valueEntry.getValue();
                     String[] synonyms = valuesStr.split(",");
-                    boolean matchFound = false;
+                    boolean wordMatch = false;
                     for (String syn : synonyms) {
-                        if (syn.equalsIgnoreCase(toBeReplaced)) {
-                            matchFound = true;
+                        if (syn.equalsIgnoreCase(word)) {
+                            wordMatch = true;
                             break;
                         }
                     }
-                    if (matchFound) {
-                        found = true;
-                        usedLookupIds.add(lookupId);
-                        usedValueIds.add(valueId);
+                    if (wordMatch) {
+                        wordLids.add(lookupId);
+                        wordVids.add(valueId);
                         for (String alt : synonyms) {
-                            if (!alt.equalsIgnoreCase(toBeReplaced) && !alts.contains(alt)) {
-                                alts.add(alt);
+                            if (!alt.equalsIgnoreCase(word) && !wordOptions.contains(alt)) {
+                                wordOptions.add(alt);
                             }
                         }
-                        if (!multipleGroups) break outer;
                     }
                 }
             }
-            if (!alts.isEmpty()) {
-                String lids = String.join(",", usedLookupIds);
-                String vids = String.join(",", usedValueIds);
-                for (String alt : alts) {
-                    Map<String, Object> info = new HashMap<>();
-                    info.put("variant", alt);
-                    info.put("lookupIds", lids);
-                    info.put("lookupValueIds", vids);
-                    result.add(info);
-                }
-            }
-        } else {
-            String[] words = toBeReplaced.split("\\s+");
-            List<List<String>> options = new ArrayList<>();
-            List<Set<String>> lidsPer = new ArrayList<>();
-            List<Set<String>> vidsPer = new ArrayList<>();
-            for (String word : words) {
-                List<String> wordOptions = new ArrayList<>();
-                wordOptions.add(word);
-                Set<String> wordLids = new HashSet<>();
-                Set<String> wordVids = new HashSet<>();
-                outer: for (Map.Entry<String, Map<String, String>> lookupEntry : synonymMap.entrySet()) {
-                    String lookupId = lookupEntry.getKey();
-                    for (Map.Entry<String, String> valueEntry : lookupEntry.getValue().entrySet()) {
-                        String valueId = valueEntry.getKey();
-                        String valuesStr = valueEntry.getValue();
-                        String[] synonyms = valuesStr.split(",");
-                        boolean wordMatch = false;
-                        for (String syn : synonyms) {
-                            if (syn.equalsIgnoreCase(word)) {
-                                wordMatch = true;
-                                break;
-                            }
-                        }
-                        if (wordMatch) {
-                            wordLids.add(lookupId);
-                            wordVids.add(valueId);
-                            for (String alt : synonyms) {
-                                if (!alt.equalsIgnoreCase(word) && !wordOptions.contains(alt)) {
-                                    wordOptions.add(alt);
-                                }
-                            }
-                            if (!multipleGroups) break outer;
-                        }
-                    }
-                }
-                options.add(wordOptions);
-                lidsPer.add(wordLids);
-                vidsPer.add(wordVids);
-            }
-            generateCombinations(options, lidsPer, vidsPer, words, 0, new ArrayList<>(), new HashSet<>(), new HashSet<>(), result, toBeReplaced, new HashSet<>());
+            options.add(wordOptions);
+            lidsPer.add(wordLids);
+            vidsPer.add(wordVids);
         }
+        generateCombinations(options, lidsPer, vidsPer, words, 0, new ArrayList<>(), new HashSet<>(), new HashSet<>(), result, toBeReplaced, new HashSet<>());
         return result;
     }
 
@@ -552,10 +509,28 @@ public class RawMessageGenerator {
         }
         return variants;
     }
+    public static List<String> generate1CedVariants(String input) {
+        List<String> variants = new ArrayList<>();
+        int len = input.length();
+        String insertChar = Constants.INSERT_CHAR;
+
+        // Delete
+        if (len >= 1) variants.add(input.substring(1)); // remove first
+        if (len >= 3) variants.add(input.substring(0, len / 2) + input.substring((len / 2) + 1)); // remove middle
+        if (len >= 1) variants.add(input.substring(0, len - 1)); // remove last
+
+        // Insert
+        variants.add(insertChar + input); // insert at start
+        variants.add(input.substring(0, len / 2) + insertChar + input.substring(len / 2)); // middle
+        variants.add(input + insertChar); // insert at end
+
+        return variants;
+    }
 
     public static List<String> generate2CedVariants(String input) {
         List<String> variants = new ArrayList<>();
         int len = input.length();
+        String insertChar = Constants.INSERT_CHAR;
 
         // Delete 2 characters
         if (len >= 3) {
@@ -564,10 +539,10 @@ public class RawMessageGenerator {
             variants.add(input.substring(0, len - 2)); // remove last two
         }
 
-//        // Insert 2 characters
-//        variants.add(INSERT_CHAR + INSERT_CHAR + input); // insert two at start
-//        variants.add(input.substring(0, len / 2) + INSERT_CHAR + INSERT_CHAR + input.substring(len / 2)); // middle
-//        variants.add(input + INSERT_CHAR + INSERT_CHAR); // insert two at end
+        // Insert 2 characters
+        variants.add( insertChar + insertChar + input); // insert two at start
+        variants.add(input.substring(0, len / 2) + insertChar + insertChar + input.substring(len / 2)); // middle
+        variants.add(input + insertChar + insertChar); // insert two at end
 
         return variants;
     }
@@ -575,6 +550,7 @@ public class RawMessageGenerator {
     public static List<String> generate3CedVariants(String input) {
         List<String> variants = new ArrayList<>();
         int len = input.length();
+        String insertChar = Constants.INSERT_CHAR;
 
         // Delete 3 characters
         if (len >= 4) {
@@ -583,10 +559,10 @@ public class RawMessageGenerator {
             variants.add(input.substring(0, len - 3)); // remove last 3
         }
 
-//        // Insert 3 characters
-//        variants.add("" + INSERT_CHAR + INSERT_CHAR + INSERT_CHAR + input); // insert 3 at start
-//        variants.add(input.substring(0, len / 2) + INSERT_CHAR + INSERT_CHAR + INSERT_CHAR + input.substring(len / 2)); // middle
-//        variants.add(input + INSERT_CHAR + INSERT_CHAR + INSERT_CHAR); // end
+        // Insert 3 characters
+        variants.add(insertChar + insertChar + insertChar + input); // insert 3 at start
+        variants.add(input.substring(0, len / 2) + insertChar + insertChar + insertChar + input.substring(len / 2)); // middle
+        variants.add(input + insertChar + insertChar + insertChar); // end
 
         return variants;
     }
@@ -633,20 +609,16 @@ public class RawMessageGenerator {
             return null;
         }
     }
-    public static void writeJsonAsExcelFile(JSONArray jsonArray, String transactionService, String tagName, String webService, String watchlistType, BlockingQueue<File> queue) throws IOException, InterruptedException {
+    public static void writeJsonAsExcelFile(JSONArray jsonArray, Properties props, BlockingQueue<File> queue) throws IOException, InterruptedException {
         // Create a subfolder "out" inside it
         if (!Constants.OUTPUT_FOLDER.exists()) {
             Constants.OUTPUT_FOLDER.mkdirs();  // Create the folder if it doesn't exist
         }
 
-        // Load configuration for Excel splitting
-        Properties props = new Properties();
-        try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
-            props.load(reader);
-        } catch (IOException e) {
-            logger.error("Error reading properties file for Excel splitting: {}", e.getMessage());
-            throw e;
-        }
+        String configName = props.getProperty("configName", "");
+        String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE);
+        String tagName = props.getProperty(Constants.TAGNAME);
+        String webService = props.getProperty(Constants.WEBSERVICE);
 
         int rowLimit;
         try {
@@ -657,83 +629,130 @@ public class RawMessageGenerator {
             rowLimit = Constants.DEFAULT_ROW_LIMIT;
         }
 
-        if (jsonArray.length() <= rowLimit) {
-            // Write to a single file if splitting is not enabled or data is within limit
-            String fileName = String.format(Constants.OUTPUT_FILE_NAME_PATTERN, 1) + Constants.XLSX_EXT;
-            File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
-            writeSingleExcelFile(jsonArray, transactionService, tagName, webService, watchlistType, outputFile);
-            if (queue != null) {
-                queue.put(outputFile);
-            }
-            if (queue != null) {
-                queue.put(new File(Constants.POISON_PILL));
-            }
-            File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
+        // Check for existing files
+        File[] existingFiles = Constants.OUTPUT_FOLDER.listFiles((dir, name) ->
+            name.matches((configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName) + "_\\d+\\.xlsx"));
+        boolean hasExisting = existingFiles != null && existingFiles.length > 0;
+
+        if (!hasExisting) {
+            // No existing files, create new as before
+            if (jsonArray.length() <= rowLimit) {
+                // Write to a single file if splitting is not enabled or data is within limit
+                String baseFileName = configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName;
+                String fileName = String.format(baseFileName + "_%d", 1) + Constants.XLSX_EXT;
+                File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
+                writeSingleExcelFile(jsonArray, transactionService, tagName, webService, outputFile, false);
+                if (queue != null) {
+                    queue.put(outputFile);
+                }
+                if (queue != null) {
+                    queue.put(new File(Constants.POISON_PILL));
+                }
+            String countFileName = Constants.OUTPUT_FILE_COUNT_PATH.replace(".txt", "_" + configName + ".txt");
+            File countFile = new File(Constants.OUTPUT_FOLDER, countFileName);
             try (FileWriter fw = new FileWriter(countFile)) {
                 fw.write("1");
             } catch (IOException e) {
                 logger.error("Error writing output file count to {}: {}", countFile.getAbsolutePath(), e.getMessage());
             }
-            logger.info("Successfully wrote to Excel ({}) file.", outputFile.getName());
-            logger.info("Output file count (1) saved to: {}", countFile.getAbsolutePath());
-        } else {
-            // Split data into multiple files
-            int fileIndex = 1;
-            int startIndex = 0;
-            while (startIndex < jsonArray.length()) {
-                int endIndex = Math.min(startIndex + rowLimit, jsonArray.length());
-                JSONArray chunk = new JSONArray();
-                for (int i = startIndex; i < endIndex; i++) {
-                    chunk.put(jsonArray.getJSONObject(i));
+                logger.info("Successfully wrote to Excel ({}) file.", outputFile.getName());
+                logger.info("Output file count (1) saved to: {}", countFile.getAbsolutePath());
+            } else {
+                // Split data into multiple files
+                int fileIndex = 1;
+                int startIndex = 0;
+                while (startIndex < jsonArray.length()) {
+                    int endIndex = Math.min(startIndex + rowLimit, jsonArray.length());
+                    JSONArray chunk = new JSONArray();
+                    for (int i = startIndex; i < endIndex; i++) {
+                        chunk.put(jsonArray.getJSONObject(i));
+                    }
+                    String baseFileName = configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName;
+                    String fileName = String.format(baseFileName + "_%d", fileIndex) + Constants.XLSX_EXT;
+                    File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
+                    writeSingleExcelFile(chunk, transactionService, tagName, webService, outputFile, false);
+                    if (queue != null) {
+                        queue.put(outputFile);
+                    }
+                    fileIndex++;
+                    startIndex = endIndex;
                 }
-                String fileName = String.format(Constants.OUTPUT_FILE_NAME_PATTERN, fileIndex) + Constants.XLSX_EXT;
-                File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
-                writeSingleExcelFile(chunk, transactionService, tagName, webService, watchlistType, outputFile);
+                // Store the count of output files created, adjusting for the last increment since fileIndex is incremented after the last file
+                String countFileName = Constants.OUTPUT_FILE_COUNT_PATH.replace(".txt", "_" + configName + ".txt");
+                File countFile = new File(Constants.OUTPUT_FOLDER, countFileName);
+                int totalFiles = fileIndex - 1; // Adjust for the last increment
+                try (FileWriter fw = new FileWriter(countFile)) {
+                    fw.write(String.valueOf(totalFiles));
+                } catch (IOException e) {
+                    logger.error("Error writing output file count to {}: {}", countFile.getAbsolutePath(), e.getMessage());
+                }
+                logger.info("Successfully wrote to multiple Excel files with prefix ({}_N.xlsx).", Constants.OUTPUT_FILE_NAME + (configName.isEmpty() ? "" : "_" + configName));
+                logger.info("Output file count ({}) saved to: {}", totalFiles, countFile.getAbsolutePath());
                 if (queue != null) {
-                    queue.put(outputFile);
+                    queue.put(new File(Constants.POISON_PILL));
                 }
-                fileIndex++;
-                startIndex = endIndex;
             }
-            // Store the count of output files created, adjusting for the last increment since fileIndex is incremented after the last file
-            File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
-            int totalFiles = fileIndex - 1; // Adjust for the last increment
-            try (FileWriter fw = new FileWriter(countFile)) {
-                fw.write(String.valueOf(totalFiles));
-            } catch (IOException e) {
-            logger.error("Error writing output file count to {}: {}", countFile.getAbsolutePath(), e.getMessage());
-            }
-            logger.info("Successfully wrote to multiple Excel files with prefix ({}_N.xlsx).", Constants.OUTPUT_FILE_NAME);
-            logger.info("Output file count ({}) saved to: {}", totalFiles, countFile.getAbsolutePath());
+        } else {
+            // Existing files present, append to the first one
+            Arrays.sort(existingFiles, (f1, f2) -> {
+                try {
+                    String n1 = f1.getName().replace((configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName) + "_", "").replace(Constants.XLSX_EXT, "");
+                    String n2 = f2.getName().replace((configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName) + "_", "").replace(Constants.XLSX_EXT, "");
+                    return Integer.compare(Integer.parseInt(n1), Integer.parseInt(n2));
+                } catch (NumberFormatException e) {
+                    return f1.getName().compareTo(f2.getName());
+                }
+            });
+            File firstFile = existingFiles[0];
+            writeSingleExcelFile(jsonArray, transactionService, tagName, webService, firstFile, true);
             if (queue != null) {
+                // Put all existing files to queue, since they may have been updated
+                for (File f : existingFiles) {
+                    queue.put(f);
+                }
                 queue.put(new File(Constants.POISON_PILL));
             }
+            logger.info("Successfully appended to existing Excel ({}) file.", firstFile.getName());
         }
     }
 
-    private static void writeSingleExcelFile(JSONArray jsonArray, String transactionService, String tagName, String webService, String watchlistType, File outputFile) throws IOException {
-        // Create the Excel workbook and sheet
-        Workbook workbook = new XSSFWorkbook();
-        Sheet sheet = workbook.createSheet("Output");
+    private static void writeSingleExcelFile(JSONArray jsonArray, String transactionService, String tagName, String webService, File outputFile, boolean append) throws IOException {
+        Workbook workbook;
+        Sheet sheet;
+        int startRow;
 
-        // Header row
-        String thirdColumn = Constants.MESSAGE + transactionService.toUpperCase();
-        String[] headers = {
-                Constants.SEQ_NO,
-                Constants.RULE,
-                thirdColumn,
-                Constants.TAG,
-                Constants.SOURCE_INPUT,
-                Constants.TARGET_INPUT,
-                Constants.TARGET_COLUMN,
-                Constants.WATCHLIST,
-                Constants.NUID
-        };
+        if (append && outputFile.exists()) {
+            // Read existing workbook
+            try (FileInputStream fis = new FileInputStream(outputFile)) {
+                workbook = new XSSFWorkbook(fis);
+            }
+            sheet = workbook.getSheetAt(0);
+            startRow = sheet.getLastRowNum() + 1;
+        } else {
+            // Create new workbook
+            workbook = new XSSFWorkbook();
+            sheet = workbook.createSheet("Output");
 
-        Row headerRow = sheet.createRow(0);
-        for (int i = 0; i < headers.length; i++) {
-            Cell cell = headerRow.createCell(i);
-            cell.setCellValue(headers[i]);
+            // Header row
+            String thirdColumn = Constants.MESSAGE + transactionService.toUpperCase();
+            String[] headers = {
+                    Constants.SEQ_NO,
+                    Constants.RULE,
+                    thirdColumn,
+                    Constants.TAG,
+                    Constants.SOURCE_INPUT,
+                    Constants.TARGET_INPUT,
+                    Constants.TARGET_COLUMN,
+                    Constants.WATCHLIST,
+                    Constants.NUID
+            };
+
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+            }
+            startRow = 1;
         }
 
         // Write JSON data
@@ -750,6 +769,7 @@ public class RawMessageGenerator {
             String targetInput = additionalData.getString(Constants.ORIGINAL_VALUE);
             String targetColumn = additionalData.getString(Constants.COLUMN);
             String uid = additionalData.getString(Constants.UID);
+            String watchlistType = additionalData.getString(Constants.WATCHLIST);
             int ced = additionalData.getInt((Constants.CED));
 
             String type = "";
@@ -760,8 +780,8 @@ public class RawMessageGenerator {
 
             String ruleName = webService+" "+type;
 
-            Row row = sheet.createRow(i + 1);
-            row.createCell(0).setCellValue(i + 1);      // SeqNo
+            Row row = sheet.createRow(startRow + i);
+            row.createCell(0).setCellValue(startRow + i);      // SeqNo
             row.createCell(1).setCellValue(ruleName);         // Rule Name
             row.createCell(2).setCellValue(rawMessage); // Message <SERVICE>
             row.createCell(3).setCellValue(tagName);         // Tag
@@ -773,9 +793,10 @@ public class RawMessageGenerator {
         }
 
         // Auto-size columns
-        for (int i = 0; i < headers.length; i++) {
-            sheet.autoSizeColumn(i);
-        }
+
+//        for (int i = 0; i < 9; i++) {
+//            sheet.autoSizeColumn(i);
+//        }
 
         // Write to file
         try (FileOutputStream fileOut = new FileOutputStream(outputFile)) {

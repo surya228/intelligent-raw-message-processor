@@ -40,13 +40,13 @@ public class MessageResponseAnalyzer {
         String tagName = props.getProperty(Constants.TAGNAME);
         String msgCategory = "";
         String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE);
-        String watchListType = props.getProperty(Constants.WATCHLIST_TYPE);
+//        String watchListType = props.getProperty(Constants.WATCHLIST_TYPE);
         String webServiceId = props.getProperty(Constants.WEBSERVICE_ID);
         if (transactionService.equalsIgnoreCase("SWIFT")) msgCategory = "SWIFT";
         else if (transactionService.equalsIgnoreCase("FEDWIRE")) msgCategory = "FEDWIRE";
         else if (transactionService.equalsIgnoreCase("ISO20022")) msgCategory = "SEPA";
         logger.info("tagName: {}", tagName);
-        processAllResponses(tagName, msgCategory, watchListType, webServiceId, matchingEngine, excelFiles);
+        processAllResponses(tagName, msgCategory, webServiceId, matchingEngine, excelFiles);
 
         logger.info("=============================================================");
         logger.info("                   RESPONSE ANALYZER ENDED                   ");
@@ -56,7 +56,7 @@ public class MessageResponseAnalyzer {
         logger.info("Time taken by Message Response Analyzer: {} seconds", (endTime - startTime) / 1000L);
     }
 
-    private static void processAllResponses(String tagName, String msgCategory, String watchListType, String webServiceId, String matchingEngine, List<File> excelFiles) throws Exception {
+    private static void processAllResponses(String tagName, String msgCategory, String webServiceId, String matchingEngine, List<File> excelFiles) throws Exception {
         if (excelFiles.isEmpty()) {
             logger.info("No Excel files found to analyze.");
             return;
@@ -100,11 +100,27 @@ public class MessageResponseAnalyzer {
                     continue;
                 }
 
+                // Find the feedback column
+                int feedbackColumn = -1;
+                for (int col = headerRow.getLastCellNum() - 1; col >= 0; col--) {
+                    Cell cell = headerRow.getCell(col);
+                    if (cell != null && cell.getStringCellValue().contains("Feedback")) {
+                        feedbackColumn = col;
+                        break;
+                    }
+                }
+                if (feedbackColumn == -1) {
+                    logger.info("No Feedback column found in {}. Skipping analysis.", excelFile.getName());
+                    continue;
+                }
+
                 // Collect all transactionTokens and row data in memory using the latest processor column
                 List<Long> transactionTokens = new ArrayList<>();
                 Map<Long, Integer> tokenToRowNum = new HashMap<>();
                 Map<Long, String> tokenToTargetColumn = new HashMap<>();
+                Map<Long, String> tokenToWatchlistTypeColumn = new HashMap<>();
                 Map<Long, String> tokenToUid = new HashMap<>();
+                Map<Long, String> tokenToFeedbackString = new HashMap<>();
 
                 int rowNum = 1; // Skip header
                 for (Row row : sheet) {
@@ -128,12 +144,17 @@ public class MessageResponseAnalyzer {
                     tokenToRowNum.put(transactionToken, row.getRowNum());
 
                     Cell targetColumnCell = row.getCell(6);
+                    Cell watchlistTypeCell = row.getCell(7);
                     Cell uidCell = row.getCell(8);
+                    Cell feedbackCell = row.getCell(feedbackColumn);
                     tokenToTargetColumn.put(transactionToken, targetColumnCell != null ? targetColumnCell.getStringCellValue() : "");
+                    tokenToWatchlistTypeColumn.put(transactionToken, watchlistTypeCell != null ? watchlistTypeCell.getStringCellValue() : "");
                     tokenToUid.put(transactionToken, uidCell != null ? uidCell.getStringCellValue() : "");
+                    String feedbackValue = feedbackCell != null ? feedbackCell.getStringCellValue() : "";
+                    tokenToFeedbackString.put(transactionToken, feedbackValue);
                 }
 
-                // Bulk fetch feedback responses
+                // Bulk fetch feedback responses (with polling for missing ones)
                 Map<Long, JSONObject> feedbackMap = getBulkResponsesFromFeedbackTable(transactionTokens, msgCategory);
 
                 // Bulk fetch WLS column names
@@ -166,12 +187,26 @@ public class MessageResponseAnalyzer {
                 for (long transactionToken : transactionTokens) {
                     CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                         try {
-                            JSONObject eachResponse = feedbackMap.get(transactionToken);
+                            JSONObject eachResponse = null;
+                            String feedbackValue = tokenToFeedbackString.get(transactionToken);
+                            if (feedbackValue != null && !feedbackValue.isEmpty()) {
+                                if (Constants.VALUE_TOO_LARGE.equalsIgnoreCase(feedbackValue.trim())) {
+                                    eachResponse = feedbackMap.get(transactionToken);
+                                } else {
+                                    try {
+                                        JSONObject fullResponse = new JSONObject(feedbackValue);
+                                        eachResponse = fullResponse.getJSONObject("feedbackData");
+                                    } catch (Exception e) {
+                                        logger.warn("Failed to parse feedback from Excel for token {}: {}", transactionToken, e.getMessage());
+                                    }
+                                }
+                            }
                             if (eachResponse == null || !eachResponse.has(Constants.MATCHES)) return;
 
                             JSONArray matches = eachResponse.getJSONArray(Constants.MATCHES);
                             int truePositives = 0;
                             String targetColumnName = tokenToTargetColumn.get(transactionToken);
+                            String watchListType = tokenToWatchlistTypeColumn.get(transactionToken);
                             String uid = tokenToUid.get(transactionToken);
                             Map<Long, String> csvColumnNamesMap = tokenToCsvColumnNamesMap.getOrDefault(transactionToken, Collections.emptyMap());
 

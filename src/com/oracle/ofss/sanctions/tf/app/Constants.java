@@ -75,6 +75,11 @@ public class Constants {
     public static String CED2 =  "ced2";
     public static String CED3 =  "ced3";
 
+    // CED values for variant types
+    public static final int CED_EXACT = 0;
+    public static final int CED_STOPWORD = -1;
+    public static final int CED_SYNONYM = -2;
+
     // Database properties
     public static String JDBC_URL =  "jdbcurl";
     public static String JDBC_DRIVER =  "jdbcdriver";
@@ -110,17 +115,18 @@ public class Constants {
     public static String HOLD_ON_MSG_2 =  "Looking for Tortoise...Will find it soon";
     public static String SUCCESS_MSG =  "Heyy...Here it is";
     public static String LOAD_MSG =  "zzzz...on the way";
+    public static final String VALUE_TOO_LARGE = "value too large please check feedback api";
 
     // File names and paths
-    public static String SOURCE_FILE_NAME = "source";
     public static String CONFIG_FILE_NAME = "config";
     public static String OUTPUT_FILE_NAME = "executing";
     public static String OUTPUT_FOLDER_NAME = "out";
     public static String BIN_FOLDER_NAME = "bin";
+    public static String RUN_DETAILS_FILE_NAME = "run_details.json";
     public static String CURRENT_DIRECTORY = System.getProperty("user.dir");
     public static File PARENT_DIRECTORY = new File(CURRENT_DIRECTORY).getParentFile();
-    public static String SOURCE_FILE_PATH = PARENT_DIRECTORY+File.separator+BIN_FOLDER_NAME+File.separator+SOURCE_FILE_NAME+".json";
     public static String CONFIG_FILE_PATH = PARENT_DIRECTORY+File.separator+BIN_FOLDER_NAME+File.separator+CONFIG_FILE_NAME+".properties";
+    public static String COMMON_CONFIG_FILE_PATH = PARENT_DIRECTORY+File.separator+BIN_FOLDER_NAME+File.separator+"common.properties";
     public static File OUTPUT_FOLDER = new File(PARENT_DIRECTORY, OUTPUT_FOLDER_NAME);
 
     // Excel splitting configuration
@@ -156,7 +162,6 @@ public class Constants {
     public static final String NO_MATCH_COMMENT = "No Match";
 
     // Additional constants for cleanup
-    public static final String DEFAULT_CONFIG_BASE = "config";
     public static final String XLSX_EXT = ".xlsx";
     public static final String JSON_EXT = ".json";
     public static final int MIN_ARGS = 6;
@@ -175,6 +180,10 @@ public class Constants {
     public static final String MATCHES = "matches";
     public static final String MATCHED_WATCHLIST_ID = "matchedWatchlistId";
     public static final String RESPONSE_ID = "responseID";
+    public static String CONNECTION_ESTABLISHED =  "Connection established successfully!";
+    public static String TNS_ADMIN =  "oracle.net.tns_admin";
+    public static final String INSERT_CHAR = "X";
+
 
     // Concurrency constants
     public static final String PROCESSOR_THREADS = "processor_thread_count";
