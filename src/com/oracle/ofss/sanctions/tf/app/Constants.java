@@ -117,7 +117,6 @@ public class Constants {
     public static String LOAD_MSG =  "zzzz...on the way";
 
     // File names and paths
-    public static String SOURCE_FILE_NAME = "source";
     public static String CONFIG_FILE_NAME = "config";
     public static String OUTPUT_FILE_NAME = "executing";
     public static String OUTPUT_FOLDER_NAME = "out";
@@ -125,7 +124,6 @@ public class Constants {
     public static String RUN_DETAILS_FILE_NAME = "run_details.json";
     public static String CURRENT_DIRECTORY = System.getProperty("user.dir");
     public static File PARENT_DIRECTORY = new File(CURRENT_DIRECTORY).getParentFile();
-    public static String SOURCE_FILE_PATH = PARENT_DIRECTORY+File.separator+BIN_FOLDER_NAME+File.separator+SOURCE_FILE_NAME+".json";
     public static String CONFIG_FILE_PATH = PARENT_DIRECTORY+File.separator+BIN_FOLDER_NAME+File.separator+CONFIG_FILE_NAME+".properties";
     public static String COMMON_CONFIG_FILE_PATH = PARENT_DIRECTORY+File.separator+BIN_FOLDER_NAME+File.separator+"common.properties";
     public static File OUTPUT_FOLDER = new File(PARENT_DIRECTORY, OUTPUT_FOLDER_NAME);
@@ -163,7 +161,6 @@ public class Constants {
     public static final String NO_MATCH_COMMENT = "No Match";
 
     // Additional constants for cleanup
-    public static final String DEFAULT_CONFIG_BASE = "config";
     public static final String XLSX_EXT = ".xlsx";
     public static final String JSON_EXT = ".json";
     public static final int MIN_ARGS = 6;

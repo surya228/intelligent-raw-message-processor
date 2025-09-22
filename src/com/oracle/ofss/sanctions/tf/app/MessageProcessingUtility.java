@@ -461,8 +461,8 @@ public class MessageProcessingUtility {
         String bearerToken = "";
         try {
             Map<String, String> headers = new HashMap<>();
-            headers.put("grant_type", "client_credentials");
-            headers.put("scope", "urn:opc:idm:__myscopes__");
+            headers.put("grant_type", Constants.GRANT_TYPE);
+            headers.put("scope", Constants.SCOPE);
             URL url1 = new URL(tokenUrl);
             HttpsURLConnection httpConn1 = (HttpsURLConnection) url1.openConnection();
             String userpass = usernm + ":" + pwd;
