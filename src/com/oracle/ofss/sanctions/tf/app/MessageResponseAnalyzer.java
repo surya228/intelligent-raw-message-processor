@@ -40,13 +40,13 @@ public class MessageResponseAnalyzer {
         String tagName = props.getProperty(Constants.TAGNAME);
         String msgCategory = "";
         String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE);
-        String watchListType = props.getProperty(Constants.WATCHLIST_TYPE);
+//        String watchListType = props.getProperty(Constants.WATCHLIST_TYPE);
         String webServiceId = props.getProperty(Constants.WEBSERVICE_ID);
         if (transactionService.equalsIgnoreCase("SWIFT")) msgCategory = "SWIFT";
         else if (transactionService.equalsIgnoreCase("FEDWIRE")) msgCategory = "FEDWIRE";
         else if (transactionService.equalsIgnoreCase("ISO20022")) msgCategory = "SEPA";
         logger.info("tagName: {}", tagName);
-        processAllResponses(tagName, msgCategory, watchListType, webServiceId, matchingEngine, excelFiles, props);
+        processAllResponses(tagName, msgCategory, webServiceId, matchingEngine, excelFiles);
 
         logger.info("=============================================================");
         logger.info("                   RESPONSE ANALYZER ENDED                   ");
@@ -56,7 +56,7 @@ public class MessageResponseAnalyzer {
         logger.info("Time taken by Message Response Analyzer: {} seconds", (endTime - startTime) / 1000L);
     }
 
-    private static void processAllResponses(String tagName, String msgCategory, String watchListType, String webServiceId, String matchingEngine, List<File> excelFiles, Properties props) throws Exception {
+    private static void processAllResponses(String tagName, String msgCategory, String webServiceId, String matchingEngine, List<File> excelFiles) throws Exception {
         if (excelFiles.isEmpty()) {
             logger.info("No Excel files found to analyze.");
             return;
@@ -118,6 +118,7 @@ public class MessageResponseAnalyzer {
                 List<Long> transactionTokens = new ArrayList<>();
                 Map<Long, Integer> tokenToRowNum = new HashMap<>();
                 Map<Long, String> tokenToTargetColumn = new HashMap<>();
+                Map<Long, String> tokenToWatchlistTypeColumn = new HashMap<>();
                 Map<Long, String> tokenToUid = new HashMap<>();
                 Map<Long, String> tokenToFeedbackString = new HashMap<>();
 
@@ -143,9 +144,11 @@ public class MessageResponseAnalyzer {
                     tokenToRowNum.put(transactionToken, row.getRowNum());
 
                     Cell targetColumnCell = row.getCell(6);
+                    Cell watchlistTypeCell = row.getCell(7);
                     Cell uidCell = row.getCell(8);
                     Cell feedbackCell = row.getCell(feedbackColumn);
                     tokenToTargetColumn.put(transactionToken, targetColumnCell != null ? targetColumnCell.getStringCellValue() : "");
+                    tokenToWatchlistTypeColumn.put(transactionToken, watchlistTypeCell != null ? watchlistTypeCell.getStringCellValue() : "");
                     tokenToUid.put(transactionToken, uidCell != null ? uidCell.getStringCellValue() : "");
                     String feedbackValue = feedbackCell != null ? feedbackCell.getStringCellValue() : "";
                     tokenToFeedbackString.put(transactionToken, feedbackValue);
@@ -203,6 +206,7 @@ public class MessageResponseAnalyzer {
                             JSONArray matches = eachResponse.getJSONArray(Constants.MATCHES);
                             int truePositives = 0;
                             String targetColumnName = tokenToTargetColumn.get(transactionToken);
+                            String watchListType = tokenToWatchlistTypeColumn.get(transactionToken);
                             String uid = tokenToUid.get(transactionToken);
                             Map<Long, String> csvColumnNamesMap = tokenToCsvColumnNamesMap.getOrDefault(transactionToken, Collections.emptyMap());
 
