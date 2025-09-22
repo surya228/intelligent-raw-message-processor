@@ -38,13 +38,10 @@ public class RawMessageGenerator {
         logger.info("=============================================================");
 
         Connection databaseConnection = null;
-        JSONArray rawMessageJsonArray = null;
-        ResultSet resultSet = null;
+        JSONArray rawMessageJsonArray = new JSONArray();
 
         try {
-            // Extract configuration properties
-            String watchlistType = props.getProperty(Constants.WATCHLIST_TYPE);
-            String tableName = Constants.TABLE_WL_MAP.get(watchlistType);
+            // Extract common configuration properties
             String tagName = props.getProperty(Constants.TAGNAME);
             String webService = props.getProperty(Constants.WEBSERVICE);
             String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE);
@@ -67,9 +64,34 @@ public class RawMessageGenerator {
             logger.info("Source template for config {}: {}", configName, sourceTemplate);
 
             databaseConnection = SQLUtility.getDbConnection();
-            resultSet = prepareQueryAndGetTableData(databaseConnection, props, tableName);
 
-            rawMessageJsonArray = generateRawMessageJsonArray(resultSet, props, sourceTemplate, tableName, tagName, webserviceId, watchlistType, isStopwordEnabled, isSynonymEnabled);
+            String watchlistTypesStr = props.getProperty(Constants.WATCHLIST_TYPE);
+            String[] watchlistTypes = watchlistTypesStr.split(",");
+
+            for (String watchlistType : watchlistTypes) {
+                watchlistType = watchlistType.trim();
+                if (!Constants.TABLE_WL_MAP.containsKey(watchlistType)) {
+                    logger.error("Invalid watchlist type: {}", watchlistType);
+                    continue;
+                }
+                String tableName = Constants.TABLE_WL_MAP.get(watchlistType);
+
+                ResultSet resultSet = prepareQueryAndGetTableData(databaseConnection, props, tableName, watchlistType);
+
+                JSONArray tempArray = generateRawMessageJsonArray(resultSet, props, sourceTemplate, tableName, tagName, webserviceId, watchlistType, isStopwordEnabled, isSynonymEnabled);
+
+                for (int i = 0; i < tempArray.length(); i++) {
+                    rawMessageJsonArray.put(tempArray.getJSONObject(i));
+                }
+
+                if (resultSet != null) {
+                    try {
+                        resultSet.close();
+                    } catch (SQLException e) {
+                        logger.error("Failed to close result set for {}: {}", watchlistType, e.getMessage());
+                    }
+                }
+            }
 
             if (rawMessageJsonArray.length() > 0) {
                 writeJsonAsExcelFile(rawMessageJsonArray, props, queue);
@@ -87,13 +109,6 @@ public class RawMessageGenerator {
             e.printStackTrace();
         } finally {
             // Close resources in reverse order of creation
-            if (resultSet != null) {
-                try {
-                    resultSet.close();
-                } catch (SQLException e) {
-                    logger.error("Failed to close result set: {}", e.getMessage());
-                }
-            }
             if (databaseConnection != null) {
                 try {
                     databaseConnection.close();
@@ -146,15 +161,16 @@ public class RawMessageGenerator {
     }
 
 
-    private static ResultSet prepareQueryAndGetTableData(Connection connection, Properties props, String tableName) throws Exception {
+    private static ResultSet prepareQueryAndGetTableData(Connection connection, Properties props, String tableName, String watchlistType) throws Exception {
         PreparedStatement pst = null;
         ResultSet rs = null;
         String filter="";
-        if(props.containsKey(Constants.WHERE_CLAUSE)){
-            filter = " where "+ props.get(Constants.WHERE_CLAUSE);
+        String whereClauseKey = Constants.WHERE_CLAUSE + "_" + watchlistType.toUpperCase();
+        if(props.containsKey(whereClauseKey)){
+            filter = " WHERE "+ props.getProperty(whereClauseKey);
         }
 
-        String query = "select * from "+tableName+" "+filter;
+        String query = "SELECT * FROM "+tableName+" "+filter;
         logger.info("SQL Query generated:: {}", query);
         try {
             pst = connection.prepareStatement(query);
@@ -214,18 +230,18 @@ public class RawMessageGenerator {
                                     String lookupIds = (String) info.get("lookupIds");
                                     String lookupValueIds = (String) info.get("lookupValueIds");
                                     temp = srcFile;
-                                    updatedCount = createRawMsg(temp, variant, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, -2, uid, tagName, webserviceId, lookupIds, lookupValueIds);
+                                    updatedCount = createRawMsg(temp, variant, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, -2, uid, tagName, webserviceId, lookupIds, lookupValueIds, watchlistType);
                                 }
                             }
 
                             // 0 ced -> exact
-                            updatedCount = createRawMsg(temp, toBeReplaced, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 0, uid, tagName, webserviceId, "NA", "NA");
+                            updatedCount = createRawMsg(temp, toBeReplaced, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 0, uid, tagName, webserviceId, "NA", "NA", watchlistType);
 
                             if (props.getProperty(Constants.CED1).equalsIgnoreCase(Constants.YES)) { // 1 ced
                                 List<String> oneCedList = generate1CedVariants(toBeReplaced);
                                 for (String value : oneCedList) {
                                     temp = srcFile;
-                                    updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 1, uid, tagName, webserviceId, "NA", "NA");
+                                    updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 1, uid, tagName, webserviceId, "NA", "NA", watchlistType);
                                 }
                             }
 
@@ -233,7 +249,7 @@ public class RawMessageGenerator {
                                 List<String> twoCedList = generate2CedVariants(toBeReplaced);
                                 for (String value : twoCedList) {
                                     temp = srcFile;
-                                    updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 2, uid, tagName, webserviceId, "NA", "NA");
+                                    updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 2, uid, tagName, webserviceId, "NA", "NA", watchlistType);
                                 }
                             }
 
@@ -241,7 +257,7 @@ public class RawMessageGenerator {
                                 List<String> threeCedList = generate3CedVariants(toBeReplaced);
                                 for (String value : threeCedList) {
                                     temp = srcFile;
-                                    updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 3, uid, tagName, webserviceId, "NA", "NA");
+                                    updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 3, uid, tagName, webserviceId, "NA", "NA", watchlistType);
                                 }
                             }
 
@@ -254,7 +270,7 @@ public class RawMessageGenerator {
                                     List<String> variants = generateStopwordVariants(toBeReplaced, stop);
                                     for (String variant : variants) {
                                         String variantTemp = srcFile;
-                                        updatedCount = createRawMsg(variantTemp, variant, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, -1, uid, tagName, webserviceId, lookupId, lookupValueId);
+                                        updatedCount = createRawMsg(variantTemp, variant, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, -1, uid, tagName, webserviceId, lookupId, lookupValueId, watchlistType);
                                     }
                                 }
                             }
@@ -273,7 +289,7 @@ public class RawMessageGenerator {
     public static int createRawMsg(String temp, String value, String identifierToBeReplaced,
                                    String token, String targetColumn, String identifierToken,
                                    String tableName, JSONArray jsonArray, int updatedCount, String originalValue, int ced, String uid,
-                                   String tagName, String webserviceId, String lookupIds, String lookupValueIds){
+                                   String tagName, String webserviceId, String lookupIds, String lookupValueIds, String watchlistType){
         if (value != null) {
             logger.info("toBeReplaced: {} originalValue: {}  token: {}  column: {}  identifier: {} ced: {}", value, originalValue, token, targetColumn, identifierToBeReplaced, ced);
             identifierToBeReplaced = Constants.IDEN_PREFIX+identifierToBeReplaced;
@@ -297,6 +313,7 @@ public class RawMessageGenerator {
             additionalData.put("isSynonymPresent", (ced == -2 ? "Y" : "N"));
             additionalData.put(Constants.LOOKUP_ID, lookupIds);
             additionalData.put(Constants.LOOKUP_VALUE_ID, lookupValueIds);
+            additionalData.put(Constants.WATCHLIST, watchlistType);
             jsonArray.put(tempJson);
 
             updatedCount++;
@@ -646,7 +663,6 @@ public class RawMessageGenerator {
         String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE);
         String tagName = props.getProperty(Constants.TAGNAME);
         String webService = props.getProperty(Constants.WEBSERVICE);
-        String watchlistType = props.getProperty(Constants.WATCHLIST_TYPE);
 
         int rowLimit;
         try {
@@ -669,7 +685,7 @@ public class RawMessageGenerator {
                 String baseFileName = configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName;
                 String fileName = String.format(baseFileName + "_%d", 1) + Constants.XLSX_EXT;
                 File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
-                writeSingleExcelFile(jsonArray, transactionService, tagName, webService, watchlistType, outputFile, false);
+                writeSingleExcelFile(jsonArray, transactionService, tagName, webService, outputFile, false);
                 if (queue != null) {
                     queue.put(outputFile);
                 }
@@ -698,7 +714,7 @@ public class RawMessageGenerator {
                     String baseFileName = configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName;
                     String fileName = String.format(baseFileName + "_%d", fileIndex) + Constants.XLSX_EXT;
                     File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
-                    writeSingleExcelFile(chunk, transactionService, tagName, webService, watchlistType, outputFile, false);
+                    writeSingleExcelFile(chunk, transactionService, tagName, webService, outputFile, false);
                     if (queue != null) {
                         queue.put(outputFile);
                     }
@@ -732,7 +748,7 @@ public class RawMessageGenerator {
                 }
             });
             File firstFile = existingFiles[0];
-            writeSingleExcelFile(jsonArray, transactionService, tagName, webService, watchlistType, firstFile, true);
+            writeSingleExcelFile(jsonArray, transactionService, tagName, webService, firstFile, true);
             if (queue != null) {
                 // Put all existing files to queue, since they may have been updated
                 for (File f : existingFiles) {
@@ -744,7 +760,7 @@ public class RawMessageGenerator {
         }
     }
 
-    private static void writeSingleExcelFile(JSONArray jsonArray, String transactionService, String tagName, String webService, String watchlistType, File outputFile, boolean append) throws IOException {
+    private static void writeSingleExcelFile(JSONArray jsonArray, String transactionService, String tagName, String webService, File outputFile, boolean append) throws IOException {
         Workbook workbook;
         Sheet sheet;
         int startRow;
@@ -797,6 +813,7 @@ public class RawMessageGenerator {
             String targetInput = additionalData.getString(Constants.ORIGINAL_VALUE);
             String targetColumn = additionalData.getString(Constants.COLUMN);
             String uid = additionalData.getString(Constants.UID);
+            String watchlistType = additionalData.getString(Constants.WATCHLIST);
             int ced = additionalData.getInt((Constants.CED));
 
             String type = "";
