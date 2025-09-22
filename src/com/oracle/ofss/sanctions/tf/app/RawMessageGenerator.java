@@ -53,13 +53,13 @@ public class RawMessageGenerator {
             boolean isSynonymEnabled = Constants.YES.equalsIgnoreCase(props.getProperty("synonym"));
 
             // Validate configuration properties
-            try {
-                validateConfigProperties(watchlistType, webserviceId, isStopwordEnabled, isSynonymEnabled);
-                logger.info("Config Properties Validation Passed.");
-            } catch (Exception validationException) {
-                logger.error("Config Properties Validation Failed: {}", validationException.getMessage());
-                throw validationException;
-            }
+//            try {
+//                validateConfigProperties(watchlistType, webserviceId, isStopwordEnabled, isSynonymEnabled);
+//                logger.info("Config Properties Validation Passed.");
+//            } catch (Exception validationException) {
+//                logger.error("Config Properties Validation Failed: {}", validationException.getMessage());
+//                throw validationException;
+//            }
 
             String configName = props.getProperty("configName");
             String sourceFilePath = Constants.PARENT_DIRECTORY + File.separator + Constants.BIN_FOLDER_NAME + File.separator + configName + " source.json";
@@ -107,15 +107,6 @@ public class RawMessageGenerator {
     }
 
     private static boolean validateConfigProperties(String watchlistType, String webserviceId, boolean isStopwordEnabled, boolean isSynonymEnabled) throws Exception {
-        // Check if both synonym and stopword are enabled
-        if (isSynonymEnabled && isStopwordEnabled) {
-            throw new Exception("Cannot enable both synonym and stopword at the same time. Only one should be enabled.");
-        }
-
-        // If neither synonym nor stopword is enabled, return true
-        if (!isSynonymEnabled && !isStopwordEnabled) {
-            return true;
-        }
 
         // Define unsupported webserviceIds
         List<String> unsupportedWebserviceIds = Arrays.asList("2", "5", "6");
