@@ -182,6 +182,7 @@ public class Constants {
     public static final String RESPONSE_ID = "responseID";
     public static String CONNECTION_ESTABLISHED =  "Connection established successfully!";
     public static String TNS_ADMIN =  "oracle.net.tns_admin";
+    public static final String INSERT_CHAR = "X";
 
 
     // Concurrency constants

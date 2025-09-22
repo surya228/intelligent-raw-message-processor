@@ -224,7 +224,7 @@ public class RawMessageGenerator {
 
                         for (String toBeReplaced : toBeReplacedValues) {
                             if (isSynonymEnabled && !synonymMap.isEmpty()) {
-                                List<Map<String, Object>> variantsWithInfo = generateSynonymVariantsWithInfo(toBeReplaced, synonymMap, props);
+                                List<Map<String, Object>> variantsWithInfo = generateSynonymVariantsWithInfo(toBeReplaced, synonymMap);
                                 for (Map<String, Object> info : variantsWithInfo) {
                                     String variant = (String) info.get("variant");
                                     String lookupIds = (String) info.get("lookupIds");
@@ -320,22 +320,7 @@ public class RawMessageGenerator {
         }
         return updatedCount;
     }
-    public static List<String> generate1CedVariants(String input) {
-        List<String> variants = new ArrayList<>();
-        int len = input.length();
 
-        // Delete
-        if (len >= 1) variants.add(input.substring(1)); // remove first
-        if (len >= 3) variants.add(input.substring(0, len / 2) + input.substring((len / 2) + 1)); // remove middle
-        if (len >= 1) variants.add(input.substring(0, len - 1)); // remove last
-
-//        // Insert
-//        variants.add(INSERT_CHAR + input); // insert at start
-//        variants.add(input.substring(0, len / 2) + INSERT_CHAR + input.substring(len / 2)); // middle
-//        variants.add(input + INSERT_CHAR); // insert at end
-
-        return variants;
-    }
 
     private static List<Object[]> getRelevantStopwords(Properties props, Connection connection) throws SQLException {
         List<Object[]> stopwords = new ArrayList<>();
@@ -426,94 +411,46 @@ public class RawMessageGenerator {
         return lookupIds;
     }
 
-    private static List<Map<String, Object>> generateSynonymVariantsWithInfo(String toBeReplaced, Map<String, Map<String, String>> synonymMap, Properties props) {
+    private static List<Map<String, Object>> generateSynonymVariantsWithInfo(String toBeReplaced, Map<String, Map<String, String>> synonymMap) {
         List<Map<String, Object>> result = new ArrayList<>();
-        boolean multiword = "Y".equalsIgnoreCase(props.getProperty("synonym.multiword", "N"));
-        boolean multipleGroups = "Y".equalsIgnoreCase(props.getProperty("synonym.multipleGroups", "N"));
-
-        if (!multiword) {
-            Set<String> usedLookupIds = new HashSet<>();
-            Set<String> usedValueIds = new HashSet<>();
-            List<String> alts = new ArrayList<>();
-            boolean found = false;
-            outer: for (Map.Entry<String, Map<String, String>> lookupEntry : synonymMap.entrySet()) {
+        String[] words = toBeReplaced.split("\\s+");
+        List<List<String>> options = new ArrayList<>();
+        List<Set<String>> lidsPer = new ArrayList<>();
+        List<Set<String>> vidsPer = new ArrayList<>();
+        for (String word : words) {
+            List<String> wordOptions = new ArrayList<>();
+            wordOptions.add(word);
+            Set<String> wordLids = new HashSet<>();
+            Set<String> wordVids = new HashSet<>();
+            for (Map.Entry<String, Map<String, String>> lookupEntry : synonymMap.entrySet()) {
                 String lookupId = lookupEntry.getKey();
                 for (Map.Entry<String, String> valueEntry : lookupEntry.getValue().entrySet()) {
                     String valueId = valueEntry.getKey();
                     String valuesStr = valueEntry.getValue();
                     String[] synonyms = valuesStr.split(",");
-                    boolean matchFound = false;
+                    boolean wordMatch = false;
                     for (String syn : synonyms) {
-                        if (syn.equalsIgnoreCase(toBeReplaced)) {
-                            matchFound = true;
+                        if (syn.equalsIgnoreCase(word)) {
+                            wordMatch = true;
                             break;
                         }
                     }
-                    if (matchFound) {
-                        found = true;
-                        usedLookupIds.add(lookupId);
-                        usedValueIds.add(valueId);
+                    if (wordMatch) {
+                        wordLids.add(lookupId);
+                        wordVids.add(valueId);
                         for (String alt : synonyms) {
-                            if (!alt.equalsIgnoreCase(toBeReplaced) && !alts.contains(alt)) {
-                                alts.add(alt);
+                            if (!alt.equalsIgnoreCase(word) && !wordOptions.contains(alt)) {
+                                wordOptions.add(alt);
                             }
                         }
-                        if (!multipleGroups) break outer;
                     }
                 }
             }
-            if (!alts.isEmpty()) {
-                String lids = String.join(",", usedLookupIds);
-                String vids = String.join(",", usedValueIds);
-                for (String alt : alts) {
-                    Map<String, Object> info = new HashMap<>();
-                    info.put("variant", alt);
-                    info.put("lookupIds", lids);
-                    info.put("lookupValueIds", vids);
-                    result.add(info);
-                }
-            }
-        } else {
-            String[] words = toBeReplaced.split("\\s+");
-            List<List<String>> options = new ArrayList<>();
-            List<Set<String>> lidsPer = new ArrayList<>();
-            List<Set<String>> vidsPer = new ArrayList<>();
-            for (String word : words) {
-                List<String> wordOptions = new ArrayList<>();
-                wordOptions.add(word);
-                Set<String> wordLids = new HashSet<>();
-                Set<String> wordVids = new HashSet<>();
-                outer: for (Map.Entry<String, Map<String, String>> lookupEntry : synonymMap.entrySet()) {
-                    String lookupId = lookupEntry.getKey();
-                    for (Map.Entry<String, String> valueEntry : lookupEntry.getValue().entrySet()) {
-                        String valueId = valueEntry.getKey();
-                        String valuesStr = valueEntry.getValue();
-                        String[] synonyms = valuesStr.split(",");
-                        boolean wordMatch = false;
-                        for (String syn : synonyms) {
-                            if (syn.equalsIgnoreCase(word)) {
-                                wordMatch = true;
-                                break;
-                            }
-                        }
-                        if (wordMatch) {
-                            wordLids.add(lookupId);
-                            wordVids.add(valueId);
-                            for (String alt : synonyms) {
-                                if (!alt.equalsIgnoreCase(word) && !wordOptions.contains(alt)) {
-                                    wordOptions.add(alt);
-                                }
-                            }
-                            if (!multipleGroups) break outer;
-                        }
-                    }
-                }
-                options.add(wordOptions);
-                lidsPer.add(wordLids);
-                vidsPer.add(wordVids);
-            }
-            generateCombinations(options, lidsPer, vidsPer, words, 0, new ArrayList<>(), new HashSet<>(), new HashSet<>(), result, toBeReplaced, new HashSet<>());
+            options.add(wordOptions);
+            lidsPer.add(wordLids);
+            vidsPer.add(wordVids);
         }
+        generateCombinations(options, lidsPer, vidsPer, words, 0, new ArrayList<>(), new HashSet<>(), new HashSet<>(), result, toBeReplaced, new HashSet<>());
         return result;
     }
 
@@ -572,10 +509,28 @@ public class RawMessageGenerator {
         }
         return variants;
     }
+    public static List<String> generate1CedVariants(String input) {
+        List<String> variants = new ArrayList<>();
+        int len = input.length();
+        String insertChar = Constants.INSERT_CHAR;
+
+        // Delete
+        if (len >= 1) variants.add(input.substring(1)); // remove first
+        if (len >= 3) variants.add(input.substring(0, len / 2) + input.substring((len / 2) + 1)); // remove middle
+        if (len >= 1) variants.add(input.substring(0, len - 1)); // remove last
+
+        // Insert
+        variants.add(insertChar + input); // insert at start
+        variants.add(input.substring(0, len / 2) + insertChar + input.substring(len / 2)); // middle
+        variants.add(input + insertChar); // insert at end
+
+        return variants;
+    }
 
     public static List<String> generate2CedVariants(String input) {
         List<String> variants = new ArrayList<>();
         int len = input.length();
+        String insertChar = Constants.INSERT_CHAR;
 
         // Delete 2 characters
         if (len >= 3) {
@@ -584,10 +539,10 @@ public class RawMessageGenerator {
             variants.add(input.substring(0, len - 2)); // remove last two
         }
 
-//        // Insert 2 characters
-//        variants.add(INSERT_CHAR + INSERT_CHAR + input); // insert two at start
-//        variants.add(input.substring(0, len / 2) + INSERT_CHAR + INSERT_CHAR + input.substring(len / 2)); // middle
-//        variants.add(input + INSERT_CHAR + INSERT_CHAR); // insert two at end
+        // Insert 2 characters
+        variants.add( insertChar + insertChar + input); // insert two at start
+        variants.add(input.substring(0, len / 2) + insertChar + insertChar + input.substring(len / 2)); // middle
+        variants.add(input + insertChar + insertChar); // insert two at end
 
         return variants;
     }
@@ -595,6 +550,7 @@ public class RawMessageGenerator {
     public static List<String> generate3CedVariants(String input) {
         List<String> variants = new ArrayList<>();
         int len = input.length();
+        String insertChar = Constants.INSERT_CHAR;
 
         // Delete 3 characters
         if (len >= 4) {
@@ -603,10 +559,10 @@ public class RawMessageGenerator {
             variants.add(input.substring(0, len - 3)); // remove last 3
         }
 
-//        // Insert 3 characters
-//        variants.add("" + INSERT_CHAR + INSERT_CHAR + INSERT_CHAR + input); // insert 3 at start
-//        variants.add(input.substring(0, len / 2) + INSERT_CHAR + INSERT_CHAR + INSERT_CHAR + input.substring(len / 2)); // middle
-//        variants.add(input + INSERT_CHAR + INSERT_CHAR + INSERT_CHAR); // end
+        // Insert 3 characters
+        variants.add(insertChar + insertChar + insertChar + input); // insert 3 at start
+        variants.add(input.substring(0, len / 2) + insertChar + insertChar + insertChar + input.substring(len / 2)); // middle
+        variants.add(input + insertChar + insertChar + insertChar); // end
 
         return variants;
     }
