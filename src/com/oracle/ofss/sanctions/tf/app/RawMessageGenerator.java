@@ -216,7 +216,7 @@ public class RawMessageGenerator {
                         String[] toBeReplacedValues = tokenValue.split(";");
 
                         for (String toBeReplaced : toBeReplacedValues) {
-                            if (isSynonymEnabled) {
+                            if (isSynonymEnabled && !synonymMap.isEmpty()) {
                                 List<Map<String, Object>> variantsWithInfo = generateSynonymVariantsWithInfo(toBeReplaced, synonymMap, props);
                                 for (Map<String, Object> info : variantsWithInfo) {
                                     String variant = (String) info.get("variant");
@@ -225,47 +225,45 @@ public class RawMessageGenerator {
                                     temp = srcFile;
                                     updatedCount = createRawMsg(temp, variant, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, -2, uid, tagName, webserviceId, lookupIds, lookupValueIds);
                                 }
-                            } else {
-                                if (!isStopwordEnabled) {
-                                    // 0 ced -> exact
-                                    updatedCount = createRawMsg(temp, toBeReplaced, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 0, uid, tagName, webserviceId, "NA", "NA");
+                            }
 
-                                    if (props.getProperty(Constants.CED1).equalsIgnoreCase(Constants.YES)) { // 1 ced
-                                        List<String> oneCedList = generate1CedVariants(toBeReplaced);
-                                        for (String value : oneCedList) {
-                                            temp = srcFile;
-                                            updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 1, uid, tagName, webserviceId, "NA", "NA");
-                                        }
-                                    }
+                            // 0 ced -> exact
+                            updatedCount = createRawMsg(temp, toBeReplaced, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 0, uid, tagName, webserviceId, "NA", "NA");
 
-                                    if (props.getProperty(Constants.CED2).equalsIgnoreCase(Constants.YES)) { // 2 ced
-                                        List<String> twoCedList = generate2CedVariants(toBeReplaced);
-                                        for (String value : twoCedList) {
-                                            temp = srcFile;
-                                            updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 2, uid, tagName, webserviceId, "NA", "NA");
-                                        }
-                                    }
-
-                                    if (props.getProperty(Constants.CED3).equalsIgnoreCase(Constants.YES)) { // 3 ced
-                                        List<String> threeCedList = generate3CedVariants(toBeReplaced);
-                                        for (String value : threeCedList) {
-                                            temp = srcFile;
-                                            updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 3, uid, tagName, webserviceId, "NA", "NA");
-                                        }
-                                    }
+                            if (props.getProperty(Constants.CED1).equalsIgnoreCase(Constants.YES)) { // 1 ced
+                                List<String> oneCedList = generate1CedVariants(toBeReplaced);
+                                for (String value : oneCedList) {
+                                    temp = srcFile;
+                                    updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 1, uid, tagName, webserviceId, "NA", "NA");
                                 }
+                            }
 
-                                // Stopword variants
-                                if (isStopwordEnabled && stopwords != null && !stopwords.isEmpty()) {
-                                    for (Object[] pair : stopwords) {
-                                        String stop = (String) pair[0];
-                                        String lookupId = (String) pair[1];
-                                        String lookupValueId = (String) pair[2];
-                                        List<String> variants = generateStopwordVariants(toBeReplaced, stop);
-                                        for (String variant : variants) {
-                                            String variantTemp = srcFile;
-                                            updatedCount = createRawMsg(variantTemp, variant, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, -1, uid, tagName, webserviceId, lookupId, lookupValueId);
-                                        }
+                            if (props.getProperty(Constants.CED2).equalsIgnoreCase(Constants.YES)) { // 2 ced
+                                List<String> twoCedList = generate2CedVariants(toBeReplaced);
+                                for (String value : twoCedList) {
+                                    temp = srcFile;
+                                    updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 2, uid, tagName, webserviceId, "NA", "NA");
+                                }
+                            }
+
+                            if (props.getProperty(Constants.CED3).equalsIgnoreCase(Constants.YES)) { // 3 ced
+                                List<String> threeCedList = generate3CedVariants(toBeReplaced);
+                                for (String value : threeCedList) {
+                                    temp = srcFile;
+                                    updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 3, uid, tagName, webserviceId, "NA", "NA");
+                                }
+                            }
+
+                            // Stopword variants
+                            if (isStopwordEnabled && stopwords != null && !stopwords.isEmpty()) {
+                                for (Object[] pair : stopwords) {
+                                    String stop = (String) pair[0];
+                                    String lookupId = (String) pair[1];
+                                    String lookupValueId = (String) pair[2];
+                                    List<String> variants = generateStopwordVariants(toBeReplaced, stop);
+                                    for (String variant : variants) {
+                                        String variantTemp = srcFile;
+                                        updatedCount = createRawMsg(variantTemp, variant, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, -1, uid, tagName, webserviceId, lookupId, lookupValueId);
                                     }
                                 }
                             }
