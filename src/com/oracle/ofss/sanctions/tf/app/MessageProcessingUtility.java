@@ -20,6 +20,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.openxml4j.util.ZipSecureFile;
 import org.json.JSONObject;
 import org.json.JSONArray;
 import org.slf4j.Logger;
@@ -80,6 +81,18 @@ public class MessageProcessingUtility {
 
         for (File excelFile : excelFiles) {
             logger.info("Processing file: {}", excelFile.getName());
+
+            // Check file size limit
+            long maxSize = Long.parseLong(props.getProperty(Constants.EXCEL_MAX_FILE_SIZE, String.valueOf(Constants.DEFAULT_MAX_EXCEL_FILE_SIZE)));
+            if (excelFile.length() > maxSize) {
+                logger.error("Excel file {} exceeds maximum size limit of {} bytes. Skipping.", excelFile.getName(), maxSize);
+                continue;
+            }
+
+            // Set zip bomb protection
+            double minRatio = Double.parseDouble(props.getProperty(Constants.EXCEL_MIN_INFLATE_RATIO, String.valueOf(Constants.DEFAULT_MIN_INFLATE_RATIO)));
+            ZipSecureFile.setMinInflateRatio(minRatio);
+
             try (FileInputStream fis = new FileInputStream(excelFile);
                  Workbook workbook = new XSSFWorkbook(fis)) {
                 Sheet sheet = workbook.getSheetAt(0);

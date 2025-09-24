@@ -10,6 +10,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.openxml4j.util.ZipSecureFile;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -46,7 +47,7 @@ public class MessageResponseAnalyzer {
         else if (transactionService.equalsIgnoreCase("FEDWIRE")) msgCategory = "FEDWIRE";
         else if (transactionService.equalsIgnoreCase("ISO20022")) msgCategory = "SEPA";
         logger.info("tagName: {}", tagName);
-        processAllResponses(tagName, msgCategory, webServiceId, matchingEngine, excelFiles);
+        processAllResponses(tagName, msgCategory, webServiceId, matchingEngine, excelFiles, props);
 
         logger.info("=============================================================");
         logger.info("                   RESPONSE ANALYZER ENDED                   ");
@@ -56,7 +57,7 @@ public class MessageResponseAnalyzer {
         logger.info("Time taken by Message Response Analyzer: {} seconds", (endTime - startTime) / 1000L);
     }
 
-    private static void processAllResponses(String tagName, String msgCategory, String webServiceId, String matchingEngine, List<File> excelFiles) throws Exception {
+    private static void processAllResponses(String tagName, String msgCategory, String webServiceId, String matchingEngine, List<File> excelFiles, Properties props) throws Exception {
         if (excelFiles.isEmpty()) {
             logger.info("No Excel files found to analyze.");
             return;
@@ -64,6 +65,18 @@ public class MessageResponseAnalyzer {
 
         for (File excelFile : excelFiles) {
             logger.info("Analyzing file: {}", excelFile.getName());
+
+            // Check file size limit
+            long maxSize = Long.parseLong(props.getProperty(Constants.EXCEL_MAX_FILE_SIZE, String.valueOf(Constants.DEFAULT_MAX_EXCEL_FILE_SIZE)));
+            if (excelFile.length() > maxSize) {
+                logger.error("Excel file {} exceeds maximum size limit of {} bytes. Skipping.", excelFile.getName(), maxSize);
+                continue;
+            }
+
+            // Set zip bomb protection
+            double minRatio = Double.parseDouble(props.getProperty(Constants.EXCEL_MIN_INFLATE_RATIO, String.valueOf(Constants.DEFAULT_MIN_INFLATE_RATIO)));
+            ZipSecureFile.setMinInflateRatio(minRatio);
+
             try (FileInputStream fis = new FileInputStream(excelFile);
                  Workbook workbook = new XSSFWorkbook(fis)) {
 
