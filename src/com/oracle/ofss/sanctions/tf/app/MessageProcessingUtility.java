@@ -34,6 +34,7 @@ public class MessageProcessingUtility {
     private static long bearerTokenRefreshInterval = Constants.DEFAULT_REFRESH_INTERVAL_MIN;
     private static String restartFlag = Constants.NO;
     private static int retryMaxCount = Constants.DEFAULT_RETRY_MAX;
+    private static long retryInterval = 5000;
     private static String retryRequiredFlag = Constants.YES;
     private static SimpleDateFormat sdf = new SimpleDateFormat(Constants.DATE_FORMAT);
     private static final AtomicInteger retryRequestNumber = new AtomicInteger(0);
@@ -49,12 +50,12 @@ public class MessageProcessingUtility {
         logger.info("                   MESSAGE POSTING STARTED                   ");
         logger.info("=============================================================");
 
-        long maxIndex = getMaxIndex(props, "msgPosting.");
-        if (maxIndex < Constants.MIN_ARGS) {
-            logger.info("Invalid arguments");
-            logger.info("Please send Url, filepath, tokenurl, Username and Password as arguments");
-            return;
-        }
+//        long maxIndex = getMaxIndex(props, "msgPosting.");
+//        if (maxIndex < Constants.MIN_ARGS) {
+//            logger.info("Invalid arguments");
+//            logger.info("Please send Url, filepath, tokenurl, Username and Password as arguments");
+//            return;
+//        }
 
         String tokenUrl = props.getProperty(Constants.TOKEN_URL);
         String usernm = props.getProperty(Constants.CLIENT_ID);
@@ -69,10 +70,10 @@ public class MessageProcessingUtility {
         String webServiceId = props.getProperty(Constants.WEBSERVICE_ID);
         String watchlistType = props.getProperty(Constants.WATCHLIST_TYPE);
 
-        if (maxIndex >= 10) {
-            configureRetryParameters(props);
-            logger.info("UserDefinedParams:::retryRequiredFlag={}; retryMaxCount={}; bearerTokenRefreshInterval={}min(s); restartFlag={}", retryRequiredFlag, retryMaxCount, bearerTokenRefreshInterval, restartFlag);
-        }
+
+        configureRetryParameters(props);
+        logger.info("UserDefinedParams:::retryRequiredFlag={}; retryMaxCount={}; retryInterval={}ms; bearerTokenRefreshInterval={}min(s); restartFlag={}", retryRequiredFlag, retryMaxCount, retryInterval, bearerTokenRefreshInterval, restartFlag);
+
 
         int processorThreads = Integer.parseInt(props.getProperty(Constants.PROCESSOR_POSTING_THREADS, String.valueOf(Constants.DEFAULT_THREAD_COUNT)));
 
@@ -145,7 +146,7 @@ public class MessageProcessingUtility {
 
                 Map<String, String> failedRequestMap = processRequests(seqIdToRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId, watchlistType, processorThreads);
 
-                if (!failedRequestMap.isEmpty()) {
+                if (Constants.YES.equalsIgnoreCase(restartFlag) && !failedRequestMap.isEmpty()) {
                     logger.info("Job is not done yet for {}...", excelFile.getName());
                     failedRequestMap = processRequests(failedRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId, watchlistType, processorThreads);
                 }
@@ -179,10 +180,14 @@ public class MessageProcessingUtility {
     private static void configureRetryParameters(Properties props) {
         retryRequiredFlag = props.getProperty(Constants.RETRY_REQUIRED_FLAG);
         String retryMaxArg = props.getProperty(Constants.RETRY_MAX_COUNT);
+        String retryIntervalArg = props.getProperty(Constants.RETRY_INTERVAL);
         String bearerTokenRefreshArg = props.getProperty(Constants.RETRY_REFRESH_INTERVAL);
         String restartFlagArg = props.getProperty(Constants.RESTART_FLAG);
         if (!retryMaxArg.isEmpty()) {
             retryMaxCount = Integer.parseInt(retryMaxArg);
+        }
+        if (!retryIntervalArg.isEmpty()) {
+            retryInterval = Long.parseLong(retryIntervalArg);
         }
         if (!restartFlagArg.isEmpty()) {
             restartFlag = restartFlagArg;
@@ -212,7 +217,7 @@ public class MessageProcessingUtility {
                 do {
                     if (retryCount > 0) {
                         try {
-                            Thread.sleep(5000);
+                            Thread.sleep(retryInterval);
                         } catch (InterruptedException ie) {
                             Thread.currentThread().interrupt();
                         }

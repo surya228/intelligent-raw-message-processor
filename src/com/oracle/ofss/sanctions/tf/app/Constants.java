@@ -60,6 +60,7 @@ public class Constants {
     public static String NAMESPACE = "msgPosting.namespace";
     public static String RETRY_REQUIRED_FLAG = "msgPosting.retryRequiredFlag";
     public static String RETRY_MAX_COUNT = "msgPosting.retryMaxCount";
+    public static String RETRY_INTERVAL = "msgPosting.retryInterval";
     public static String RETRY_REFRESH_INTERVAL = "msgPosting.bearerTokenRefreshInterval";
     public static String RESTART_FLAG = "msgPosting.restartFlag";
     public static String POSTING_ENDPOINT = "-transaction-service/sync/process";
