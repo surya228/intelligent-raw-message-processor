@@ -192,8 +192,11 @@ public class Constants {
 
 
     // Concurrency constants
-    public static final String PROCESSOR_THREADS = "processor_thread_count";
+    public static final String PROCESSOR_QUEUE_THREADS = "processor_queue_thread_count";
+    public static final String PROCESSOR_POSTING_THREADS = "processor_posting_thread_count";
+    public static final String ANALYZER_QUEUE_THREADS = "analyzer_queue_thread_count";
     public static final String ANALYZER_THREADS = "analyzer_thread_count";
     public static final String POISON_PILL = "POISON_PILL";
     public static final int DEFAULT_THREAD_COUNT = 2;
+    public static final int DEFAULT_QUEUE_THREAD_COUNT = 1;
 }
