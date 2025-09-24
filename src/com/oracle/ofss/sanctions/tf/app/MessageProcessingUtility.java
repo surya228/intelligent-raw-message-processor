@@ -278,7 +278,7 @@ public class MessageProcessingUtility {
                         }
                     }
                     retryCount++;
-                } while (Constants.YES.equalsIgnoreCase(retryRequiredFlag) && responseCode > 399 && retryCount <= retryMaxCount);
+                } while (Constants.YES.equalsIgnoreCase(retryRequiredFlag) && responseCode > 400 && retryCount <= retryMaxCount);
 
                 logger.info("ResponseCode: {}", responseCode);
 
@@ -297,9 +297,9 @@ public class MessageProcessingUtility {
                 String feedbackStatus = "NA";
                 long filteredCount = 0;
 
-                boolean isErrorToHandle = (responseCode == 400 || responseCode == 500 || responseCode == Constants.SERVICE_UNAVAILABLE);
+                boolean isErrorToHandle = (responseCode <= 400 || responseCode == 500 || responseCode == Constants.SERVICE_UNAVAILABLE);
 
-                if (responseCode <= 399 || isErrorToHandle) {
+                if (isErrorToHandle) {
                     // Try to parse JSON for transaction token
                     try {
                         JSONObject responseJson = new JSONObject(apiResponse.toString());
@@ -374,7 +374,7 @@ public class MessageProcessingUtility {
                     }
                 }
 
-                if (responseCode > 399) {
+                if (responseCode > 400) {
                     failedRequestMap.put(seqId, requestBody);
                 }
             }, executor);
