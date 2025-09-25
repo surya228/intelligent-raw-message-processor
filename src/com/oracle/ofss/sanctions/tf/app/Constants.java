@@ -60,6 +60,7 @@ public class Constants {
     public static String NAMESPACE = "msgPosting.namespace";
     public static String RETRY_REQUIRED_FLAG = "msgPosting.retryRequiredFlag";
     public static String RETRY_MAX_COUNT = "msgPosting.retryMaxCount";
+    public static String RETRY_INTERVAL = "msgPosting.retryInterval";
     public static String RETRY_REFRESH_INTERVAL = "msgPosting.bearerTokenRefreshInterval";
     public static String RESTART_FLAG = "msgPosting.restartFlag";
     public static String POSTING_ENDPOINT = "-transaction-service/sync/process";
@@ -135,6 +136,12 @@ public class Constants {
     public static String OUTPUT_FILE_NAME_PATTERN = OUTPUT_FILE_NAME+"_%d";
     public static String OUTPUT_FILE_COUNT_PATH = "generated_file_count.txt";
 
+    // Excel zip bomb protection
+    public static String EXCEL_MAX_FILE_SIZE = "excel.maxFileSize";
+    public static String EXCEL_MIN_INFLATE_RATIO = "excel.minInflateRatio";
+    public static final long DEFAULT_MAX_EXCEL_FILE_SIZE = 100L * 1024 * 1024; // 100MB
+    public static final double DEFAULT_MIN_INFLATE_RATIO = 0.01d; // 1%
+
     // Status strings
     public static String PASS = "PASS";
     public static String FAIL = "FAIL";
@@ -186,8 +193,11 @@ public class Constants {
 
 
     // Concurrency constants
-    public static final String PROCESSOR_THREADS = "processor_thread_count";
+    public static final String PROCESSOR_QUEUE_THREADS = "processor_queue_thread_count";
+    public static final String PROCESSOR_POSTING_THREADS = "processor_posting_thread_count";
+    public static final String ANALYZER_QUEUE_THREADS = "analyzer_queue_thread_count";
     public static final String ANALYZER_THREADS = "analyzer_thread_count";
     public static final String POISON_PILL = "POISON_PILL";
     public static final int DEFAULT_THREAD_COUNT = 2;
+    public static final int DEFAULT_QUEUE_THREAD_COUNT = 1;
 }

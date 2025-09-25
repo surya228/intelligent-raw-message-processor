@@ -10,7 +10,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,7 +21,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.Scanner;
 
 public class Main {
     /**
@@ -300,19 +298,19 @@ public class Main {
      * @param props Properties containing configuration details like webservice name.
      */
     private static void runProcessing(String matchingEngine, List<File> excelFiles, Properties props, boolean isToggle, boolean isFinalRun, String renamePrefix, String startDate, String startTimeStr, String configName) throws Exception {
-        int processorThreads = Integer.parseInt(props.getProperty(Constants.PROCESSOR_THREADS, String.valueOf(Constants.DEFAULT_THREAD_COUNT)));
-        int analyzerThreads = Integer.parseInt(props.getProperty(Constants.ANALYZER_THREADS, String.valueOf(Constants.DEFAULT_THREAD_COUNT)));
+        int processorQueueThreads = Integer.parseInt(props.getProperty(Constants.PROCESSOR_QUEUE_THREADS, String.valueOf(Constants.DEFAULT_QUEUE_THREAD_COUNT)));
+        int analyzerQueueThreads = Integer.parseInt(props.getProperty(Constants.ANALYZER_QUEUE_THREADS, String.valueOf(Constants.DEFAULT_QUEUE_THREAD_COUNT)));
 
         BlockingQueue<File> processorQueue = new LinkedBlockingQueue<>();
         BlockingQueue<File> analyzerQueue = new LinkedBlockingQueue<>();
 
-        ExecutorService processorPool = Executors.newFixedThreadPool(processorThreads);
-        ExecutorService analyzerPool = Executors.newFixedThreadPool(analyzerThreads);
+        ExecutorService processorPool = Executors.newFixedThreadPool(processorQueueThreads);
+        ExecutorService analyzerPool = Executors.newFixedThreadPool(analyzerQueueThreads);
 
-        for (int i = 0; i < processorThreads; i++) {
+        for (int i = 0; i < processorQueueThreads; i++) {
             processorPool.submit(new ProcessorRunnable(processorQueue, analyzerQueue, matchingEngine, props));
         }
-        for (int i = 0; i < analyzerThreads; i++) {
+        for (int i = 0; i < analyzerQueueThreads; i++) {
             analyzerPool.submit(new AnalyzerRunnable(analyzerQueue, matchingEngine, isToggle, isFinalRun, renamePrefix, startDate, startTimeStr, props));
         }
 
@@ -322,7 +320,7 @@ public class Main {
         }
 
         // Put one poison pill per processor thread
-        for (int i = 0; i < processorThreads; i++) {
+        for (int i = 0; i < processorQueueThreads; i++) {
             processorQueue.put(new File(Constants.POISON_PILL));
         }
 
@@ -330,7 +328,7 @@ public class Main {
         processorPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
 
         // Put one poison pill per analyzer thread
-        for (int i = 0; i < analyzerThreads; i++) {
+        for (int i = 0; i < analyzerQueueThreads; i++) {
             analyzerQueue.put(new File(Constants.POISON_PILL));
         }
 

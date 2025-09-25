@@ -5,21 +5,22 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import java.util.Base64;
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLSession;
+
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.openxml4j.util.ZipSecureFile;
 import org.json.JSONObject;
 import org.json.JSONArray;
 import org.slf4j.Logger;
@@ -33,6 +34,7 @@ public class MessageProcessingUtility {
     private static long bearerTokenRefreshInterval = Constants.DEFAULT_REFRESH_INTERVAL_MIN;
     private static String restartFlag = Constants.NO;
     private static int retryMaxCount = Constants.DEFAULT_RETRY_MAX;
+    private static long retryInterval = 5000;
     private static String retryRequiredFlag = Constants.YES;
     private static SimpleDateFormat sdf = new SimpleDateFormat(Constants.DATE_FORMAT);
     private static final AtomicInteger retryRequestNumber = new AtomicInteger(0);
@@ -48,12 +50,12 @@ public class MessageProcessingUtility {
         logger.info("                   MESSAGE POSTING STARTED                   ");
         logger.info("=============================================================");
 
-        long maxIndex = getMaxIndex(props, "msgPosting.");
-        if (maxIndex < Constants.MIN_ARGS) {
-            logger.info("Invalid arguments");
-            logger.info("Please send Url, filepath, tokenurl, Username and Password as arguments");
-            return;
-        }
+//        long maxIndex = getMaxIndex(props, "msgPosting.");
+//        if (maxIndex < Constants.MIN_ARGS) {
+//            logger.info("Invalid arguments");
+//            logger.info("Please send Url, filepath, tokenurl, Username and Password as arguments");
+//            return;
+//        }
 
         String tokenUrl = props.getProperty(Constants.TOKEN_URL);
         String usernm = props.getProperty(Constants.CLIENT_ID);
@@ -68,10 +70,12 @@ public class MessageProcessingUtility {
         String webServiceId = props.getProperty(Constants.WEBSERVICE_ID);
         String watchlistType = props.getProperty(Constants.WATCHLIST_TYPE);
 
-        if (maxIndex >= 10) {
-            configureRetryParameters(props);
-            logger.info("UserDefinedParams:::retryRequiredFlag={}; retryMaxCount={}; bearerTokenRefreshInterval={}min(s); restartFlag={}", retryRequiredFlag, retryMaxCount, bearerTokenRefreshInterval, restartFlag);
-        }
+
+        configureRetryParameters(props);
+        logger.info("UserDefinedParams:::retryRequiredFlag={}; retryMaxCount={}; retryInterval={}ms; bearerTokenRefreshInterval={}min(s); restartFlag={}", retryRequiredFlag, retryMaxCount, retryInterval, bearerTokenRefreshInterval, restartFlag);
+
+
+        int processorThreads = Integer.parseInt(props.getProperty(Constants.PROCESSOR_POSTING_THREADS, String.valueOf(Constants.DEFAULT_THREAD_COUNT)));
 
         if (excelFiles.isEmpty()) {
             logger.info("No Excel files found to process.");
@@ -80,6 +84,18 @@ public class MessageProcessingUtility {
 
         for (File excelFile : excelFiles) {
             logger.info("Processing file: {}", excelFile.getName());
+
+            // Check file size limit
+            long maxSize = Long.parseLong(props.getProperty(Constants.EXCEL_MAX_FILE_SIZE, String.valueOf(Constants.DEFAULT_MAX_EXCEL_FILE_SIZE)));
+            if (excelFile.length() > maxSize) {
+                logger.error("Excel file {} exceeds maximum size limit of {} bytes. Skipping.", excelFile.getName(), maxSize);
+                continue;
+            }
+
+            // Set zip bomb protection
+            double minRatio = Double.parseDouble(props.getProperty(Constants.EXCEL_MIN_INFLATE_RATIO, String.valueOf(Constants.DEFAULT_MIN_INFLATE_RATIO)));
+            ZipSecureFile.setMinInflateRatio(minRatio);
+
             try (FileInputStream fis = new FileInputStream(excelFile);
                  Workbook workbook = new XSSFWorkbook(fis)) {
                 Sheet sheet = workbook.getSheetAt(0);
@@ -128,11 +144,11 @@ public class MessageProcessingUtility {
 
                 logger.info("size of seqIdToRequestMap in {} is {}", excelFile.getName(), seqIdToRequestMap.size());
 
-                Map<String, String> failedRequestMap = processRequests(seqIdToRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId, watchlistType);
+                Map<String, String> failedRequestMap = processRequests(seqIdToRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId, watchlistType, processorThreads);
 
-                if (!failedRequestMap.isEmpty()) {
+                if (Constants.YES.equalsIgnoreCase(restartFlag) && !failedRequestMap.isEmpty()) {
                     logger.info("Job is not done yet for {}...", excelFile.getName());
-                    failedRequestMap = processRequests(failedRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId, watchlistType);
+                    failedRequestMap = processRequests(failedRequestMap, tokenUrl, usernm, pwd, url, sheet, seqIdToRowNum, formatter, processorStartColumn, webServiceId, watchlistType, processorThreads);
                 }
 
                 // Auto-size new columns except the last (feedback) one
@@ -164,10 +180,14 @@ public class MessageProcessingUtility {
     private static void configureRetryParameters(Properties props) {
         retryRequiredFlag = props.getProperty(Constants.RETRY_REQUIRED_FLAG);
         String retryMaxArg = props.getProperty(Constants.RETRY_MAX_COUNT);
+        String retryIntervalArg = props.getProperty(Constants.RETRY_INTERVAL);
         String bearerTokenRefreshArg = props.getProperty(Constants.RETRY_REFRESH_INTERVAL);
         String restartFlagArg = props.getProperty(Constants.RESTART_FLAG);
         if (!retryMaxArg.isEmpty()) {
             retryMaxCount = Integer.parseInt(retryMaxArg);
+        }
+        if (!retryIntervalArg.isEmpty()) {
+            retryInterval = Long.parseLong(retryIntervalArg);
         }
         if (!restartFlagArg.isEmpty()) {
             restartFlag = restartFlagArg;
@@ -177,164 +197,151 @@ public class MessageProcessingUtility {
         }
     }
 
-    private static Map<String, String> processRequests(Map<String, String> seqIdToRequestMap, String tokenUrl, String usernm, String pwd, String url, Sheet sheet, Map<String, Integer> seqIdToRowNum, DataFormatter formatter, int processorStartColumn, String webServiceId, String watchlistType) {
+    private static Map<String, String> processRequests(Map<String, String> seqIdToRequestMap, String tokenUrl, String usernm, String pwd, String url, Sheet sheet, Map<String, Integer> seqIdToRowNum, DataFormatter formatter, int processorStartColumn, String webServiceId, String watchlistType, int processorThreads) {
         Map<String, String> failedRequestMap = new ConcurrentHashMap<>();
 
-        seqIdToRequestMap.entrySet().parallelStream().forEach(entry -> {
+        ExecutorService executor = Executors.newFixedThreadPool(processorThreads);
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+
+        for (Map.Entry<String, String> entry : seqIdToRequestMap.entrySet()) {
             String seqId = entry.getKey();
             String requestBody = entry.getValue();
-            long startTime = System.currentTimeMillis();
-            int retryCount = 0;
-            int responseCode = 500;
-            StringBuilder apiResponse = new StringBuilder();
-            BufferedReader br = null;
+            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                long startTime = System.currentTimeMillis();
+                int retryCount = 0;
+                int responseCode = 500;
+                StringBuilder apiResponse = new StringBuilder();
+                BufferedReader br = null;
 
-            logger.info("Executing REST call with SeqId: {}", seqId);
-            do {
-                if (retryCount > 0) {
-                    try {
-                        Thread.sleep(5000);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                    }
-                    logger.info("Waiting for REST call to complete...");
-                }
-                int currentRetry = retryRequestNumber.incrementAndGet();
-
-                String bearerToken;
-                synchronized (tokenLock) {
-                    bearerToken = getAccessToken(tokenUrl, usernm, pwd);
-                }
-                logger.info("Access token: {}", bearerToken);
-
-                try {
-                    URL resturl = new URL(url + "?reqId=" + currentRetry);
-                    HttpsURLConnection conn = (HttpsURLConnection) resturl.openConnection();
-                    conn.setRequestMethod("POST");
-                    conn.setRequestProperty("Content-Type", Constants.CONTENT_TYPE_JSON);
-                    conn.setRequestProperty("ofs_remote_user", "OFS_SRV_ACCT");
-                    conn.setRequestProperty("accept-language", "en-US,en-U");
-                    conn.setRequestProperty("authorization", Constants.AUTH_BEARER_PREFIX + bearerToken);
-                    conn.setRequestProperty("idcs_remote_user", "appuser");
-                    conn.setRequestProperty("locale", "en-US");
-                    conn.setHostnameVerifier((hostname, sslSession) -> true);
-                    conn.setDoOutput(true);
-                    try (OutputStream os = conn.getOutputStream()) {
-                        os.write(requestBody.getBytes(Constants.ENCODER));
-                        os.flush();
-                    }
-
-                    responseCode = conn.getResponseCode();
-                    if (responseCode >= 100 && responseCode <= 399) {
-                        br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                    } else {
-                        br = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
-                    }
-
-                    apiResponse = new StringBuilder();
-                    String output;
-                    while ((output = br.readLine()) != null) {
-                        apiResponse.append(output);
-                    }
-                    br.close();
-                    conn.disconnect();
-
-                    logger.info("Waiting for Response: {}", getResponseMsg(responseCode));
-                    logger.info("api response::: {}", apiResponse);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    responseCode = 500; // Treat as error for retry
-                } finally {
-                    if (br != null) {
+                logger.info("Executing REST call with SeqId: {}", seqId);
+                do {
+                    if (retryCount > 0) {
                         try {
-                            br.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                            Thread.sleep(retryInterval);
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                        }
+                        logger.info("Waiting for REST call to complete...");
+                    }
+                    int currentRetry = retryRequestNumber.incrementAndGet();
+
+                    String bearerToken;
+                    synchronized (tokenLock) {
+                        bearerToken = getAccessToken(tokenUrl, usernm, pwd);
+                    }
+                    logger.info("Access token: {}", bearerToken);
+
+                    try {
+                        URL resturl = new URL(url + "?reqId=" + currentRetry);
+                        HttpsURLConnection conn = (HttpsURLConnection) resturl.openConnection();
+                        conn.setRequestMethod("POST");
+                        conn.setRequestProperty("Content-Type", Constants.CONTENT_TYPE_JSON);
+                        conn.setRequestProperty("ofs_remote_user", "OFS_SRV_ACCT");
+                        conn.setRequestProperty("accept-language", "en-US,en-U");
+                        conn.setRequestProperty("authorization", Constants.AUTH_BEARER_PREFIX + bearerToken);
+                        conn.setRequestProperty("idcs_remote_user", "appuser");
+                        conn.setRequestProperty("locale", "en-US");
+                        conn.setHostnameVerifier((hostname, sslSession) -> true);
+                        conn.setDoOutput(true);
+                        try (OutputStream os = conn.getOutputStream()) {
+                            os.write(requestBody.getBytes(Constants.ENCODER));
+                            os.flush();
+                        }
+
+                        responseCode = conn.getResponseCode();
+                        if (responseCode >= 100 && responseCode <= 399) {
+                            br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                        } else {
+                            br = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
+                        }
+
+                        apiResponse = new StringBuilder();
+                        String output;
+                        while ((output = br.readLine()) != null) {
+                            apiResponse.append(output);
+                        }
+                        br.close();
+                        conn.disconnect();
+
+                        logger.info("Waiting for Response: {}", getResponseMsg(responseCode));
+                        logger.info("api response::: {}", apiResponse);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        responseCode = 500; // Treat as error for retry
+                    } finally {
+                        if (br != null) {
+                            try {
+                                br.close();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
+                    retryCount++;
+                } while (Constants.YES.equalsIgnoreCase(retryRequiredFlag) && responseCode > 400 && retryCount <= retryMaxCount);
+
+                logger.info("ResponseCode: {}", responseCode);
+
+                long endTime = System.currentTimeMillis();
+
+                logger.info("Time taken for rest call: {} seconds", (endTime - startTime) / 1000L);
+
+                String responseString = apiResponse.toString();
+                if (responseString.length() > 32767) {
+                    responseString = Constants.VALUE_TOO_LARGE;
                 }
-                retryCount++;
-            } while (Constants.YES.equalsIgnoreCase(retryRequiredFlag) && responseCode > 399 && retryCount <= retryMaxCount);
 
-            logger.info("ResponseCode: {}", responseCode);
+                String tokenString = "NA";
+                long matchCount = 0;
+                String status = "NA";
+                String feedbackStatus = "NA";
+                long filteredCount = 0;
 
-            long endTime = System.currentTimeMillis();
+                boolean isErrorToHandle = (responseCode <= 400 || responseCode == 500 || responseCode == Constants.SERVICE_UNAVAILABLE);
 
-            logger.info("Time taken for rest call: {} seconds", (endTime - startTime) / 1000L);
+                if (isErrorToHandle) {
+                    // Try to parse JSON for transaction token
+                    try {
+                        JSONObject responseJson = new JSONObject(apiResponse.toString());
+                        if (responseJson.has(Constants.TRANSACTION_TOKEN)) {
+                            long transactionToken = responseJson.getLong(Constants.TRANSACTION_TOKEN);
+                            tokenString = String.valueOf(transactionToken);
+                        }
 
-            String responseString = apiResponse.toString();
-            if (responseString.length() > 32767) {
-                responseString = Constants.VALUE_TOO_LARGE;
-            }
+                        if (responseCode <= 399) {
+                            // Existing success logic
+                            logger.info("response: {}", responseJson);
+                            matchCount = responseJson.has(Constants.FEEDBACK_DATA) ? (responseJson.getJSONObject(Constants.FEEDBACK_DATA).has(Constants.MATCHING_COUNT) ? responseJson.getJSONObject(Constants.FEEDBACK_DATA).getLong(Constants.MATCHING_COUNT) : 0) : 0;
+                            status = responseJson.optString(Constants.MATCHING_STATUS, "");
+                            feedbackStatus = responseJson.has(Constants.FEEDBACK_DATA) ? responseJson.getJSONObject(Constants.FEEDBACK_DATA).optString(Constants.MATCHING_STATUS, "") : "";
+                            logger.info("transactionToken: {} matchCount: {} status: {} feedbackStatus: {}", tokenString, matchCount, status, feedbackStatus);
 
-            String tokenString = "NA";
-            long matchCount = 0;
-            String status = "NA";
-            String feedbackStatus = "NA";
-            long filteredCount = 0;
-
-            boolean isErrorToHandle = (responseCode == 400 || responseCode == 500 || responseCode == Constants.SERVICE_UNAVAILABLE);
-
-            if (responseCode <= 399 || isErrorToHandle) {
-                // Try to parse JSON for transaction token
-                try {
-                    JSONObject responseJson = new JSONObject(apiResponse.toString());
-                    if (responseJson.has(Constants.TRANSACTION_TOKEN)) {
-                        long transactionToken = responseJson.getLong(Constants.TRANSACTION_TOKEN);
-                        tokenString = String.valueOf(transactionToken);
-                    }
-
-                    if (responseCode <= 399) {
-                        // Existing success logic
-                        logger.info("response: {}", responseJson);
-                        matchCount = responseJson.has(Constants.FEEDBACK_DATA) ? (responseJson.getJSONObject(Constants.FEEDBACK_DATA).has(Constants.MATCHING_COUNT) ? responseJson.getJSONObject(Constants.FEEDBACK_DATA).getLong(Constants.MATCHING_COUNT) : 0) : 0;
-                        status = responseJson.optString(Constants.MATCHING_STATUS, "");
-                        feedbackStatus = responseJson.has(Constants.FEEDBACK_DATA) ? responseJson.getJSONObject(Constants.FEEDBACK_DATA).optString(Constants.MATCHING_STATUS, "") : "";
-                        logger.info("transactionToken: {} matchCount: {} status: {} feedbackStatus: {}", tokenString, matchCount, status, feedbackStatus);
-
-                        if (responseJson.has(Constants.FEEDBACK_DATA)) {
-                            JSONObject feedbackData = responseJson.getJSONObject(Constants.FEEDBACK_DATA);
-                            if (feedbackData.has(Constants.MATCHES)) {
-                                JSONArray matches = feedbackData.getJSONArray(Constants.MATCHES);
-                                for (int i = 0; i < matches.length(); i++) {
-                                    JSONObject match = matches.getJSONObject(i);
-                                    String matchWebServiceId = String.valueOf(match.optInt("webServiceID"));
-                                    String matchWatchlistType = match.optString("watchlistType");
-                                    if (matchWebServiceId.equals(webServiceId)
-                                            && (!webServiceId.equals("3")
-                                            && !webServiceId.equals("4")
-                                            || matchWatchlistType.equalsIgnoreCase(watchlistType))) {
-                                        filteredCount++;
+                            if (responseJson.has(Constants.FEEDBACK_DATA)) {
+                                JSONObject feedbackData = responseJson.getJSONObject(Constants.FEEDBACK_DATA);
+                                if (feedbackData.has(Constants.MATCHES)) {
+                                    JSONArray matches = feedbackData.getJSONArray(Constants.MATCHES);
+                                    for (int i = 0; i < matches.length(); i++) {
+                                        JSONObject match = matches.getJSONObject(i);
+                                        String matchWebServiceId = String.valueOf(match.optInt("webServiceID"));
+                                        String matchWatchlistType = match.optString("watchlistType");
+                                        if (matchWebServiceId.equals(webServiceId)
+                                                && (!webServiceId.equals("3")
+                                                && !webServiceId.equals("4")
+                                                || matchWatchlistType.equalsIgnoreCase(watchlistType))) {
+                                            filteredCount++;
+                                        }
                                     }
                                 }
                             }
+                        } else {
+                            // Error handling for 400, 500, 503
+                            status = "ERROR: " + responseCode;
+                            // Other values remain default (0 or empty)
                         }
-                    } else {
-                        // Error handling for 400, 500, 503
-                        status = "ERROR: " + responseCode;
-                        // Other values remain default (0 or empty)
-                    }
 
-                    Object[] excelParams = new Object[]{tokenString, matchCount, status, feedbackStatus, filteredCount, responseString};
+                        Object[] excelParams = new Object[]{tokenString, matchCount, status, feedbackStatus, filteredCount, responseString};
 
-                    // Update sheet in synchronized block
-                    synchronized (sheet) {
-                        int targetRowNum = seqIdToRowNum.get(seqId);
-                        logger.info("Writing output to file for seqId: {}", seqId);
-                        Row row = (Row) sheet.getRow(targetRowNum);
-                        for (int i = 0; i < excelParams.length; i++) {
-                            Cell cell = row.getCell(processorStartColumn + i);
-                            if (cell == null) cell = row.createCell(processorStartColumn + i);
-                            logger.info(excelParams[i].toString());
-                            cell.setCellValue(excelParams[i].toString());
-                        }
-                    }
-                } catch (Exception e) {
-                    // If not valid JSON, use defaults and store raw response
-                    status = (isErrorToHandle ? "ERROR: " + responseCode : "ERROR");
-                    Object[] excelParams = new Object[]{tokenString, matchCount, status, feedbackStatus, filteredCount, responseString};
-
-                    if (isErrorToHandle) {
+                        // Update sheet in synchronized block
                         synchronized (sheet) {
                             int targetRowNum = seqIdToRowNum.get(seqId);
                             logger.info("Writing output to file for seqId: {}", seqId);
@@ -346,14 +353,36 @@ public class MessageProcessingUtility {
                                 cell.setCellValue(excelParams[i].toString());
                             }
                         }
+                    } catch (Exception e) {
+                        // If not valid JSON, use defaults and store raw response
+                        status = (isErrorToHandle ? "ERROR: " + responseCode : "ERROR");
+                        Object[] excelParams = new Object[]{tokenString, matchCount, status, feedbackStatus, filteredCount, responseString};
+
+                        if (isErrorToHandle) {
+                            synchronized (sheet) {
+                                int targetRowNum = seqIdToRowNum.get(seqId);
+                                logger.info("Writing output to file for seqId: {}", seqId);
+                                Row row = (Row) sheet.getRow(targetRowNum);
+                                for (int i = 0; i < excelParams.length; i++) {
+                                    Cell cell = row.getCell(processorStartColumn + i);
+                                    if (cell == null) cell = row.createCell(processorStartColumn + i);
+                                    logger.info(excelParams[i].toString());
+                                    cell.setCellValue(excelParams[i].toString());
+                                }
+                            }
+                        }
                     }
                 }
-            }
 
-            if (responseCode > 399) {
-                failedRequestMap.put(seqId, requestBody);
-            }
-        });
+                if (responseCode > 400) {
+                    failedRequestMap.put(seqId, requestBody);
+                }
+            }, executor);
+            futures.add(future);
+        }
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        executor.shutdown();
 
         return failedRequestMap;
     }
