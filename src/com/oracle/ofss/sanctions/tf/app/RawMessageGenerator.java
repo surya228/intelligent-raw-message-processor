@@ -10,6 +10,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -295,28 +296,32 @@ public class RawMessageGenerator {
             identifierToBeReplaced = Constants.IDEN_PREFIX+identifierToBeReplaced;
             temp = temp.replace(token, value);
             temp = temp.replace(identifierToken,identifierToBeReplaced);
+            try{
+                JSONObject tempJson = new JSONObject(temp);
+                JSONObject additionalData = tempJson.getJSONObject(Constants.ADDITIONAL_DATA);
+                additionalData.put(Constants.TABLE, tableName);
+                additionalData.put(Constants.UID,uid);
+                additionalData.put(Constants.COLUMN, targetColumn);
+                additionalData.put(Constants.TOKEN, token);
+                additionalData.put(Constants.VALUE, value);
+                additionalData.put(Constants.ORIGINAL_VALUE, originalValue);
+                additionalData.put(Constants.CED, ced);
+                additionalData.put(Constants.TAGNAME,tagName);
+                additionalData.put(Constants.WEBSERVICE_ID,webserviceId);
+                additionalData.put(Constants.IDEN_TOKEN, identifierToken);
+                additionalData.put(Constants.IDEN_VALUE, identifierToBeReplaced);
+                additionalData.put(Constants.IS_STOPWORD_PRESENT, (ced == -1 ? "Y" : "N"));
+                additionalData.put("isSynonymPresent", (ced == -2 ? "Y" : "N"));
+                additionalData.put(Constants.LOOKUP_ID, lookupIds);
+                additionalData.put(Constants.LOOKUP_VALUE_ID, lookupValueIds);
+                additionalData.put(Constants.WATCHLIST, watchlistType);
+                jsonArray.put(tempJson);
 
-            JSONObject tempJson = new JSONObject(temp);
-            JSONObject additionalData = tempJson.getJSONObject(Constants.ADDITIONAL_DATA);
-            additionalData.put(Constants.TABLE, tableName);
-            additionalData.put(Constants.UID,uid);
-            additionalData.put(Constants.COLUMN, targetColumn);
-            additionalData.put(Constants.TOKEN, token);
-            additionalData.put(Constants.VALUE, value);
-            additionalData.put(Constants.ORIGINAL_VALUE, originalValue);
-            additionalData.put(Constants.CED, ced);
-            additionalData.put(Constants.TAGNAME,tagName);
-            additionalData.put(Constants.WEBSERVICE_ID,webserviceId);
-            additionalData.put(Constants.IDEN_TOKEN, identifierToken);
-            additionalData.put(Constants.IDEN_VALUE, identifierToBeReplaced);
-            additionalData.put(Constants.IS_STOPWORD_PRESENT, (ced == -1 ? "Y" : "N"));
-            additionalData.put("isSynonymPresent", (ced == -2 ? "Y" : "N"));
-            additionalData.put(Constants.LOOKUP_ID, lookupIds);
-            additionalData.put(Constants.LOOKUP_VALUE_ID, lookupValueIds);
-            additionalData.put(Constants.WATCHLIST, watchlistType);
-            jsonArray.put(tempJson);
+                updatedCount++;
+            } catch (JSONException e){
+                logger.error("Raw Message skipped due to bad data: {}",e.getMessage());
+            }
 
-            updatedCount++;
         }
         return updatedCount;
     }
