@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.CSVWriter;
+import org.apache.poi.openxml4j.util.ZipSecureFile;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -329,9 +330,11 @@ public class RawMessageGenerator {
             if (tokenIndex != -1) {
                 sb.replace(tokenIndex, tokenIndex + token.length(), value);
             }
-            int idTokenIndex = sb.indexOf(identifierToken);
-            if (idTokenIndex != -1) {
-                sb.replace(idTokenIndex, idTokenIndex + identifierToken.length(), identifierToBeReplaced);
+            // Replace all occurrences of identifierToken
+            int start = 0;
+            while ((start = sb.indexOf(identifierToken, start)) != -1) {
+                sb.replace(start, start + identifierToken.length(), identifierToBeReplaced);
+                start += identifierToBeReplaced.length();
             }
             String modifiedTemp = sb.toString();
             try{
@@ -728,6 +731,10 @@ public class RawMessageGenerator {
     private static CompletableFuture<Void> writeExcelChunkAsync(List<JSONObject> chunk, Properties props, BlockingQueue<File> queue, int fileIndex) {
         return CompletableFuture.runAsync(() -> {
             try {
+                // Set zip bomb protection
+                double minRatio = Double.parseDouble(props.getProperty(Constants.EXCEL_MIN_INFLATE_RATIO, String.valueOf(Constants.DEFAULT_MIN_INFLATE_RATIO)));
+                ZipSecureFile.setMinInflateRatio(minRatio);
+
                 // Create output folder if needed
                 if (!Constants.OUTPUT_FOLDER.exists()) {
                     Constants.OUTPUT_FOLDER.mkdirs();
@@ -749,6 +756,14 @@ public class RawMessageGenerator {
                 String webService = props.getProperty(Constants.WEBSERVICE);
 
                 writeSingleExcelFile(jsonArray, transactionService, tagName, webService, outputFile, false);
+
+                // Check file size limit
+                long maxSize = Long.parseLong(props.getProperty(Constants.EXCEL_MAX_FILE_SIZE, String.valueOf(Constants.DEFAULT_MAX_EXCEL_FILE_SIZE)));
+                if (outputFile.length() > maxSize) {
+                    logger.error("Generated Excel file {} exceeds maximum size limit of {} bytes. Deleting.", outputFile.getName(), maxSize);
+                    outputFile.delete();
+                    return;
+                }
 
                 if (queue != null) {
                     queue.put(outputFile);

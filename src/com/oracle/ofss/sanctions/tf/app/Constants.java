@@ -140,7 +140,7 @@ public class Constants {
     public static String EXCEL_MAX_FILE_SIZE = "excel.maxFileSize";
     public static String EXCEL_MIN_INFLATE_RATIO = "excel.minInflateRatio";
     public static final long DEFAULT_MAX_EXCEL_FILE_SIZE = 100L * 1024 * 1024; // 100MB
-    public static final double DEFAULT_MIN_INFLATE_RATIO = 0.01d; // 1%
+    public static final double DEFAULT_MIN_INFLATE_RATIO = 0.0d; // 0%
 
     // Status strings
     public static String PASS = "PASS";
