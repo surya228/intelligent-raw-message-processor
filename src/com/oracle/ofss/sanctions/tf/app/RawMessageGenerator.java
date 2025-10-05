@@ -79,10 +79,10 @@ public class RawMessageGenerator {
 
                 ResultSet resultSet = prepareQueryAndGetTableData(databaseConnection, props, tableName, watchlistType);
 
-                JSONArray tempArray = generateRawMessageJsonArray(resultSet, props, sourceTemplate, tableName, tagName, webserviceId, watchlistType, isStopwordEnabled, isSynonymEnabled);
+                List<JSONObject> tempList = generateRawMessageJsonArray(resultSet, props, sourceTemplate, tableName, tagName, webserviceId, watchlistType, isStopwordEnabled, isSynonymEnabled);
 
-                for (int i = 0; i < tempArray.length(); i++) {
-                    rawMessageJsonArray.put(tempArray.getJSONObject(i));
+                for (JSONObject jsonObj : tempList) {
+                    rawMessageJsonArray.put(jsonObj);
                 }
 
                 if (resultSet != null) {
@@ -183,30 +183,36 @@ public class RawMessageGenerator {
         return rs;
     }
 
-    public static JSONArray generateRawMessageJsonArray(ResultSet rs, Properties props, String srcFile, String tableName, String tagName, String webserviceId, String watchlistType, boolean isStopwordEnabled, boolean isSynonymEnabled) throws Exception {
-        JSONArray jsonArray = new JSONArray();
+    public static List<JSONObject> generateRawMessageJsonArray(ResultSet rs, Properties props, String srcFile, String tableName, String tagName, String webserviceId, String watchlistType, boolean isStopwordEnabled, boolean isSynonymEnabled) throws Exception {
+        List<JSONObject> jsonList = new ArrayList<>();
         int maxIndex = getMaxIndex(props, Constants.REPLACE_SRC);
-        String temp;
         int updatedCount = 0;
 
         List<Object[]> stopwords = null;
         Map<String, Map<String, String>> synonymMap = null;
 
+        // Cache stopwords and synonyms outside the loop to avoid repeated DB calls
         if (isStopwordEnabled) {
             Connection connection = SQLUtility.getDbConnection();
-            stopwords = getRelevantStopwords(props, connection);
-            connection.close();
+            try {
+                stopwords = getRelevantStopwords(props, connection);
+            } finally {
+                connection.close();
+            }
         }
 
         if (isSynonymEnabled) {
             Connection connection = SQLUtility.getDbConnection();
-            synonymMap = loadSynonyms(connection, watchlistType);
-            connection.close();
+            try {
+                synonymMap = loadSynonyms(connection, watchlistType);
+            } finally {
+                connection.close();
+            }
         }
 
         int cnt=0;
         while(rs.next()) {
-            temp=srcFile;
+            String temp = srcFile;
             if(temp != null) {
                 for (int i = 1; i <= maxIndex; i++) {
                     String srcKey = Constants.REPLACE_SRC+"[" + i + "]";
@@ -231,18 +237,18 @@ public class RawMessageGenerator {
                                     String lookupIds = (String) info.get("lookupIds");
                                     String lookupValueIds = (String) info.get("lookupValueIds");
                                     temp = srcFile;
-                                    updatedCount = createRawMsg(temp, variant, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, -2, uid, tagName, webserviceId, lookupIds, lookupValueIds, watchlistType);
+                                    updatedCount = createRawMsg(temp, variant, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonList, updatedCount, tokenValue, -2, uid, tagName, webserviceId, lookupIds, lookupValueIds, watchlistType);
                                 }
                             }
 
                             // 0 ced -> exact
-                            updatedCount = createRawMsg(temp, toBeReplaced, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 0, uid, tagName, webserviceId, "NA", "NA", watchlistType);
+                            updatedCount = createRawMsg(temp, toBeReplaced, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonList, updatedCount, tokenValue, 0, uid, tagName, webserviceId, "NA", "NA", watchlistType);
 
                             if (props.getProperty(Constants.CED1).equalsIgnoreCase(Constants.YES)) { // 1 ced
                                 List<String> oneCedList = generate1CedVariants(toBeReplaced);
                                 for (String value : oneCedList) {
                                     temp = srcFile;
-                                    updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 1, uid, tagName, webserviceId, "NA", "NA", watchlistType);
+                                    updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonList, updatedCount, tokenValue, 1, uid, tagName, webserviceId, "NA", "NA", watchlistType);
                                 }
                             }
 
@@ -250,7 +256,7 @@ public class RawMessageGenerator {
                                 List<String> twoCedList = generate2CedVariants(toBeReplaced);
                                 for (String value : twoCedList) {
                                     temp = srcFile;
-                                    updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 2, uid, tagName, webserviceId, "NA", "NA", watchlistType);
+                                    updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonList, updatedCount, tokenValue, 2, uid, tagName, webserviceId, "NA", "NA", watchlistType);
                                 }
                             }
 
@@ -258,7 +264,7 @@ public class RawMessageGenerator {
                                 List<String> threeCedList = generate3CedVariants(toBeReplaced);
                                 for (String value : threeCedList) {
                                     temp = srcFile;
-                                    updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 3, uid, tagName, webserviceId, "NA", "NA", watchlistType);
+                                    updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonList, updatedCount, tokenValue, 3, uid, tagName, webserviceId, "NA", "NA", watchlistType);
                                 }
                             }
 
@@ -271,7 +277,7 @@ public class RawMessageGenerator {
                                     List<String> variants = generateStopwordVariants(toBeReplaced, stop);
                                     for (String variant : variants) {
                                         String variantTemp = srcFile;
-                                        updatedCount = createRawMsg(variantTemp, variant, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, -1, uid, tagName, webserviceId, lookupId, lookupValueId, watchlistType);
+                                        updatedCount = createRawMsg(variantTemp, variant, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonList, updatedCount, tokenValue, -1, uid, tagName, webserviceId, lookupId, lookupValueId, watchlistType);
                                     }
                                 }
                             }
@@ -283,21 +289,30 @@ public class RawMessageGenerator {
         }
         logger.info("No. of rows selected from Watchlist:: {}", cnt);
         logger.info("No. of raw message created by Generator:: {}", updatedCount);
-        return jsonArray;
+        return jsonList;
 
     }
 
     public static int createRawMsg(String temp, String value, String identifierToBeReplaced,
                                    String token, String targetColumn, String identifierToken,
-                                   String tableName, JSONArray jsonArray, int updatedCount, String originalValue, int ced, String uid,
+                                   String tableName, List<JSONObject> jsonList, int updatedCount, String originalValue, int ced, String uid,
                                    String tagName, String webserviceId, String lookupIds, String lookupValueIds, String watchlistType){
         if (value != null) {
             logger.info("toBeReplaced: {} originalValue: {}  token: {}  column: {}  identifier: {} ced: {}", value, originalValue, token, targetColumn, identifierToBeReplaced, ced);
-            identifierToBeReplaced = Constants.IDEN_PREFIX+identifierToBeReplaced;
-            temp = temp.replace(token, value);
-            temp = temp.replace(identifierToken,identifierToBeReplaced);
+            identifierToBeReplaced = Constants.IDEN_PREFIX + identifierToBeReplaced;
+            // Use StringBuilder for efficient string replacements
+            StringBuilder sb = new StringBuilder(temp);
+            int tokenIndex = sb.indexOf(token);
+            if (tokenIndex != -1) {
+                sb.replace(tokenIndex, tokenIndex + token.length(), value);
+            }
+            int idTokenIndex = sb.indexOf(identifierToken);
+            if (idTokenIndex != -1) {
+                sb.replace(idTokenIndex, idTokenIndex + identifierToken.length(), identifierToBeReplaced);
+            }
+            String modifiedTemp = sb.toString();
             try{
-                JSONObject tempJson = new JSONObject(temp);
+                JSONObject tempJson = new JSONObject(modifiedTemp);
                 JSONObject additionalData = tempJson.getJSONObject(Constants.ADDITIONAL_DATA);
                 additionalData.put(Constants.TABLE, tableName);
                 additionalData.put(Constants.UID,uid);
@@ -315,7 +330,7 @@ public class RawMessageGenerator {
                 additionalData.put(Constants.LOOKUP_ID, lookupIds);
                 additionalData.put(Constants.LOOKUP_VALUE_ID, lookupValueIds);
                 additionalData.put(Constants.WATCHLIST, watchlistType);
-                jsonArray.put(tempJson);
+                jsonList.add(tempJson);
 
                 updatedCount++;
             } catch (JSONException e){
