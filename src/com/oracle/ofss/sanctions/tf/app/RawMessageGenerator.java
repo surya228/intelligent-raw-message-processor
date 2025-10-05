@@ -705,25 +705,21 @@ public class RawMessageGenerator {
             rowLimit = Constants.DEFAULT_ROW_LIMIT;
         }
 
-        // Check for existing files
-        File[] existingFiles = Constants.OUTPUT_FOLDER.listFiles((dir, name) ->
-            name.matches((configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName) + "_\\d+\\.xlsx"));
-        boolean hasExisting = existingFiles != null && existingFiles.length > 0;
 
-        if (!hasExisting) {
-            // No existing files, create new as before
-            if (jsonArray.length() <= rowLimit) {
-                // Write to a single file if splitting is not enabled or data is within limit
-                String baseFileName = configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName;
-                String fileName = String.format(baseFileName + "_%d", 1) + Constants.XLSX_EXT;
-                File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
-                writeSingleExcelFile(jsonArray, transactionService, tagName, webService, outputFile, false);
-                if (queue != null) {
-                    queue.put(outputFile);
-                }
-                if (queue != null) {
-                    queue.put(new File(Constants.POISON_PILL));
-                }
+
+        // No existing files, create new as before
+        if (jsonArray.length() <= rowLimit) {
+            // Write to a single file if splitting is not enabled or data is within limit
+            String baseFileName = configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName;
+            String fileName = String.format(baseFileName + "_%d", 1) + Constants.XLSX_EXT;
+            File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
+            writeSingleExcelFile(jsonArray, transactionService, tagName, webService, outputFile, false);
+            if (queue != null) {
+                queue.put(outputFile);
+            }
+            if (queue != null) {
+                queue.put(new File(Constants.POISON_PILL));
+            }
             String countFileName = Constants.OUTPUT_FILE_COUNT_PATH.replace(".txt", "_" + configName + ".txt");
             File countFile = new File(Constants.OUTPUT_FOLDER, countFileName);
             try (FileWriter fw = new FileWriter(countFile)) {
@@ -731,64 +727,42 @@ public class RawMessageGenerator {
             } catch (IOException e) {
                 logger.error("Error writing output file count to {}: {}", countFile.getAbsolutePath(), e.getMessage());
             }
-                logger.info("Successfully wrote to Excel ({}) file.", outputFile.getName());
-                logger.info("Output file count (1) saved to: {}", countFile.getAbsolutePath());
-            } else {
-                // Split data into multiple files
-                int fileIndex = 1;
-                int startIndex = 0;
-                while (startIndex < jsonArray.length()) {
-                    int endIndex = Math.min(startIndex + rowLimit, jsonArray.length());
-                    JSONArray chunk = new JSONArray();
-                    for (int i = startIndex; i < endIndex; i++) {
-                        chunk.put(jsonArray.getJSONObject(i));
-                    }
-                    String baseFileName = configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName;
-                    String fileName = String.format(baseFileName + "_%d", fileIndex) + Constants.XLSX_EXT;
-                    File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
-                    writeSingleExcelFile(chunk, transactionService, tagName, webService, outputFile, false);
-                    if (queue != null) {
-                        queue.put(outputFile);
-                    }
-                    fileIndex++;
-                    startIndex = endIndex;
-                }
-                // Store the count of output files created, adjusting for the last increment since fileIndex is incremented after the last file
-                String countFileName = Constants.OUTPUT_FILE_COUNT_PATH.replace(".txt", "_" + configName + ".txt");
-                File countFile = new File(Constants.OUTPUT_FOLDER, countFileName);
-                int totalFiles = fileIndex - 1; // Adjust for the last increment
-                try (FileWriter fw = new FileWriter(countFile)) {
-                    fw.write(String.valueOf(totalFiles));
-                } catch (IOException e) {
-                    logger.error("Error writing output file count to {}: {}", countFile.getAbsolutePath(), e.getMessage());
-                }
-                logger.info("Successfully wrote to multiple Excel files with prefix ({}_N.xlsx).", Constants.OUTPUT_FILE_NAME + (configName.isEmpty() ? "" : "_" + configName));
-                logger.info("Output file count ({}) saved to: {}", totalFiles, countFile.getAbsolutePath());
-                if (queue != null) {
-                    queue.put(new File(Constants.POISON_PILL));
-                }
-            }
+            logger.info("Successfully wrote to Excel ({}) file.", outputFile.getName());
+            logger.info("Output file count (1) saved to: {}", countFile.getAbsolutePath());
         } else {
-            // Existing files present, append to the first one
-            Arrays.sort(existingFiles, (f1, f2) -> {
-                try {
-                    String n1 = f1.getName().replace((configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName) + "_", "").replace(Constants.XLSX_EXT, "");
-                    String n2 = f2.getName().replace((configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName) + "_", "").replace(Constants.XLSX_EXT, "");
-                    return Integer.compare(Integer.parseInt(n1), Integer.parseInt(n2));
-                } catch (NumberFormatException e) {
-                    return f1.getName().compareTo(f2.getName());
+            // Split data into multiple files
+            int fileIndex = 1;
+            int startIndex = 0;
+            while (startIndex < jsonArray.length()) {
+                int endIndex = Math.min(startIndex + rowLimit, jsonArray.length());
+                JSONArray chunk = new JSONArray();
+                for (int i = startIndex; i < endIndex; i++) {
+                    chunk.put(jsonArray.getJSONObject(i));
                 }
-            });
-            File firstFile = existingFiles[0];
-            writeSingleExcelFile(jsonArray, transactionService, tagName, webService, firstFile, true);
+                String baseFileName = configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName;
+                String fileName = String.format(baseFileName + "_%d", fileIndex) + Constants.XLSX_EXT;
+                File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
+                writeSingleExcelFile(chunk, transactionService, tagName, webService, outputFile, false);
+                if (queue != null) {
+                    queue.put(outputFile);
+                }
+                fileIndex++;
+                startIndex = endIndex;
+            }
+            // Store the count of output files created, adjusting for the last increment since fileIndex is incremented after the last file
+            String countFileName = Constants.OUTPUT_FILE_COUNT_PATH.replace(".txt", "_" + configName + ".txt");
+            File countFile = new File(Constants.OUTPUT_FOLDER, countFileName);
+            int totalFiles = fileIndex - 1; // Adjust for the last increment
+            try (FileWriter fw = new FileWriter(countFile)) {
+                fw.write(String.valueOf(totalFiles));
+            } catch (IOException e) {
+                logger.error("Error writing output file count to {}: {}", countFile.getAbsolutePath(), e.getMessage());
+            }
+            logger.info("Successfully wrote to multiple Excel files with prefix ({}_N.xlsx).", Constants.OUTPUT_FILE_NAME + (configName.isEmpty() ? "" : "_" + configName));
+            logger.info("Output file count ({}) saved to: {}", totalFiles, countFile.getAbsolutePath());
             if (queue != null) {
-                // Put all existing files to queue, since they may have been updated
-                for (File f : existingFiles) {
-                    queue.put(f);
-                }
                 queue.put(new File(Constants.POISON_PILL));
             }
-            logger.info("Successfully appended to existing Excel ({}) file.", firstFile.getName());
         }
     }
 
