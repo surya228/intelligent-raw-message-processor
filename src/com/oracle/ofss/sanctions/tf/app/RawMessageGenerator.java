@@ -21,6 +21,8 @@ import java.nio.file.Path;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 public class RawMessageGenerator {
     private static final Logger logger = LoggerFactory.getLogger(RawMessageGenerator.class);
@@ -229,57 +231,40 @@ public class RawMessageGenerator {
 
                         String[] toBeReplacedValues = tokenValue.split(";");
 
+                        // Process token values in parallel for better performance
+                        final String finalSrcFile = srcFile;
+                        final String finalIdentifierToBeReplaced = identifierToBeReplaced;
+                        final String finalToken = token;
+                        final String finalTargetColumn = targetColumn;
+                        final String finalIdentifierToken = identifierToken;
+                        final String finalTableName = tableName;
+                        final String finalTokenValue = tokenValue;
+                        final String finalUid = uid;
+                        final String finalTagName = tagName;
+                        final String finalWebserviceId = webserviceId;
+                        final String finalWatchlistType = watchlistType;
+                        final Properties finalProps = props;
+                        final Map<String, Map<String, String>> finalSynonymMap = synonymMap;
+                        final List<Object[]> finalStopwords = stopwords;
+
+                        ArrayList<CompletableFuture<List<JSONObject>>> futures = new ArrayList<>();
                         for (String toBeReplaced : toBeReplacedValues) {
-                            if (isSynonymEnabled && !synonymMap.isEmpty()) {
-                                List<Map<String, Object>> variantsWithInfo = generateSynonymVariantsWithInfo(toBeReplaced, synonymMap);
-                                for (Map<String, Object> info : variantsWithInfo) {
-                                    String variant = (String) info.get("variant");
-                                    String lookupIds = (String) info.get("lookupIds");
-                                    String lookupValueIds = (String) info.get("lookupValueIds");
-                                    temp = srcFile;
-                                    updatedCount = createRawMsg(temp, variant, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonList, updatedCount, tokenValue, -2, uid, tagName, webserviceId, lookupIds, lookupValueIds, watchlistType);
-                                }
-                            }
+                            CompletableFuture<List<JSONObject>> future = CompletableFuture.supplyAsync(() ->
+                                generateAllVariantsForTokenValue(toBeReplaced, finalSrcFile, finalIdentifierToBeReplaced,
+                                    finalToken, finalTargetColumn, finalIdentifierToken, finalTableName, finalTokenValue, finalUid,
+                                    finalTagName, finalWebserviceId, finalWatchlistType, finalProps, finalSynonymMap, finalStopwords,
+                                    isSynonymEnabled, isStopwordEnabled));
+                            futures.add(future);
+                        }
 
-                            // 0 ced -> exact
-                            updatedCount = createRawMsg(temp, toBeReplaced, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonList, updatedCount, tokenValue, 0, uid, tagName, webserviceId, "NA", "NA", watchlistType);
-
-                            if (props.getProperty(Constants.CED1).equalsIgnoreCase(Constants.YES)) { // 1 ced
-                                List<String> oneCedList = generate1CedVariants(toBeReplaced);
-                                for (String value : oneCedList) {
-                                    temp = srcFile;
-                                    updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonList, updatedCount, tokenValue, 1, uid, tagName, webserviceId, "NA", "NA", watchlistType);
-                                }
-                            }
-
-                            if (props.getProperty(Constants.CED2).equalsIgnoreCase(Constants.YES)) { // 2 ced
-                                List<String> twoCedList = generate2CedVariants(toBeReplaced);
-                                for (String value : twoCedList) {
-                                    temp = srcFile;
-                                    updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonList, updatedCount, tokenValue, 2, uid, tagName, webserviceId, "NA", "NA", watchlistType);
-                                }
-                            }
-
-                            if (props.getProperty(Constants.CED3).equalsIgnoreCase(Constants.YES)) { // 3 ced
-                                List<String> threeCedList = generate3CedVariants(toBeReplaced);
-                                for (String value : threeCedList) {
-                                    temp = srcFile;
-                                    updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonList, updatedCount, tokenValue, 3, uid, tagName, webserviceId, "NA", "NA", watchlistType);
-                                }
-                            }
-
-                            // Stopword variants
-                            if (isStopwordEnabled && stopwords != null && !stopwords.isEmpty()) {
-                                for (Object[] pair : stopwords) {
-                                    String stop = (String) pair[0];
-                                    String lookupId = (String) pair[1];
-                                    String lookupValueId = (String) pair[2];
-                                    List<String> variants = generateStopwordVariants(toBeReplaced, stop);
-                                    for (String variant : variants) {
-                                        String variantTemp = srcFile;
-                                        updatedCount = createRawMsg(variantTemp, variant, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonList, updatedCount, tokenValue, -1, uid, tagName, webserviceId, lookupId, lookupValueId, watchlistType);
-                                    }
-                                }
+                        // Collect results and add to main list
+                        for (CompletableFuture<List<JSONObject>> future : futures) {
+                            try {
+                                List<JSONObject> variants = future.get();
+                                jsonList.addAll(variants);
+                                updatedCount += variants.size();
+                            } catch (Exception e) {
+                                logger.error("Error processing token value variants: {}", e.getMessage());
                             }
                         }
                     }
@@ -339,6 +324,77 @@ public class RawMessageGenerator {
 
         }
         return updatedCount;
+    }
+
+    private static List<JSONObject> generateAllVariantsForTokenValue(String toBeReplaced, String srcFile,
+            String identifierToBeReplaced, String token, String targetColumn, String identifierToken,
+            String tableName, String tokenValue, String uid, String tagName, String webserviceId,
+            String watchlistType, Properties props, Map<String, Map<String, String>> synonymMap,
+            List<Object[]> stopwords, boolean isSynonymEnabled, boolean isStopwordEnabled) {
+        List<JSONObject> variants = new ArrayList<>();
+        List<JSONObject> tempList = new ArrayList<>();
+        int localUpdatedCount = 0;
+
+        if (isSynonymEnabled && synonymMap != null && !synonymMap.isEmpty()) {
+            List<Map<String, Object>> variantsWithInfo = generateSynonymVariantsWithInfo(toBeReplaced, synonymMap);
+            for (Map<String, Object> info : variantsWithInfo) {
+                String variant = (String) info.get("variant");
+                String lookupIds = (String) info.get("lookupIds");
+                String lookupValueIds = (String) info.get("lookupValueIds");
+                localUpdatedCount = createRawMsg(srcFile, variant, identifierToBeReplaced, token, targetColumn,
+                    identifierToken, tableName, tempList, localUpdatedCount, tokenValue, -2, uid, tagName,
+                    webserviceId, lookupIds, lookupValueIds, watchlistType);
+            }
+        }
+
+        // 0 ced -> exact
+        localUpdatedCount = createRawMsg(srcFile, toBeReplaced, identifierToBeReplaced, token, targetColumn,
+            identifierToken, tableName, tempList, localUpdatedCount, tokenValue, 0, uid, tagName,
+            webserviceId, "NA", "NA", watchlistType);
+
+        if (props.getProperty(Constants.CED1).equalsIgnoreCase(Constants.YES)) { // 1 ced
+            List<String> oneCedList = generate1CedVariants(toBeReplaced);
+            for (String value : oneCedList) {
+                localUpdatedCount = createRawMsg(srcFile, value, identifierToBeReplaced, token, targetColumn,
+                    identifierToken, tableName, tempList, localUpdatedCount, tokenValue, 1, uid, tagName,
+                    webserviceId, "NA", "NA", watchlistType);
+            }
+        }
+
+        if (props.getProperty(Constants.CED2).equalsIgnoreCase(Constants.YES)) { // 2 ced
+            List<String> twoCedList = generate2CedVariants(toBeReplaced);
+            for (String value : twoCedList) {
+                localUpdatedCount = createRawMsg(srcFile, value, identifierToBeReplaced, token, targetColumn,
+                    identifierToken, tableName, tempList, localUpdatedCount, tokenValue, 2, uid, tagName,
+                    webserviceId, "NA", "NA", watchlistType);
+            }
+        }
+
+        if (props.getProperty(Constants.CED3).equalsIgnoreCase(Constants.YES)) { // 3 ced
+            List<String> threeCedList = generate3CedVariants(toBeReplaced);
+            for (String value : threeCedList) {
+                localUpdatedCount = createRawMsg(srcFile, value, identifierToBeReplaced, token, targetColumn,
+                    identifierToken, tableName, tempList, localUpdatedCount, tokenValue, 3, uid, tagName,
+                    webserviceId, "NA", "NA", watchlistType);
+            }
+        }
+
+        // Stopword variants
+        if (isStopwordEnabled && stopwords != null && !stopwords.isEmpty()) {
+            for (Object[] pair : stopwords) {
+                String stop = (String) pair[0];
+                String lookupId = (String) pair[1];
+                String lookupValueId = (String) pair[2];
+                List<String> stopwordVariants = generateStopwordVariants(toBeReplaced, stop);
+                for (String variant : stopwordVariants) {
+                    localUpdatedCount = createRawMsg(srcFile, variant, identifierToBeReplaced, token, targetColumn,
+                        identifierToken, tableName, tempList, localUpdatedCount, tokenValue, -1, uid, tagName,
+                        webserviceId, lookupId, lookupValueId, watchlistType);
+                }
+            }
+        }
+
+        return tempList;
     }
 
 
