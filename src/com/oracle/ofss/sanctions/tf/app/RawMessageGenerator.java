@@ -41,7 +41,18 @@ public class RawMessageGenerator {
         logger.info("=============================================================");
 
         Connection databaseConnection = null;
-        JSONArray rawMessageJsonArray = new JSONArray();
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+        int globalFileIndex = 1;
+        int totalMessages = 0;
+
+        int rowLimit;
+        try {
+            String rowLimitStr = props.getProperty(Constants.EXCEL_SPLIT_ROW_LIMIT, String.valueOf(Constants.DEFAULT_ROW_LIMIT));
+            rowLimit = Integer.parseInt(rowLimitStr);
+        } catch (NumberFormatException e) {
+            logger.error("Invalid row limit value, using default: {}", Constants.DEFAULT_ROW_LIMIT);
+            rowLimit = Constants.DEFAULT_ROW_LIMIT;
+        }
 
         try {
             // Extract common configuration properties
@@ -81,10 +92,12 @@ public class RawMessageGenerator {
 
                 ResultSet resultSet = prepareQueryAndGetTableData(databaseConnection, props, tableName, watchlistType);
 
-                List<JSONObject> tempList = generateRawMessageJsonArray(resultSet, props, sourceTemplate, tableName, tagName, webserviceId, watchlistType, isStopwordEnabled, isSynonymEnabled);
+                List<List<JSONObject>> tempBatches = generateRawMessageJsonArrayBatched(resultSet, props, sourceTemplate, tableName, tagName, webserviceId, watchlistType, isStopwordEnabled, isSynonymEnabled, rowLimit);
 
-                for (JSONObject jsonObj : tempList) {
-                    rawMessageJsonArray.put(jsonObj);
+                // Process each batch as a separate Excel file
+                for (List<JSONObject> batch : tempBatches) {
+                    futures.add(writeExcelChunkAsync(batch, props, queue, globalFileIndex++));
+                    totalMessages += batch.size();
                 }
 
                 if (resultSet != null) {
@@ -96,8 +109,23 @@ public class RawMessageGenerator {
                 }
             }
 
-            if (rawMessageJsonArray.length() > 0) {
-                writeJsonAsExcelFile(rawMessageJsonArray, props, queue);
+            // Wait for all Excel writing tasks to complete
+            if (!futures.isEmpty()) {
+                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+            }
+
+            // Write the count file
+            String countFileName = Constants.OUTPUT_FILE_COUNT_PATH.replace(".txt", "_" + configName + ".txt");
+            File countFile = new File(Constants.OUTPUT_FOLDER, countFileName);
+            try (FileWriter fw = new FileWriter(countFile)) {
+                fw.write(String.valueOf(globalFileIndex - 1));
+            } catch (IOException e) {
+                logger.error("Error writing output file count to {}: {}", countFile.getAbsolutePath(), e.getMessage());
+            }
+            logger.info("Output file count ({}) saved to: {}", globalFileIndex - 1, countFile.getAbsolutePath());
+
+            if (queue != null) {
+                queue.put(new File(Constants.POISON_PILL));
             }
 
             logger.info("=============================================================");
@@ -121,7 +149,7 @@ public class RawMessageGenerator {
                 }
             }
         }
-        return rawMessageJsonArray != null ? rawMessageJsonArray.length() : 0;
+        return totalMessages;
     }
 
     private static boolean validateConfigProperties(String watchlistType, String webserviceId, boolean isStopwordEnabled, boolean isSynonymEnabled) throws Exception {
@@ -185,8 +213,9 @@ public class RawMessageGenerator {
         return rs;
     }
 
-    public static List<JSONObject> generateRawMessageJsonArray(ResultSet rs, Properties props, String srcFile, String tableName, String tagName, String webserviceId, String watchlistType, boolean isStopwordEnabled, boolean isSynonymEnabled) throws Exception {
-        List<JSONObject> jsonList = new ArrayList<>();
+    public static List<List<JSONObject>> generateRawMessageJsonArrayBatched(ResultSet rs, Properties props, String srcFile, String tableName, String tagName, String webserviceId, String watchlistType, boolean isStopwordEnabled, boolean isSynonymEnabled, int batchSize) throws Exception {
+        List<List<JSONObject>> batches = new ArrayList<>();
+        List<JSONObject> currentBatch = new ArrayList<>();
         int maxIndex = getMaxIndex(props, Constants.REPLACE_SRC);
         int updatedCount = 0;
 
@@ -257,11 +286,17 @@ public class RawMessageGenerator {
                             futures.add(future);
                         }
 
-                        // Collect results and add to main list
+                        // Collect results and add to batches
                         for (CompletableFuture<List<JSONObject>> future : futures) {
                             try {
                                 List<JSONObject> variants = future.get();
-                                jsonList.addAll(variants);
+                                for (JSONObject variant : variants) {
+                                    currentBatch.add(variant);
+                                    if (currentBatch.size() >= batchSize) {
+                                        batches.add(currentBatch);
+                                        currentBatch = new ArrayList<>();
+                                    }
+                                }
                                 updatedCount += variants.size();
                             } catch (Exception e) {
                                 logger.error("Error processing token value variants: {}", e.getMessage());
@@ -274,13 +309,16 @@ public class RawMessageGenerator {
         }
         logger.info("No. of rows selected from Watchlist:: {}", cnt);
         logger.info("No. of raw message created by Generator:: {}", updatedCount);
-        return jsonList;
+        if (!currentBatch.isEmpty()) {
+            batches.add(currentBatch);
+        }
+        return batches;
 
     }
 
-    public static int createRawMsg(String temp, String value, String identifierToBeReplaced,
+    public static JSONObject createRawMsg(String temp, String value, String identifierToBeReplaced,
                                    String token, String targetColumn, String identifierToken,
-                                   String tableName, List<JSONObject> jsonList, int updatedCount, String originalValue, int ced, String uid,
+                                   String tableName, String originalValue, int ced, String uid,
                                    String tagName, String webserviceId, String lookupIds, String lookupValueIds, String watchlistType){
         if (value != null) {
             logger.info("toBeReplaced: {} originalValue: {}  token: {}  column: {}  identifier: {} ced: {}", value, originalValue, token, targetColumn, identifierToBeReplaced, ced);
@@ -315,15 +353,13 @@ public class RawMessageGenerator {
                 additionalData.put(Constants.LOOKUP_ID, lookupIds);
                 additionalData.put(Constants.LOOKUP_VALUE_ID, lookupValueIds);
                 additionalData.put(Constants.WATCHLIST, watchlistType);
-                jsonList.add(tempJson);
-
-                updatedCount++;
+                return tempJson;
             } catch (JSONException e){
                 logger.error("Raw Message skipped due to bad data: {}",e.getMessage());
             }
 
         }
-        return updatedCount;
+        return null;
     }
 
     private static List<JSONObject> generateAllVariantsForTokenValue(String toBeReplaced, String srcFile,
@@ -331,9 +367,7 @@ public class RawMessageGenerator {
             String tableName, String tokenValue, String uid, String tagName, String webserviceId,
             String watchlistType, Properties props, Map<String, Map<String, String>> synonymMap,
             List<Object[]> stopwords, boolean isSynonymEnabled, boolean isStopwordEnabled) {
-        List<JSONObject> variants = new ArrayList<>();
         List<JSONObject> tempList = new ArrayList<>();
-        int localUpdatedCount = 0;
 
         if (isSynonymEnabled && synonymMap != null && !synonymMap.isEmpty()) {
             List<Map<String, Object>> variantsWithInfo = generateSynonymVariantsWithInfo(toBeReplaced, synonymMap);
@@ -341,41 +375,46 @@ public class RawMessageGenerator {
                 String variant = (String) info.get("variant");
                 String lookupIds = (String) info.get("lookupIds");
                 String lookupValueIds = (String) info.get("lookupValueIds");
-                localUpdatedCount = createRawMsg(srcFile, variant, identifierToBeReplaced, token, targetColumn,
-                    identifierToken, tableName, tempList, localUpdatedCount, tokenValue, -2, uid, tagName,
+                JSONObject obj = createRawMsg(srcFile, variant, identifierToBeReplaced, token, targetColumn,
+                    identifierToken, tableName, tokenValue, -2, uid, tagName,
                     webserviceId, lookupIds, lookupValueIds, watchlistType);
+                if (obj != null) tempList.add(obj);
             }
         }
 
         // 0 ced -> exact
-        localUpdatedCount = createRawMsg(srcFile, toBeReplaced, identifierToBeReplaced, token, targetColumn,
-            identifierToken, tableName, tempList, localUpdatedCount, tokenValue, 0, uid, tagName,
+        JSONObject obj = createRawMsg(srcFile, toBeReplaced, identifierToBeReplaced, token, targetColumn,
+            identifierToken, tableName, tokenValue, 0, uid, tagName,
             webserviceId, "NA", "NA", watchlistType);
+        if (obj != null) tempList.add(obj);
 
         if (props.getProperty(Constants.CED1).equalsIgnoreCase(Constants.YES)) { // 1 ced
             List<String> oneCedList = generate1CedVariants(toBeReplaced);
             for (String value : oneCedList) {
-                localUpdatedCount = createRawMsg(srcFile, value, identifierToBeReplaced, token, targetColumn,
-                    identifierToken, tableName, tempList, localUpdatedCount, tokenValue, 1, uid, tagName,
+                obj = createRawMsg(srcFile, value, identifierToBeReplaced, token, targetColumn,
+                    identifierToken, tableName, tokenValue, 1, uid, tagName,
                     webserviceId, "NA", "NA", watchlistType);
+                if (obj != null) tempList.add(obj);
             }
         }
 
         if (props.getProperty(Constants.CED2).equalsIgnoreCase(Constants.YES)) { // 2 ced
             List<String> twoCedList = generate2CedVariants(toBeReplaced);
             for (String value : twoCedList) {
-                localUpdatedCount = createRawMsg(srcFile, value, identifierToBeReplaced, token, targetColumn,
-                    identifierToken, tableName, tempList, localUpdatedCount, tokenValue, 2, uid, tagName,
+                obj = createRawMsg(srcFile, value, identifierToBeReplaced, token, targetColumn,
+                    identifierToken, tableName, tokenValue, 2, uid, tagName,
                     webserviceId, "NA", "NA", watchlistType);
+                if (obj != null) tempList.add(obj);
             }
         }
 
         if (props.getProperty(Constants.CED3).equalsIgnoreCase(Constants.YES)) { // 3 ced
             List<String> threeCedList = generate3CedVariants(toBeReplaced);
             for (String value : threeCedList) {
-                localUpdatedCount = createRawMsg(srcFile, value, identifierToBeReplaced, token, targetColumn,
-                    identifierToken, tableName, tempList, localUpdatedCount, tokenValue, 3, uid, tagName,
+                obj = createRawMsg(srcFile, value, identifierToBeReplaced, token, targetColumn,
+                    identifierToken, tableName, tokenValue, 3, uid, tagName,
                     webserviceId, "NA", "NA", watchlistType);
+                if (obj != null) tempList.add(obj);
             }
         }
 
@@ -387,9 +426,10 @@ public class RawMessageGenerator {
                 String lookupValueId = (String) pair[2];
                 List<String> stopwordVariants = generateStopwordVariants(toBeReplaced, stop);
                 for (String variant : stopwordVariants) {
-                    localUpdatedCount = createRawMsg(srcFile, variant, identifierToBeReplaced, token, targetColumn,
-                        identifierToken, tableName, tempList, localUpdatedCount, tokenValue, -1, uid, tagName,
+                    obj = createRawMsg(srcFile, variant, identifierToBeReplaced, token, targetColumn,
+                        identifierToken, tableName, tokenValue, -1, uid, tagName,
                         webserviceId, lookupId, lookupValueId, watchlistType);
+                    if (obj != null) tempList.add(obj);
                 }
             }
         }
@@ -685,6 +725,43 @@ public class RawMessageGenerator {
             return null;
         }
     }
+    private static CompletableFuture<Void> writeExcelChunkAsync(List<JSONObject> chunk, Properties props, BlockingQueue<File> queue, int fileIndex) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                // Create output folder if needed
+                if (!Constants.OUTPUT_FOLDER.exists()) {
+                    Constants.OUTPUT_FOLDER.mkdirs();
+                }
+
+                String configName = props.getProperty("configName", "");
+                String baseFileName = configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName;
+                String fileName = String.format(baseFileName + "_%d", fileIndex) + Constants.XLSX_EXT;
+                File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
+
+                // Convert List to JSONArray
+                JSONArray jsonArray = new JSONArray();
+                for (JSONObject obj : chunk) {
+                    jsonArray.put(obj);
+                }
+
+                String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE);
+                String tagName = props.getProperty(Constants.TAGNAME);
+                String webService = props.getProperty(Constants.WEBSERVICE);
+
+                writeSingleExcelFile(jsonArray, transactionService, tagName, webService, outputFile, false);
+
+                if (queue != null) {
+                    queue.put(outputFile);
+                }
+
+                logger.info("Successfully wrote Excel chunk to ({}) file.", outputFile.getName());
+            } catch (Exception e) {
+                logger.error("Error writing Excel chunk: {}", e.getMessage());
+                e.printStackTrace();
+            }
+        });
+    }
+
     public static void writeJsonAsExcelFile(JSONArray jsonArray, Properties props, BlockingQueue<File> queue) throws IOException, InterruptedException {
         // Create a subfolder "out" inside it
         if (!Constants.OUTPUT_FOLDER.exists()) {
