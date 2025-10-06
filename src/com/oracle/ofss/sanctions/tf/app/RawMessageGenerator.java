@@ -202,7 +202,27 @@ public class RawMessageGenerator {
             filter = " WHERE "+ props.getProperty(whereClauseKey);
         }
 
-        String query = "SELECT * FROM "+tableName+" "+filter;
+        // Collect required columns to optimize query performance
+        Set<String> requiredColumns = new HashSet<>();
+        requiredColumns.add(Constants.NUID); // Always need UID column
+
+        int maxIndex = getMaxIndex(props, Constants.REPLACE_SRC);
+        for (int i = 0; i <= maxIndex; i++) {
+            String targetColumnKey = Constants.REPLACE_TARGET_COLUMN + "[" + i + "]";
+            String targetColumn = props.getProperty(targetColumnKey);
+            if (targetColumn != null && !targetColumn.trim().isEmpty()) {
+                requiredColumns.add(targetColumn);
+            }
+        }
+
+        String selectClause;
+        if (requiredColumns.isEmpty()) {
+            selectClause = "*"; // Fallback to SELECT * if no columns specified (unlikely)
+        } else {
+            selectClause = String.join(",", requiredColumns);
+        }
+
+        String query = "SELECT " + selectClause + " FROM "+tableName+" "+filter;
         logger.info("SQL Query generated:: {}", query);
         try {
             pst = connection.prepareStatement(query);
