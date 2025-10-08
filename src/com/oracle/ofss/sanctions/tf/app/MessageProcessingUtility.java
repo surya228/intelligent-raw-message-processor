@@ -212,7 +212,7 @@ public class MessageProcessingUtility {
                 int responseCode = 500;
                 StringBuilder apiResponse = new StringBuilder();
                 BufferedReader br = null;
-
+                logger.info("============================================================");
                 logger.info("Executing REST call with SeqId: {}", seqId);
                 do {
                     if (retryCount > 0) {
@@ -229,7 +229,7 @@ public class MessageProcessingUtility {
                     synchronized (tokenLock) {
                         bearerToken = getAccessToken(tokenUrl, usernm, pwd);
                     }
-                    logger.info("Access token: {}", bearerToken);
+//                    logger.info("Access token: {}", bearerToken);
 
                     try {
                         URL resturl = new URL(url + "?reqId=" + currentRetry);
@@ -264,7 +264,7 @@ public class MessageProcessingUtility {
                         conn.disconnect();
 
                         logger.info("Waiting for Response: {}", getResponseMsg(responseCode));
-                        logger.info("api response::: {}", apiResponse);
+//                        logger.info("api response::: {}", apiResponse);
                     } catch (Exception e) {
                         e.printStackTrace();
                         responseCode = 500; // Treat as error for retry
@@ -310,7 +310,7 @@ public class MessageProcessingUtility {
 
                         if (responseCode <= 399) {
                             // Existing success logic
-                            logger.info("response: {}", responseJson);
+//                            logger.info("response: {}", responseJson);
                             matchCount = responseJson.has(Constants.FEEDBACK_DATA) ? (responseJson.getJSONObject(Constants.FEEDBACK_DATA).has(Constants.MATCHING_COUNT) ? responseJson.getJSONObject(Constants.FEEDBACK_DATA).getLong(Constants.MATCHING_COUNT) : 0) : 0;
                             status = responseJson.optString(Constants.MATCHING_STATUS, "");
                             feedbackStatus = responseJson.has(Constants.FEEDBACK_DATA) ? responseJson.getJSONObject(Constants.FEEDBACK_DATA).optString(Constants.MATCHING_STATUS, "") : "";
@@ -349,7 +349,7 @@ public class MessageProcessingUtility {
                             for (int i = 0; i < excelParams.length; i++) {
                                 Cell cell = row.getCell(processorStartColumn + i);
                                 if (cell == null) cell = row.createCell(processorStartColumn + i);
-                                logger.info(excelParams[i].toString());
+                                if (i!=5) logger.info(excelParams[i].toString());
                                 cell.setCellValue(excelParams[i].toString());
                             }
                         }
