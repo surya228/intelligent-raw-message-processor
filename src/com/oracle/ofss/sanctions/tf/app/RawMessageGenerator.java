@@ -4,12 +4,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.CSVWriter;
+import org.apache.poi.openxml4j.util.ZipSecureFile;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +22,8 @@ import java.nio.file.Path;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 public class RawMessageGenerator {
     private static final Logger logger = LoggerFactory.getLogger(RawMessageGenerator.class);
@@ -38,7 +42,18 @@ public class RawMessageGenerator {
         logger.info("=============================================================");
 
         Connection databaseConnection = null;
-        JSONArray rawMessageJsonArray = new JSONArray();
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+        int globalFileIndex = 1;
+        int totalMessages = 0;
+
+        int rowLimit;
+        try {
+            String rowLimitStr = props.getProperty(Constants.EXCEL_SPLIT_ROW_LIMIT, String.valueOf(Constants.DEFAULT_ROW_LIMIT));
+            rowLimit = Integer.parseInt(rowLimitStr);
+        } catch (NumberFormatException e) {
+            logger.error("Invalid row limit value, using default: {}", Constants.DEFAULT_ROW_LIMIT);
+            rowLimit = Constants.DEFAULT_ROW_LIMIT;
+        }
 
         try {
             // Extract common configuration properties
@@ -78,10 +93,12 @@ public class RawMessageGenerator {
 
                 ResultSet resultSet = prepareQueryAndGetTableData(databaseConnection, props, tableName, watchlistType);
 
-                JSONArray tempArray = generateRawMessageJsonArray(resultSet, props, sourceTemplate, tableName, tagName, webserviceId, watchlistType, isStopwordEnabled, isSynonymEnabled);
+                List<List<JSONObject>> tempBatches = generateRawMessageJsonArrayBatched(resultSet, props, sourceTemplate, tableName, tagName, webserviceId, watchlistType, isStopwordEnabled, isSynonymEnabled, rowLimit);
 
-                for (int i = 0; i < tempArray.length(); i++) {
-                    rawMessageJsonArray.put(tempArray.getJSONObject(i));
+                // Process each batch as a separate Excel file
+                for (List<JSONObject> batch : tempBatches) {
+                    futures.add(writeExcelChunkAsync(batch, props, queue, globalFileIndex++));
+                    totalMessages += batch.size();
                 }
 
                 if (resultSet != null) {
@@ -93,8 +110,23 @@ public class RawMessageGenerator {
                 }
             }
 
-            if (rawMessageJsonArray.length() > 0) {
-                writeJsonAsExcelFile(rawMessageJsonArray, props, queue);
+            // Wait for all Excel writing tasks to complete
+            if (!futures.isEmpty()) {
+                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+            }
+
+            // Write the count file
+            String countFileName = Constants.OUTPUT_FILE_COUNT_PATH.replace(".txt", "_" + configName + ".txt");
+            File countFile = new File(Constants.OUTPUT_FOLDER, countFileName);
+            try (FileWriter fw = new FileWriter(countFile)) {
+                fw.write(String.valueOf(globalFileIndex - 1));
+            } catch (IOException e) {
+                logger.error("Error writing output file count to {}: {}", countFile.getAbsolutePath(), e.getMessage());
+            }
+            logger.info("Output file count ({}) saved to: {}", globalFileIndex - 1, countFile.getAbsolutePath());
+
+            if (queue != null) {
+                queue.put(new File(Constants.POISON_PILL));
             }
 
             logger.info("=============================================================");
@@ -118,7 +150,7 @@ public class RawMessageGenerator {
                 }
             }
         }
-        return rawMessageJsonArray != null ? rawMessageJsonArray.length() : 0;
+        return totalMessages;
     }
 
     private static boolean validateConfigProperties(String watchlistType, String webserviceId, boolean isStopwordEnabled, boolean isSynonymEnabled) throws Exception {
@@ -170,7 +202,27 @@ public class RawMessageGenerator {
             filter = " WHERE "+ props.getProperty(whereClauseKey);
         }
 
-        String query = "SELECT * FROM "+tableName+" "+filter;
+        // Collect required columns to optimize query performance
+        Set<String> requiredColumns = new HashSet<>();
+        requiredColumns.add(Constants.NUID); // Always need UID column
+
+        int maxIndex = getMaxIndex(props, Constants.REPLACE_SRC);
+        for (int i = 0; i <= maxIndex; i++) {
+            String targetColumnKey = Constants.REPLACE_TARGET_COLUMN + "[" + i + "]";
+            String targetColumn = props.getProperty(targetColumnKey);
+            if (targetColumn != null && !targetColumn.trim().isEmpty()) {
+                requiredColumns.add(targetColumn);
+            }
+        }
+
+        String selectClause;
+        if (requiredColumns.isEmpty()) {
+            selectClause = "*"; // Fallback to SELECT * if no columns specified (unlikely)
+        } else {
+            selectClause = String.join(",", requiredColumns);
+        }
+
+        String query = "SELECT " + selectClause + " FROM "+tableName+" "+filter;
         logger.info("SQL Query generated:: {}", query);
         try {
             pst = connection.prepareStatement(query);
@@ -182,30 +234,37 @@ public class RawMessageGenerator {
         return rs;
     }
 
-    public static JSONArray generateRawMessageJsonArray(ResultSet rs, Properties props, String srcFile, String tableName, String tagName, String webserviceId, String watchlistType, boolean isStopwordEnabled, boolean isSynonymEnabled) throws Exception {
-        JSONArray jsonArray = new JSONArray();
+    public static List<List<JSONObject>> generateRawMessageJsonArrayBatched(ResultSet rs, Properties props, String srcFile, String tableName, String tagName, String webserviceId, String watchlistType, boolean isStopwordEnabled, boolean isSynonymEnabled, int batchSize) throws Exception {
+        List<List<JSONObject>> batches = new ArrayList<>();
+        List<JSONObject> currentBatch = new ArrayList<>();
         int maxIndex = getMaxIndex(props, Constants.REPLACE_SRC);
-        String temp;
         int updatedCount = 0;
 
         List<Object[]> stopwords = null;
         Map<String, Map<String, String>> synonymMap = null;
 
+        // Cache stopwords and synonyms outside the loop to avoid repeated DB calls
         if (isStopwordEnabled) {
             Connection connection = SQLUtility.getDbConnection();
-            stopwords = getRelevantStopwords(props, connection);
-            connection.close();
+            try {
+                stopwords = getRelevantStopwords(props, connection);
+            } finally {
+                connection.close();
+            }
         }
 
         if (isSynonymEnabled) {
             Connection connection = SQLUtility.getDbConnection();
-            synonymMap = loadSynonyms(connection, watchlistType);
-            connection.close();
+            try {
+                synonymMap = loadSynonyms(connection, watchlistType);
+            } finally {
+                connection.close();
+            }
         }
 
         int cnt=0;
         while(rs.next()) {
-            temp=srcFile;
+            String temp = srcFile;
             if(temp != null) {
                 for (int i = 1; i <= maxIndex; i++) {
                     String srcKey = Constants.REPLACE_SRC+"[" + i + "]";
@@ -222,57 +281,46 @@ public class RawMessageGenerator {
 
                         String[] toBeReplacedValues = tokenValue.split(";");
 
+                        // Process token values in parallel for better performance
+                        final String finalSrcFile = srcFile;
+                        final String finalIdentifierToBeReplaced = identifierToBeReplaced;
+                        final String finalToken = token;
+                        final String finalTargetColumn = targetColumn;
+                        final String finalIdentifierToken = identifierToken;
+                        final String finalTableName = tableName;
+                        final String finalTokenValue = tokenValue;
+                        final String finalUid = uid;
+                        final String finalTagName = tagName;
+                        final String finalWebserviceId = webserviceId;
+                        final String finalWatchlistType = watchlistType;
+                        final Properties finalProps = props;
+                        final Map<String, Map<String, String>> finalSynonymMap = synonymMap;
+                        final List<Object[]> finalStopwords = stopwords;
+
+                        ArrayList<CompletableFuture<List<JSONObject>>> futures = new ArrayList<>();
                         for (String toBeReplaced : toBeReplacedValues) {
-                            if (isSynonymEnabled && !synonymMap.isEmpty()) {
-                                List<Map<String, Object>> variantsWithInfo = generateSynonymVariantsWithInfo(toBeReplaced, synonymMap);
-                                for (Map<String, Object> info : variantsWithInfo) {
-                                    String variant = (String) info.get("variant");
-                                    String lookupIds = (String) info.get("lookupIds");
-                                    String lookupValueIds = (String) info.get("lookupValueIds");
-                                    temp = srcFile;
-                                    updatedCount = createRawMsg(temp, variant, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, -2, uid, tagName, webserviceId, lookupIds, lookupValueIds, watchlistType);
-                                }
-                            }
+                            CompletableFuture<List<JSONObject>> future = CompletableFuture.supplyAsync(() ->
+                                generateAllVariantsForTokenValue(toBeReplaced, finalSrcFile, finalIdentifierToBeReplaced,
+                                    finalToken, finalTargetColumn, finalIdentifierToken, finalTableName, finalTokenValue, finalUid,
+                                    finalTagName, finalWebserviceId, finalWatchlistType, finalProps, finalSynonymMap, finalStopwords,
+                                    isSynonymEnabled, isStopwordEnabled));
+                            futures.add(future);
+                        }
 
-                            // 0 ced -> exact
-                            updatedCount = createRawMsg(temp, toBeReplaced, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 0, uid, tagName, webserviceId, "NA", "NA", watchlistType);
-
-                            if (props.getProperty(Constants.CED1).equalsIgnoreCase(Constants.YES)) { // 1 ced
-                                List<String> oneCedList = generate1CedVariants(toBeReplaced);
-                                for (String value : oneCedList) {
-                                    temp = srcFile;
-                                    updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 1, uid, tagName, webserviceId, "NA", "NA", watchlistType);
-                                }
-                            }
-
-                            if (props.getProperty(Constants.CED2).equalsIgnoreCase(Constants.YES)) { // 2 ced
-                                List<String> twoCedList = generate2CedVariants(toBeReplaced);
-                                for (String value : twoCedList) {
-                                    temp = srcFile;
-                                    updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 2, uid, tagName, webserviceId, "NA", "NA", watchlistType);
-                                }
-                            }
-
-                            if (props.getProperty(Constants.CED3).equalsIgnoreCase(Constants.YES)) { // 3 ced
-                                List<String> threeCedList = generate3CedVariants(toBeReplaced);
-                                for (String value : threeCedList) {
-                                    temp = srcFile;
-                                    updatedCount = createRawMsg(temp, value, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, 3, uid, tagName, webserviceId, "NA", "NA", watchlistType);
-                                }
-                            }
-
-                            // Stopword variants
-                            if (isStopwordEnabled && stopwords != null && !stopwords.isEmpty()) {
-                                for (Object[] pair : stopwords) {
-                                    String stop = (String) pair[0];
-                                    String lookupId = (String) pair[1];
-                                    String lookupValueId = (String) pair[2];
-                                    List<String> variants = generateStopwordVariants(toBeReplaced, stop);
-                                    for (String variant : variants) {
-                                        String variantTemp = srcFile;
-                                        updatedCount = createRawMsg(variantTemp, variant, identifierToBeReplaced, token, targetColumn, identifierToken, tableName, jsonArray, updatedCount, tokenValue, -1, uid, tagName, webserviceId, lookupId, lookupValueId, watchlistType);
+                        // Collect results and add to batches
+                        for (CompletableFuture<List<JSONObject>> future : futures) {
+                            try {
+                                List<JSONObject> variants = future.get();
+                                for (JSONObject variant : variants) {
+                                    currentBatch.add(variant);
+                                    if (currentBatch.size() >= batchSize) {
+                                        batches.add(currentBatch);
+                                        currentBatch = new ArrayList<>();
                                     }
                                 }
+                                updatedCount += variants.size();
+                            } catch (Exception e) {
+                                logger.error("Error processing token value variants: {}", e.getMessage());
                             }
                         }
                     }
@@ -282,43 +330,134 @@ public class RawMessageGenerator {
         }
         logger.info("No. of rows selected from Watchlist:: {}", cnt);
         logger.info("No. of raw message created by Generator:: {}", updatedCount);
-        return jsonArray;
+        if (!currentBatch.isEmpty()) {
+            batches.add(currentBatch);
+        }
+        return batches;
 
     }
 
-    public static int createRawMsg(String temp, String value, String identifierToBeReplaced,
+    public static JSONObject createRawMsg(String temp, String value, String identifierToBeReplaced,
                                    String token, String targetColumn, String identifierToken,
-                                   String tableName, JSONArray jsonArray, int updatedCount, String originalValue, int ced, String uid,
+                                   String tableName, String originalValue, int ced, String uid,
                                    String tagName, String webserviceId, String lookupIds, String lookupValueIds, String watchlistType){
         if (value != null) {
             logger.info("toBeReplaced: {} originalValue: {}  token: {}  column: {}  identifier: {} ced: {}", value, originalValue, token, targetColumn, identifierToBeReplaced, ced);
-            identifierToBeReplaced = Constants.IDEN_PREFIX+identifierToBeReplaced;
-            temp = temp.replace(token, value);
-            temp = temp.replace(identifierToken,identifierToBeReplaced);
+            identifierToBeReplaced = Constants.IDEN_PREFIX + identifierToBeReplaced;
+            // Use StringBuilder for efficient string replacements
+            StringBuilder sb = new StringBuilder(temp);
+            int tokenIndex = sb.indexOf(token);
+            if (tokenIndex != -1) {
+                sb.replace(tokenIndex, tokenIndex + token.length(), value);
+            }
+            // Replace all occurrences of identifierToken
+            int start = 0;
+            while ((start = sb.indexOf(identifierToken, start)) != -1) {
+                sb.replace(start, start + identifierToken.length(), identifierToBeReplaced);
+                start += identifierToBeReplaced.length();
+            }
+            String modifiedTemp = sb.toString();
+            try{
+                JSONObject tempJson = new JSONObject(modifiedTemp);
+                JSONObject additionalData = tempJson.getJSONObject(Constants.ADDITIONAL_DATA);
+                additionalData.put(Constants.TABLE, tableName);
+                additionalData.put(Constants.UID,uid);
+                additionalData.put(Constants.COLUMN, targetColumn);
+                additionalData.put(Constants.TOKEN, token);
+                additionalData.put(Constants.VALUE, value);
+                additionalData.put(Constants.ORIGINAL_VALUE, originalValue);
+                additionalData.put(Constants.CED, ced);
+                additionalData.put(Constants.TAGNAME,tagName);
+                additionalData.put(Constants.WEBSERVICE_ID,webserviceId);
+                additionalData.put(Constants.IDEN_TOKEN, identifierToken);
+                additionalData.put(Constants.IDEN_VALUE, identifierToBeReplaced);
+                additionalData.put(Constants.IS_STOPWORD_PRESENT, (ced == -1 ? "Y" : "N"));
+                additionalData.put("isSynonymPresent", (ced == -2 ? "Y" : "N"));
+                additionalData.put(Constants.LOOKUP_ID, lookupIds);
+                additionalData.put(Constants.LOOKUP_VALUE_ID, lookupValueIds);
+                additionalData.put(Constants.WATCHLIST, watchlistType);
+                return tempJson;
+            } catch (JSONException e){
+                logger.error("Raw Message skipped due to bad data: {}",e.getMessage());
+            }
 
-            JSONObject tempJson = new JSONObject(temp);
-            JSONObject additionalData = tempJson.getJSONObject(Constants.ADDITIONAL_DATA);
-            additionalData.put(Constants.TABLE, tableName);
-            additionalData.put(Constants.UID,uid);
-            additionalData.put(Constants.COLUMN, targetColumn);
-            additionalData.put(Constants.TOKEN, token);
-            additionalData.put(Constants.VALUE, value);
-            additionalData.put(Constants.ORIGINAL_VALUE, originalValue);
-            additionalData.put(Constants.CED, ced);
-            additionalData.put(Constants.TAGNAME,tagName);
-            additionalData.put(Constants.WEBSERVICE_ID,webserviceId);
-            additionalData.put(Constants.IDEN_TOKEN, identifierToken);
-            additionalData.put(Constants.IDEN_VALUE, identifierToBeReplaced);
-            additionalData.put(Constants.IS_STOPWORD_PRESENT, (ced == -1 ? "Y" : "N"));
-            additionalData.put("isSynonymPresent", (ced == -2 ? "Y" : "N"));
-            additionalData.put(Constants.LOOKUP_ID, lookupIds);
-            additionalData.put(Constants.LOOKUP_VALUE_ID, lookupValueIds);
-            additionalData.put(Constants.WATCHLIST, watchlistType);
-            jsonArray.put(tempJson);
-
-            updatedCount++;
         }
-        return updatedCount;
+        return null;
+    }
+
+    private static List<JSONObject> generateAllVariantsForTokenValue(String toBeReplaced, String srcFile,
+            String identifierToBeReplaced, String token, String targetColumn, String identifierToken,
+            String tableName, String tokenValue, String uid, String tagName, String webserviceId,
+            String watchlistType, Properties props, Map<String, Map<String, String>> synonymMap,
+            List<Object[]> stopwords, boolean isSynonymEnabled, boolean isStopwordEnabled) {
+        List<JSONObject> tempList = new ArrayList<>();
+
+        if (isSynonymEnabled && synonymMap != null && !synonymMap.isEmpty()) {
+            List<Map<String, Object>> variantsWithInfo = generateSynonymVariantsWithInfo(toBeReplaced, synonymMap);
+            for (Map<String, Object> info : variantsWithInfo) {
+                String variant = (String) info.get("variant");
+                String lookupIds = (String) info.get("lookupIds");
+                String lookupValueIds = (String) info.get("lookupValueIds");
+                JSONObject obj = createRawMsg(srcFile, variant, identifierToBeReplaced, token, targetColumn,
+                    identifierToken, tableName, tokenValue, -2, uid, tagName,
+                    webserviceId, lookupIds, lookupValueIds, watchlistType);
+                if (obj != null) tempList.add(obj);
+            }
+        }
+
+        // 0 ced -> exact
+        JSONObject obj = createRawMsg(srcFile, toBeReplaced, identifierToBeReplaced, token, targetColumn,
+            identifierToken, tableName, tokenValue, 0, uid, tagName,
+            webserviceId, "NA", "NA", watchlistType);
+        if (obj != null) tempList.add(obj);
+
+        if (props.getProperty(Constants.CED1).equalsIgnoreCase(Constants.YES)) { // 1 ced
+            List<String> oneCedList = generate1CedVariants(toBeReplaced);
+            for (String value : oneCedList) {
+                obj = createRawMsg(srcFile, value, identifierToBeReplaced, token, targetColumn,
+                    identifierToken, tableName, tokenValue, 1, uid, tagName,
+                    webserviceId, "NA", "NA", watchlistType);
+                if (obj != null) tempList.add(obj);
+            }
+        }
+
+        if (props.getProperty(Constants.CED2).equalsIgnoreCase(Constants.YES)) { // 2 ced
+            List<String> twoCedList = generate2CedVariants(toBeReplaced);
+            for (String value : twoCedList) {
+                obj = createRawMsg(srcFile, value, identifierToBeReplaced, token, targetColumn,
+                    identifierToken, tableName, tokenValue, 2, uid, tagName,
+                    webserviceId, "NA", "NA", watchlistType);
+                if (obj != null) tempList.add(obj);
+            }
+        }
+
+        if (props.getProperty(Constants.CED3).equalsIgnoreCase(Constants.YES)) { // 3 ced
+            List<String> threeCedList = generate3CedVariants(toBeReplaced);
+            for (String value : threeCedList) {
+                obj = createRawMsg(srcFile, value, identifierToBeReplaced, token, targetColumn,
+                    identifierToken, tableName, tokenValue, 3, uid, tagName,
+                    webserviceId, "NA", "NA", watchlistType);
+                if (obj != null) tempList.add(obj);
+            }
+        }
+
+        // Stopword variants
+        if (isStopwordEnabled && stopwords != null && !stopwords.isEmpty()) {
+            for (Object[] pair : stopwords) {
+                String stop = (String) pair[0];
+                String lookupId = (String) pair[1];
+                String lookupValueId = (String) pair[2];
+                List<String> stopwordVariants = generateStopwordVariants(toBeReplaced, stop);
+                for (String variant : stopwordVariants) {
+                    obj = createRawMsg(srcFile, variant, identifierToBeReplaced, token, targetColumn,
+                        identifierToken, tableName, tokenValue, -1, uid, tagName,
+                        webserviceId, lookupId, lookupValueId, watchlistType);
+                    if (obj != null) tempList.add(obj);
+                }
+            }
+        }
+
+        return tempList;
     }
 
 
@@ -609,6 +748,55 @@ public class RawMessageGenerator {
             return null;
         }
     }
+    private static CompletableFuture<Void> writeExcelChunkAsync(List<JSONObject> chunk, Properties props, BlockingQueue<File> queue, int fileIndex) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                // Set zip bomb protection
+                double minRatio = Double.parseDouble(props.getProperty(Constants.EXCEL_MIN_INFLATE_RATIO, String.valueOf(Constants.DEFAULT_MIN_INFLATE_RATIO)));
+                ZipSecureFile.setMinInflateRatio(minRatio);
+
+                // Create output folder if needed
+                if (!Constants.OUTPUT_FOLDER.exists()) {
+                    Constants.OUTPUT_FOLDER.mkdirs();
+                }
+
+                String configName = props.getProperty("configName", "");
+                String baseFileName = configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName;
+                String fileName = String.format(baseFileName + "_%d", fileIndex) + Constants.XLSX_EXT;
+                File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
+
+                // Convert List to JSONArray
+                JSONArray jsonArray = new JSONArray();
+                for (JSONObject obj : chunk) {
+                    jsonArray.put(obj);
+                }
+
+                String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE);
+                String tagName = props.getProperty(Constants.TAGNAME);
+                String webService = props.getProperty(Constants.WEBSERVICE);
+
+                writeSingleExcelFile(jsonArray, transactionService, tagName, webService, outputFile, false);
+
+                // Check file size limit
+                long maxSize = Long.parseLong(props.getProperty(Constants.EXCEL_MAX_FILE_SIZE, String.valueOf(Constants.DEFAULT_MAX_EXCEL_FILE_SIZE)));
+                if (outputFile.length() > maxSize) {
+                    logger.error("Generated Excel file {} exceeds maximum size limit of {} bytes. Deleting.", outputFile.getName(), maxSize);
+                    outputFile.delete();
+                    return;
+                }
+
+                if (queue != null) {
+                    queue.put(outputFile);
+                }
+
+                logger.info("Successfully wrote Excel chunk to ({}) file.", outputFile.getName());
+            } catch (Exception e) {
+                logger.error("Error writing Excel chunk: {}", e.getMessage());
+                e.printStackTrace();
+            }
+        });
+    }
+
     public static void writeJsonAsExcelFile(JSONArray jsonArray, Properties props, BlockingQueue<File> queue) throws IOException, InterruptedException {
         // Create a subfolder "out" inside it
         if (!Constants.OUTPUT_FOLDER.exists()) {
@@ -629,25 +817,21 @@ public class RawMessageGenerator {
             rowLimit = Constants.DEFAULT_ROW_LIMIT;
         }
 
-        // Check for existing files
-        File[] existingFiles = Constants.OUTPUT_FOLDER.listFiles((dir, name) ->
-            name.matches((configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName) + "_\\d+\\.xlsx"));
-        boolean hasExisting = existingFiles != null && existingFiles.length > 0;
 
-        if (!hasExisting) {
-            // No existing files, create new as before
-            if (jsonArray.length() <= rowLimit) {
-                // Write to a single file if splitting is not enabled or data is within limit
-                String baseFileName = configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName;
-                String fileName = String.format(baseFileName + "_%d", 1) + Constants.XLSX_EXT;
-                File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
-                writeSingleExcelFile(jsonArray, transactionService, tagName, webService, outputFile, false);
-                if (queue != null) {
-                    queue.put(outputFile);
-                }
-                if (queue != null) {
-                    queue.put(new File(Constants.POISON_PILL));
-                }
+
+        // No existing files, create new as before
+        if (jsonArray.length() <= rowLimit) {
+            // Write to a single file if splitting is not enabled or data is within limit
+            String baseFileName = configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName;
+            String fileName = String.format(baseFileName + "_%d", 1) + Constants.XLSX_EXT;
+            File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
+            writeSingleExcelFile(jsonArray, transactionService, tagName, webService, outputFile, false);
+            if (queue != null) {
+                queue.put(outputFile);
+            }
+            if (queue != null) {
+                queue.put(new File(Constants.POISON_PILL));
+            }
             String countFileName = Constants.OUTPUT_FILE_COUNT_PATH.replace(".txt", "_" + configName + ".txt");
             File countFile = new File(Constants.OUTPUT_FOLDER, countFileName);
             try (FileWriter fw = new FileWriter(countFile)) {
@@ -655,64 +839,42 @@ public class RawMessageGenerator {
             } catch (IOException e) {
                 logger.error("Error writing output file count to {}: {}", countFile.getAbsolutePath(), e.getMessage());
             }
-                logger.info("Successfully wrote to Excel ({}) file.", outputFile.getName());
-                logger.info("Output file count (1) saved to: {}", countFile.getAbsolutePath());
-            } else {
-                // Split data into multiple files
-                int fileIndex = 1;
-                int startIndex = 0;
-                while (startIndex < jsonArray.length()) {
-                    int endIndex = Math.min(startIndex + rowLimit, jsonArray.length());
-                    JSONArray chunk = new JSONArray();
-                    for (int i = startIndex; i < endIndex; i++) {
-                        chunk.put(jsonArray.getJSONObject(i));
-                    }
-                    String baseFileName = configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName;
-                    String fileName = String.format(baseFileName + "_%d", fileIndex) + Constants.XLSX_EXT;
-                    File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
-                    writeSingleExcelFile(chunk, transactionService, tagName, webService, outputFile, false);
-                    if (queue != null) {
-                        queue.put(outputFile);
-                    }
-                    fileIndex++;
-                    startIndex = endIndex;
-                }
-                // Store the count of output files created, adjusting for the last increment since fileIndex is incremented after the last file
-                String countFileName = Constants.OUTPUT_FILE_COUNT_PATH.replace(".txt", "_" + configName + ".txt");
-                File countFile = new File(Constants.OUTPUT_FOLDER, countFileName);
-                int totalFiles = fileIndex - 1; // Adjust for the last increment
-                try (FileWriter fw = new FileWriter(countFile)) {
-                    fw.write(String.valueOf(totalFiles));
-                } catch (IOException e) {
-                    logger.error("Error writing output file count to {}: {}", countFile.getAbsolutePath(), e.getMessage());
-                }
-                logger.info("Successfully wrote to multiple Excel files with prefix ({}_N.xlsx).", Constants.OUTPUT_FILE_NAME + (configName.isEmpty() ? "" : "_" + configName));
-                logger.info("Output file count ({}) saved to: {}", totalFiles, countFile.getAbsolutePath());
-                if (queue != null) {
-                    queue.put(new File(Constants.POISON_PILL));
-                }
-            }
+            logger.info("Successfully wrote to Excel ({}) file.", outputFile.getName());
+            logger.info("Output file count (1) saved to: {}", countFile.getAbsolutePath());
         } else {
-            // Existing files present, append to the first one
-            Arrays.sort(existingFiles, (f1, f2) -> {
-                try {
-                    String n1 = f1.getName().replace((configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName) + "_", "").replace(Constants.XLSX_EXT, "");
-                    String n2 = f2.getName().replace((configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName) + "_", "").replace(Constants.XLSX_EXT, "");
-                    return Integer.compare(Integer.parseInt(n1), Integer.parseInt(n2));
-                } catch (NumberFormatException e) {
-                    return f1.getName().compareTo(f2.getName());
+            // Split data into multiple files
+            int fileIndex = 1;
+            int startIndex = 0;
+            while (startIndex < jsonArray.length()) {
+                int endIndex = Math.min(startIndex + rowLimit, jsonArray.length());
+                JSONArray chunk = new JSONArray();
+                for (int i = startIndex; i < endIndex; i++) {
+                    chunk.put(jsonArray.getJSONObject(i));
                 }
-            });
-            File firstFile = existingFiles[0];
-            writeSingleExcelFile(jsonArray, transactionService, tagName, webService, firstFile, true);
+                String baseFileName = configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName;
+                String fileName = String.format(baseFileName + "_%d", fileIndex) + Constants.XLSX_EXT;
+                File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
+                writeSingleExcelFile(chunk, transactionService, tagName, webService, outputFile, false);
+                if (queue != null) {
+                    queue.put(outputFile);
+                }
+                fileIndex++;
+                startIndex = endIndex;
+            }
+            // Store the count of output files created, adjusting for the last increment since fileIndex is incremented after the last file
+            String countFileName = Constants.OUTPUT_FILE_COUNT_PATH.replace(".txt", "_" + configName + ".txt");
+            File countFile = new File(Constants.OUTPUT_FOLDER, countFileName);
+            int totalFiles = fileIndex - 1; // Adjust for the last increment
+            try (FileWriter fw = new FileWriter(countFile)) {
+                fw.write(String.valueOf(totalFiles));
+            } catch (IOException e) {
+                logger.error("Error writing output file count to {}: {}", countFile.getAbsolutePath(), e.getMessage());
+            }
+            logger.info("Successfully wrote to multiple Excel files with prefix ({}_N.xlsx).", Constants.OUTPUT_FILE_NAME + (configName.isEmpty() ? "" : "_" + configName));
+            logger.info("Output file count ({}) saved to: {}", totalFiles, countFile.getAbsolutePath());
             if (queue != null) {
-                // Put all existing files to queue, since they may have been updated
-                for (File f : existingFiles) {
-                    queue.put(f);
-                }
                 queue.put(new File(Constants.POISON_PILL));
             }
-            logger.info("Successfully appended to existing Excel ({}) file.", firstFile.getName());
         }
     }
 

@@ -42,11 +42,12 @@ public class MessageResponseAnalyzer {
         String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE);
 //        String watchListType = props.getProperty(Constants.WATCHLIST_TYPE);
         String webServiceId = props.getProperty(Constants.WEBSERVICE_ID);
+        int analyzerThreadCount = Integer.parseInt(props.getProperty(Constants.ANALYZER_THREADS));
         if (transactionService.equalsIgnoreCase("SWIFT")) msgCategory = "SWIFT";
         else if (transactionService.equalsIgnoreCase("FEDWIRE")) msgCategory = "FEDWIRE";
         else if (transactionService.equalsIgnoreCase("ISO20022")) msgCategory = "SEPA";
         logger.info("tagName: {}", tagName);
-        processAllResponses(tagName, msgCategory, webServiceId, matchingEngine, excelFiles);
+        processAllResponses(tagName, msgCategory, webServiceId, matchingEngine, excelFiles, analyzerThreadCount);
 
         logger.info("=============================================================");
         logger.info("                   RESPONSE ANALYZER ENDED                   ");
@@ -56,7 +57,7 @@ public class MessageResponseAnalyzer {
         logger.info("Time taken by Message Response Analyzer: {} seconds", (endTime - startTime) / 1000L);
     }
 
-    private static void processAllResponses(String tagName, String msgCategory, String webServiceId, String matchingEngine, List<File> excelFiles) throws Exception {
+    private static void processAllResponses(String tagName, String msgCategory, String webServiceId, String matchingEngine, List<File> excelFiles, int analyzerThreadCount) throws Exception {
         if (excelFiles.isEmpty()) {
             logger.info("No Excel files found to analyze.");
             return;
@@ -181,7 +182,7 @@ public class MessageResponseAnalyzer {
                 highlightYellow.setFont(boldFont);
 
                 // Parallel processing of rows
-                ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+                ExecutorService executor = Executors.newFixedThreadPool(analyzerThreadCount);
                 List<CompletableFuture<Void>> futures = new ArrayList<>();
 
                 for (long transactionToken : transactionTokens) {

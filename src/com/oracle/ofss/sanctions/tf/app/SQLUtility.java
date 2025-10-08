@@ -34,14 +34,15 @@ public class SQLUtility {
             // Optimized connection pool settings for bulk operations
             config.setMaximumPoolSize(20); // Increased for better throughput
             config.setMinimumIdle(10);
-            config.setConnectionTimeout(60000); // 60 seconds
-            config.setIdleTimeout(300000); // 5 minutes
-            config.setMaxLifetime(1800000); // 30 minutes
-            config.setLeakDetectionThreshold(60000); // 60 seconds
+            config.setConnectionTimeout(900000000);
+            config.setIdleTimeout(900000000);
+            config.setMaxLifetime(1800000000);
+            config.setLeakDetectionThreshold(60000);
 
-            // Performance optimizations
+            // Performance optimizations and timeout settings
             config.addDataSourceProperty("oracle.jdbc.ReadTimeout", "60000");
             config.addDataSourceProperty("oracle.net.CONNECT_TIMEOUT", "10000");
+            config.addDataSourceProperty("oracle.net.authenticationTimeout", "120000"); // 120 seconds for authentication
             config.addDataSourceProperty("oracle.jdbc.defaultNChar", "true");
 
             dataSource = new HikariDataSource(config);
@@ -52,8 +53,29 @@ public class SQLUtility {
     }
 
     public static Connection getDbConnection() throws Exception {
-        Connection connection = dataSource.getConnection();
-        logger.info(Constants.CONNECTION_ESTABLISHED);
-        return connection;
+        int maxRetries = 3;
+        long retryDelayMs = 5000; // 5 seconds
+
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                Connection connection = dataSource.getConnection();
+                logger.info(Constants.CONNECTION_ESTABLISHED);
+                return connection;
+            } catch (Exception e) {
+                if (attempt == maxRetries) {
+                    logger.error("Failed to establish database connection after {} attempts", maxRetries);
+                    throw e;
+                }
+                logger.warn("Database connection attempt {} failed: {}. Retrying in {} ms...", attempt, e.getMessage(), retryDelayMs);
+                try {
+                    Thread.sleep(retryDelayMs);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Interrupted while waiting to retry connection", ie);
+                }
+            }
+        }
+        // This should never be reached
+        throw new RuntimeException("Unexpected error in connection retry logic");
     }
 }
