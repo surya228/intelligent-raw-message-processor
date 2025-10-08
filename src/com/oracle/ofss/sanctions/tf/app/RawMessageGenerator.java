@@ -58,11 +58,9 @@ public class RawMessageGenerator {
         try {
             // Extract common configuration properties
             String tagName = props.getProperty(Constants.TAGNAME);
-            String webService = props.getProperty(Constants.WEBSERVICE);
-            String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE);
             String webserviceId = props.getProperty(Constants.WEBSERVICE_ID);
-            boolean isStopwordEnabled = Constants.YES.equalsIgnoreCase(props.getProperty("stopword"));
-            boolean isSynonymEnabled = Constants.YES.equalsIgnoreCase(props.getProperty("synonym"));
+            boolean isStopwordEnabled = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.STOPWORD));
+            boolean isSynonymEnabled = Constants.YES.equalsIgnoreCase(props.getProperty(Constants.SYNONYM));
 
             // Validate configuration properties
 //            try {
@@ -405,11 +403,15 @@ public class RawMessageGenerator {
             }
         }
 
-        // 0 ced -> exact
-        JSONObject obj = createRawMsg(srcFile, toBeReplaced, identifierToBeReplaced, token, targetColumn,
-            identifierToken, tableName, tokenValue, 0, uid, tagName,
-            webserviceId, "NA", "NA", watchlistType);
-        if (obj != null) tempList.add(obj);
+
+        JSONObject obj;
+
+        if (props.getProperty(Constants.CED0).equalsIgnoreCase(Constants.YES)) { // 0 ced -> Exact
+            obj = createRawMsg(srcFile, toBeReplaced, identifierToBeReplaced, token, targetColumn,
+                    identifierToken, tableName, tokenValue, 0, uid, tagName,
+                    webserviceId, "NA", "NA", watchlistType);
+            if (obj != null) tempList.add(obj);
+        }
 
         if (props.getProperty(Constants.CED1).equalsIgnoreCase(Constants.YES)) { // 1 ced
             List<String> oneCedList = generate1CedVariants(toBeReplaced);
@@ -797,87 +799,6 @@ public class RawMessageGenerator {
         });
     }
 
-    public static void writeJsonAsExcelFile(JSONArray jsonArray, Properties props, BlockingQueue<File> queue) throws IOException, InterruptedException {
-        // Create a subfolder "out" inside it
-        if (!Constants.OUTPUT_FOLDER.exists()) {
-            Constants.OUTPUT_FOLDER.mkdirs();  // Create the folder if it doesn't exist
-        }
-
-        String configName = props.getProperty("configName", "");
-        String transactionService = props.getProperty(Constants.TRANSACTION_SERVICE);
-        String tagName = props.getProperty(Constants.TAGNAME);
-        String webService = props.getProperty(Constants.WEBSERVICE);
-
-        int rowLimit;
-        try {
-            String rowLimitStr = props.getProperty(Constants.EXCEL_SPLIT_ROW_LIMIT, String.valueOf(Constants.DEFAULT_ROW_LIMIT));
-            rowLimit = Integer.parseInt(rowLimitStr);
-        } catch (NumberFormatException e) {
-            logger.error("Invalid row limit value, using default: {}", Constants.DEFAULT_ROW_LIMIT);
-            rowLimit = Constants.DEFAULT_ROW_LIMIT;
-        }
-
-
-
-        // No existing files, create new as before
-        if (jsonArray.length() <= rowLimit) {
-            // Write to a single file if splitting is not enabled or data is within limit
-            String baseFileName = configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName;
-            String fileName = String.format(baseFileName + "_%d", 1) + Constants.XLSX_EXT;
-            File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
-            writeSingleExcelFile(jsonArray, transactionService, tagName, webService, outputFile, false);
-            if (queue != null) {
-                queue.put(outputFile);
-            }
-            if (queue != null) {
-                queue.put(new File(Constants.POISON_PILL));
-            }
-            String countFileName = Constants.OUTPUT_FILE_COUNT_PATH.replace(".txt", "_" + configName + ".txt");
-            File countFile = new File(Constants.OUTPUT_FOLDER, countFileName);
-            try (FileWriter fw = new FileWriter(countFile)) {
-                fw.write("1");
-            } catch (IOException e) {
-                logger.error("Error writing output file count to {}: {}", countFile.getAbsolutePath(), e.getMessage());
-            }
-            logger.info("Successfully wrote to Excel ({}) file.", outputFile.getName());
-            logger.info("Output file count (1) saved to: {}", countFile.getAbsolutePath());
-        } else {
-            // Split data into multiple files
-            int fileIndex = 1;
-            int startIndex = 0;
-            while (startIndex < jsonArray.length()) {
-                int endIndex = Math.min(startIndex + rowLimit, jsonArray.length());
-                JSONArray chunk = new JSONArray();
-                for (int i = startIndex; i < endIndex; i++) {
-                    chunk.put(jsonArray.getJSONObject(i));
-                }
-                String baseFileName = configName.isEmpty() ? Constants.OUTPUT_FILE_NAME : Constants.OUTPUT_FILE_NAME + "_" + configName;
-                String fileName = String.format(baseFileName + "_%d", fileIndex) + Constants.XLSX_EXT;
-                File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
-                writeSingleExcelFile(chunk, transactionService, tagName, webService, outputFile, false);
-                if (queue != null) {
-                    queue.put(outputFile);
-                }
-                fileIndex++;
-                startIndex = endIndex;
-            }
-            // Store the count of output files created, adjusting for the last increment since fileIndex is incremented after the last file
-            String countFileName = Constants.OUTPUT_FILE_COUNT_PATH.replace(".txt", "_" + configName + ".txt");
-            File countFile = new File(Constants.OUTPUT_FOLDER, countFileName);
-            int totalFiles = fileIndex - 1; // Adjust for the last increment
-            try (FileWriter fw = new FileWriter(countFile)) {
-                fw.write(String.valueOf(totalFiles));
-            } catch (IOException e) {
-                logger.error("Error writing output file count to {}: {}", countFile.getAbsolutePath(), e.getMessage());
-            }
-            logger.info("Successfully wrote to multiple Excel files with prefix ({}_N.xlsx).", Constants.OUTPUT_FILE_NAME + (configName.isEmpty() ? "" : "_" + configName));
-            logger.info("Output file count ({}) saved to: {}", totalFiles, countFile.getAbsolutePath());
-            if (queue != null) {
-                queue.put(new File(Constants.POISON_PILL));
-            }
-        }
-    }
-
     private static void writeSingleExcelFile(JSONArray jsonArray, String transactionService, String tagName, String webService, File outputFile, boolean append) throws IOException {
         Workbook workbook;
         Sheet sheet;
@@ -968,73 +889,4 @@ public class RawMessageGenerator {
         logger.info("Successfully wrote to Excel ({}) file.", outputFile.getName());
     }
 
-    public static void writeRawMessagesToJsonFile(JSONArray jsonArray) throws IOException {
-        if (!Constants.OUTPUT_FOLDER.exists()) {
-            Constants.OUTPUT_FOLDER.mkdirs();
-        }
-
-        // Load configuration for Excel splitting to match JSON splitting
-        Properties props = new Properties();
-        try (FileReader reader = new FileReader(Constants.CONFIG_FILE_PATH)) {
-            props.load(reader);
-        } catch (IOException e) {
-            logger.error("Error reading properties file for JSON splitting: {}", e.getMessage());
-            throw e;
-        }
-
-        int rowLimit = Constants.DEFAULT_ROW_LIMIT;
-        try {
-            String rowLimitStr = props.getProperty(Constants.EXCEL_SPLIT_ROW_LIMIT, String.valueOf(Constants.DEFAULT_ROW_LIMIT));
-            rowLimit = Integer.parseInt(rowLimitStr);
-        } catch (NumberFormatException e) {
-            logger.error("Invalid row limit value for JSON splitting, using default: {}", Constants.DEFAULT_ROW_LIMIT);
-            rowLimit = Constants.DEFAULT_ROW_LIMIT;
-        }
-
-        if (jsonArray.length() <= rowLimit) {
-            // Write to a single file if splitting is not enabled or data is within limit
-            String fileName = String.format(Constants.OUTPUT_FILE_NAME_PATTERN, 1) + Constants.JSON_EXT;
-            File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
-            try (FileOutputStream fos = new FileOutputStream(outputFile)) {
-                fos.write(jsonArray.toString(4).getBytes(Constants.ENCODER));
-            }
-            File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
-            try (FileWriter fw = new FileWriter(countFile)) {
-                fw.write("1");
-            } catch (IOException e) {
-            logger.error("Error writing output file count to {}: {}", countFile.getAbsolutePath(), e.getMessage());
-            }
-            logger.info("Successfully wrote raw messages to JSON ({}) file.", outputFile.getName());
-            logger.info("Output file count (1) saved to: {}", countFile.getAbsolutePath());
-        } else {
-            // Split data into multiple files
-            int fileIndex = 1;
-            int startIndex = 0;
-            while (startIndex < jsonArray.length()) {
-                int endIndex = Math.min(startIndex + rowLimit, jsonArray.length());
-                JSONArray chunk = new JSONArray();
-                for (int i = startIndex; i < endIndex; i++) {
-                    chunk.put(jsonArray.getJSONObject(i));
-                }
-                String fileName = String.format(Constants.OUTPUT_FILE_NAME_PATTERN, fileIndex) + Constants.JSON_EXT;
-                File outputFile = new File(Constants.OUTPUT_FOLDER, fileName);
-                try (FileOutputStream fos = new FileOutputStream(outputFile)) {
-                    fos.write(chunk.toString(4).getBytes(Constants.ENCODER));
-                }
-                logger.info("Successfully wrote raw messages to JSON ({}) file.", fileName);
-                fileIndex++;
-                startIndex = endIndex;
-            }
-            // Store the count of output files created, adjusting for the last increment since fileIndex is incremented after the last file
-            File countFile = new File(Constants.OUTPUT_FOLDER, Constants.OUTPUT_FILE_COUNT_PATH);
-            int totalFiles = fileIndex - 1; // Adjust for the last increment
-            try (FileWriter fw = new FileWriter(countFile)) {
-                fw.write(String.valueOf(totalFiles));
-            } catch (IOException e) {
-                logger.error("Error writing output file count to {}: {}", countFile.getAbsolutePath(), e.getMessage());
-            }
-            logger.info("Successfully wrote to multiple Excel files with prefix ({}_N.xlsx).", Constants.OUTPUT_FILE_NAME);
-            logger.info("Output file count ({}) saved to: {}", totalFiles, countFile.getAbsolutePath());
-        }
-    }
 }

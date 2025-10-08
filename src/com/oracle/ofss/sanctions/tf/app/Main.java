@@ -206,6 +206,12 @@ public class Main {
             try {
                 String configName = specificConfig.getName().replace(".properties", "");
                 Properties specificProps = loadProperties(specificConfig.getPath());
+
+                if (!isAtLeastOneVariantEnabled(specificProps)) {
+                    logger.warn("Skipping config {}: at least one of ced0,ced1,ced2,ced3,synonym,stopword must be enabled.", configName);
+                    continue;
+                }
+
                 Properties mergedProps = mergeProperties(commonProps, specificProps);
 
                 int generatedCount = processSingleConfig(mergedProps, configName, matchingEngine, isToggle, false, formattedStartDate, formattedStartTime, false);
@@ -256,6 +262,12 @@ public class Main {
                 try {
                     String configName = specificConfig.getName().replace(".properties", "");
                     Properties specificProps = loadProperties(specificConfig.getPath());
+
+                    if (!isAtLeastOneVariantEnabled(specificProps)) {
+                        logger.warn("Skipping config {}: at least one of ced0,ced1,ced2,ced3,synonym,stopword must be enabled.", configName);
+                        continue;
+                    }
+
                     Properties mergedProps = mergeProperties(commonProps, specificProps);
 
                     processSingleConfig(mergedProps, configName, matchingEngine, isToggle, true, formattedStartDate, formattedStartTime, true);
@@ -392,6 +404,15 @@ public class Main {
         return merged;
     }
 
+    private static boolean isAtLeastOneVariantEnabled(Properties props) {
+        return Constants.YES.equalsIgnoreCase(props.getProperty(Constants.CED0)) ||
+               Constants.YES.equalsIgnoreCase(props.getProperty(Constants.CED1)) ||
+               Constants.YES.equalsIgnoreCase(props.getProperty(Constants.CED2)) ||
+               Constants.YES.equalsIgnoreCase(props.getProperty(Constants.CED3)) ||
+               Constants.YES.equalsIgnoreCase(props.getProperty(Constants.SYNONYM)) ||
+               Constants.YES.equalsIgnoreCase(props.getProperty(Constants.STOPWORD));
+    }
+
     private static int processSingleConfig(Properties mergedProps, String configName, String matchingEngine,
             boolean isToggle, boolean isFinalRun, String startDate, String startTimeStr, boolean skipGeneration) throws Exception {
         logger.info("=============================================================");
@@ -444,32 +465,6 @@ public class Main {
         return generatedCount;
     }
 
-    private static void deletePreviousFilesForConfig(String configName) {
-        // Delete config-specific count file
-        String countFileName = Constants.OUTPUT_FILE_COUNT_PATH.replace(".txt", "_" + configName + ".txt");
-        File countFile = new File(Constants.OUTPUT_FOLDER, countFileName);
-        if (countFile.exists()) {
-            if (countFile.delete()) {
-                logger.info("Deleted previous count file: {}", countFile.getName());
-            } else {
-                logger.error("Failed to delete previous count file: {}", countFile.getName());
-            }
-        }
-
-        // Delete files with config-specific naming pattern
-        File[] prevFiles = Constants.OUTPUT_FOLDER.listFiles((dir, name) ->
-            name.matches(Constants.OUTPUT_FILE_NAME + "_" + configName + "_\\d+\\.xlsx") ||
-            name.matches(Constants.OUTPUT_FILE_NAME + "_\\d+\\.xlsx")); // fallback for old pattern
-        if (prevFiles != null) {
-            for (File file : prevFiles) {
-                if (file.delete()) {
-                    logger.info("Deleted previous output file: {}", file.getName());
-                } else {
-                    logger.error("Failed to delete previous output file: {}", file.getName());
-                }
-            }
-        }
-    }
 
     private static List<File> getExcelFilesForConfig(Properties props, String configName) throws IOException {
         List<File> excelFiles = new ArrayList<>();
