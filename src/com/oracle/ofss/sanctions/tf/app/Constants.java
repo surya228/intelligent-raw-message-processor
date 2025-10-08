@@ -71,7 +71,9 @@ public class Constants {
     public static String WEBSERVICE_ID = "webServiceId";
     public static final String COMMENTS = "Comments";
 
-    // CED properties
+    // CED, Synonym, Stopword properties
+    public static String SYNONYM =  "synonym";
+    public static String STOPWORD =  "stopword";
     public static String CED0 =  "ced0";
     public static String CED1 =  "ced1";
     public static String CED2 =  "ced2";
