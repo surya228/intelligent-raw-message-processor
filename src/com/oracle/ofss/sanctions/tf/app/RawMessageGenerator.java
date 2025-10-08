@@ -405,11 +405,15 @@ public class RawMessageGenerator {
             }
         }
 
-        // 0 ced -> exact
-        JSONObject obj = createRawMsg(srcFile, toBeReplaced, identifierToBeReplaced, token, targetColumn,
-            identifierToken, tableName, tokenValue, 0, uid, tagName,
-            webserviceId, "NA", "NA", watchlistType);
-        if (obj != null) tempList.add(obj);
+
+        JSONObject obj;
+
+        if (props.getProperty(Constants.CED0).equalsIgnoreCase(Constants.YES)) { // 0 ced -> Exact
+            obj = createRawMsg(srcFile, toBeReplaced, identifierToBeReplaced, token, targetColumn,
+                    identifierToken, tableName, tokenValue, 0, uid, tagName,
+                    webserviceId, "NA", "NA", watchlistType);
+            if (obj != null) tempList.add(obj);
+        }
 
         if (props.getProperty(Constants.CED1).equalsIgnoreCase(Constants.YES)) { // 1 ced
             List<String> oneCedList = generate1CedVariants(toBeReplaced);

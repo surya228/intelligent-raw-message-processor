@@ -72,6 +72,7 @@ public class Constants {
     public static final String COMMENTS = "Comments";
 
     // CED properties
+    public static String CED0 =  "ced0";
     public static String CED1 =  "ced1";
     public static String CED2 =  "ced2";
     public static String CED3 =  "ced3";
